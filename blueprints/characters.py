@@ -1,0 +1,166 @@
+import dataclasses
+import logging
+from typing import TYPE_CHECKING, Optional
+
+from flask import Blueprint, request
+from library import responses, schemas, utils
+from library.configlib import config
+from library.security import route_security
+from models.character import Character, CharacterParameters
+from models.user import User
+
+if TYPE_CHECKING:
+    from ..app import App
+
+
+logger = logging.getLogger(__name__)
+
+
+# pylint: disable=unused-argument
+def setup(server: "App") -> Blueprint:
+    app = Blueprint("characters", __name__, url_prefix="/api/characters")
+
+    route_security.patch(app, authentication_methods=["session", "api"])
+
+    @app.get("/")
+    @route_security.request_args_schema(schema=schemas.GET_CHARACTERS)
+    def get_characters():
+        """
+        Get all of your characters or all publicly available characters.
+        """
+
+        page_size = int(request.args.get("page_size", 25))
+        page = int(request.args.get("page", 1))
+
+        public = bool(request.args.get("public"))
+        query = {"public": True}
+
+        if not public:
+            user_id = utils.get_user_id_from_request()
+            query = {"created_by": user_id}
+
+        logger.info(f"Querying characters with the query '{query}'")
+
+        characters = [
+            x.to_json()
+            for x in utils.paginate_mongoclass_cursor(
+                Character.find_classes(query), page_size=page_size, page=page
+            )
+        ]
+
+        return responses.create_paginated_response(
+            objects=characters, page=page, page_size=page_size
+        )
+
+    @app.post("/")
+    @route_security.request_json_schema(schema=schemas.POST_CHARACTERS)
+    def post_characters():
+        """
+        Create a new character.
+        """
+
+        user_id = utils.get_user_id_from_request()
+        user: Optional[User] = User.find_class({"id": user_id})
+        if user is None:
+            return responses.create_response(status_code=responses.CODE_500)
+
+        data: dict = request.json
+
+        user_characters = Character.count_documents({"created_by": user_id})
+        if user_characters >= user.plan.max_characters:
+            return responses.create_response(
+                status_code=responses.CODE_409,
+                payload={
+                    "message": "You have reached your maximum amount of characters. Either upgrade to a higher plan or delete some of your old characters."
+                },
+            )
+
+        # Get the real model name
+        model = data.get("model", "basic")
+        model = config.model_mappings[model]
+
+        character = Character(
+            created_by=user_id,
+            name=data["name"],
+            description=data["description"],
+            parameters=CharacterParameters(model=model),
+            personalities=data.get("personalities", []),
+            favorite_words=data.get("favorite_words", []),
+            example_exchanges=data.get("example_exchanges", []),
+            private=data.get("private", False),
+            image=data.get("image"),
+        )
+        character.save()
+
+        return responses.create_response(payload=character.to_json())
+
+    @app.patch("/")
+    @route_security.request_json_schema(schema=schemas.PATCH_CHARACTERS)
+    def patch_characters():
+        """
+        Edit one of your existing characters.
+        """
+
+        user_id = utils.get_user_id_from_request()
+        character_id = request.args.get("character_id")
+
+        if character_id is None:
+            return responses.create_response(
+                status_code=responses.CODE_400_MISSING_REQUIRED_PARAMETERS,
+                payload={"character_id": "str"},
+            )
+
+        query = {"created_by": user_id, "id": character_id}
+        character: Optional[Character] = Character.find_class(query)
+
+        if character is None:
+            return responses.create_response(
+                status_code=responses.CODE_404,
+                payload={
+                    "message": f"Cannot find a character with the ID of '{character_id}'."
+                },
+            )
+
+        data: dict = request.json
+        if "model" in data:
+            data["parameters"] = CharacterParameters(
+                model=config.model_mappings[data["model"]]
+            )
+            data.pop("model")
+
+        for k, v in data.items():
+            setattr(character, k, v)
+
+        character.save()
+        return responses.create_response(status_code=responses.CODE_200)
+
+    @app.delete("/")
+    def delete_characters():
+        """
+        Delete a character by using its id.
+        """
+
+        user_id = utils.get_user_id_from_request()
+        character_id = request.args.get("character_id")
+
+        if character_id is None:
+            return responses.create_response(
+                status_code=responses.CODE_400_MISSING_REQUIRED_PARAMETERS,
+                payload={"character_id": "str"},
+            )
+
+        query = {"created_by": user_id, "id": character_id}
+        character: Optional[Character] = Character.find_class(query)
+
+        if character is None:
+            return responses.create_response(
+                status_code=responses.CODE_404,
+                payload={
+                    "message": f"Cannot find a character with the ID of '{character_id}'."
+                },
+            )
+
+        character.delete()
+        return responses.create_response(status_code=responses.CODE_200)
+
+    return app

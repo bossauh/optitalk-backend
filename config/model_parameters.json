@@ -1,0 +1,16 @@
+{
+  "gpt-3.5-turbo": {
+    "temperature": 0.9,
+    "max_tokens": 3000,
+    "top_p": 1,
+    "frequency_penalty": 0.35,
+    "presence_penalty": 1.59
+  },
+  "text-davinci-003": {
+    "temperature": 1,
+    "max_tokens": 3000,
+    "top_p": 1,
+    "frequency_penalty": 0.32,
+    "presence_penalty": 1.49
+  }
+}

@@ -1,0 +1,4 @@
+{
+  "basic": "gpt-3.5-turbo",
+  "advanced": "text-davinci-003"
+}

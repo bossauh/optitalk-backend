@@ -87,7 +87,7 @@ def create_text_completion_context(
         if m["role"] == "assistant":
             name = "You"
 
-        message += f"{name}: {m['message']}\n"
+        message += f"{name}: {m['content']}\n"
 
     return message
 

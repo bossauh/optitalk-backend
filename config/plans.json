@@ -2,7 +2,7 @@
   "free": {
     "max_basic_model_requests_per_month": 500,
     "max_advanced_model_requests_per_month": 30,
-    "max_session_history": 10,
+    "max_session_history": 15,
     "max_characters": 8,
     "name": "Free"
   },

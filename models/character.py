@@ -236,14 +236,24 @@ class Character:
                 presence_penalty=self.parameters.presence_penalty,
             )
 
+        content = completion.result.strip() if completion.result else None
+        message_intent = None
+        if content:
+            intents = config.intents
+            for intent in intents:
+                if content.endswith(intent):
+                    content = content.replace(intent, "")
+                    message_intent = intent
+
         response_message = Message(
-            content=completion.result.strip() if completion.result else None,
+            content=content,
             role="assistant",
             session_id=session_id,
             character_id=self.id,
             created_by=user_id,
             completion_model=self.parameters.model,
             completion_id=completion.id,
+            intent=message_intent,
         )
 
         insert_message.delay(**dataclasses.asdict(new_message))

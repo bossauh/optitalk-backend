@@ -28,6 +28,7 @@ class Message:
     )
     completion_model: Optional[str] = None
     completion_id: Optional[str] = None
+    intent: Optional[str] = None
 
     def to_json(self) -> dict:
         data = dataclasses.asdict(self)

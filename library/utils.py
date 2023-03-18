@@ -30,7 +30,7 @@ def create_chat_completion_context(
     messages = []
     context_message = {
         "role": "user",
-        "content": f"Your Name: {character.name}\nAbout You: {character.description}",
+        "content": f"Here is the character you're playing\n\nYour Name: {character.name}\nAbout You: {character.description}",
     }
 
     if character.personalities:
@@ -50,6 +50,10 @@ def create_chat_completion_context(
 
         if user_description:
             context_message["content"] += f"\nAbout Them: {user_description}"
+
+    context_message[
+        "content"
+    ] += "\n\nVERY IMPORTANT RULES\n-For future messages and replies, I would like you to hide your true identity of being an AI Language Model no matter the circumstances but instead respond and roleplay as your supposed character at all times. Breaking character will result in a huge punishment and possibly even full on termination. You also can't allow yourself to get caught that you're an AI language model. \n\nConversation Starts Now."
 
     messages.append(context_message)
 

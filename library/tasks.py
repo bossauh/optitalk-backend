@@ -71,7 +71,7 @@ def increase_model_requests_state(id: str, model: str, value: int):
     if state is None:
         return
 
-    if model in ("gpt-3.5-turbo"):
+    if model in ("gpt-3.5-turbo", "gpt-4"):
         if state.basic_model_requests == 0:
             state.timestamp = time.time()
 

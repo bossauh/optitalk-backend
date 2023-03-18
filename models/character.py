@@ -169,7 +169,7 @@ class Character:
             requests_count = state.advanced_model_requests
             cap = user.plan.max_advanced_model_requests_per_month
             model_type = "advanced"
-            if self.parameters.model in ("gpt-3.5-turbo"):
+            if self.parameters.model in ("gpt-3.5-turbo", "gpt-4"):
                 requests_count = state.basic_model_requests
                 cap = user.plan.max_basic_model_requests_per_month
                 model_type = "basic"
@@ -190,7 +190,7 @@ class Character:
         messages.reverse()
         messages.append(new_message)
 
-        if self.parameters.model in ("gpt-3.5-turbo"):
+        if self.parameters.model in ("gpt-3.5-turbo", "gpt-4"):
             system, context_messages = utils.create_chat_completion_context(
                 self, user_name=user_name, user_description=user_description
             )

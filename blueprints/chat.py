@@ -46,7 +46,9 @@ def setup(server: "App") -> Blueprint:
                         session_id=data.get("session_id", "0"),
                     )
                 except ModelRequestsLimitExceeded as e:
-                    return responses.create_response(exception=e)
+                    return responses.create_response(
+                        exception=e, status_code=responses.CODE_403
+                    )
 
                 return responses.create_response(payload=response.to_json())
 

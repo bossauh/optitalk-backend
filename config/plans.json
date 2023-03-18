@@ -1,27 +1,27 @@
 {
   "free": {
-    "max_basic_model_requests_per_month": 500,
-    "max_advanced_model_requests_per_month": 30,
+    "max_basic_model_requests_per_month": 700,
+    "max_advanced_model_requests_per_month": 80,
     "max_session_history": 15,
     "max_characters": 8,
     "name": "Free"
   },
   "basic": {
-    "max_basic_model_requests_per_month": 2000,
+    "max_basic_model_requests_per_month": 2500,
     "max_advanced_model_requests_per_month": 30,
     "max_session_history": 25,
     "max_characters": 200,
     "name": "Basic"
   },
   "premium": {
-    "max_basic_model_requests_per_month": 3000,
+    "max_basic_model_requests_per_month": 10000,
     "max_advanced_model_requests_per_month": 500,
-    "max_session_history": 40,
+    "max_session_history": 35,
     "max_characters": 1000,
     "name": "Premium"
   },
   "advanced": {
-    "max_basic_model_requests_per_month": 5000,
+    "max_basic_model_requests_per_month": 17000,
     "max_advanced_model_requests_per_month": 1500,
     "max_session_history": 50,
     "max_characters": 5000,

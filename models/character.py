@@ -201,7 +201,8 @@ class Character:
 
             logger.debug(f"Prompt: {pprint.pformat(prompt)}")
 
-            completion = gpt.create_chat_completion(
+            completion_function = gpt.create_chat_completion
+            completion_parameters = dict(
                 system=system,
                 messages=prompt,
                 model=self.parameters.model,
@@ -223,10 +224,10 @@ class Character:
                 prompt += f"{name}: {message.content}\n"
 
             prompt += "You:"
-
             logger.debug(f"Prompt: {pprint.pformat(prompt)}")
 
-            completion = gpt.create_completion(
+            completion_function = gpt.create_completion
+            completion_parameters = dict(
                 prompt=prompt,
                 model=self.parameters.model,
                 temperature=self.parameters.temperature,
@@ -235,6 +236,8 @@ class Character:
                 frequency_penalty=self.parameters.frequency_penalty,
                 presence_penalty=self.parameters.presence_penalty,
             )
+
+        completion = completion_function(**completion_parameters)
 
         content = completion.result.strip() if completion.result else None
         message_intent = None

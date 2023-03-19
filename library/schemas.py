@@ -3,6 +3,7 @@ from voluptuous import All, Any, Email, Length, Optional, Required, Schema, Url
 _CHARACTER_EXCHANGE = {
     Required("role"): Any("user", "assistant"),
     Required("content"): All(str, Length(min=1, max=3000)),
+    Optional("name"): All(str, Length(min=1, max=50)),
 }
 _PAGING_SCHEMA = {Optional("page"): str, Optional("page_size"): str}
 POST_USERS_LOGIN = Schema(
@@ -58,7 +59,6 @@ POST_CHAT = Schema(
         Required("character_id"): str,
         Required("content"): str,
         Optional("user_name"): Any(str, Length(min=1, max=100)),
-        Optional("user_description"): Any(str, Length(min=1, max=300)),
         Optional("role"): Any("user", "assistant"),
         Optional("session_id"): str,
     }

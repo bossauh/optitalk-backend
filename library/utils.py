@@ -13,7 +13,6 @@ if TYPE_CHECKING:
 def create_chat_completion_context(
     character: "Character",
     user_name: Optional[str] = None,
-    user_description: Optional[str] = None,
 ) -> tuple[str, list[dict[str, str]]]:
     """
     Create the context for a chat completion request.
@@ -32,6 +31,8 @@ def create_chat_completion_context(
         "role": "user",
         "content": f"Here is the character you're playing\n\nYour Name: {character.name}\nAbout You: {character.description}",
     }
+    if user_name:
+        context_message["name"] = user_name
 
     if character.personalities:
         context_message["content"] += f"\nPersonalities and Traits: " + ", ".join(
@@ -43,15 +44,7 @@ def create_chat_completion_context(
             character.favorite_words
         )
 
-    if user_name:
-        context_message[
-            "content"
-        ] += f"\n\nThe user's name you're talking to: {user_name}."
-
-        if user_description:
-            context_message["content"] += f"\nAbout Them: {user_description}"
-
-    context_message["content"] += "\n\nConversation Starts Now"
+    context_message["content"] += "\n\nConversation Continues"
 
     messages.append(context_message)
 
@@ -64,7 +57,6 @@ def create_chat_completion_context(
 def create_text_completion_context(
     character: "Character",
     user_name: Optional[str] = None,
-    user_description: Optional[str] = None,
 ) -> str:
     """
     Create the context for a text completion request.
@@ -85,7 +77,7 @@ def create_text_completion_context(
     )
 
     for m in messages:
-        name = "User"
+        name = user_name or "User"
         if m["role"] == "assistant":
             name = "You"
 

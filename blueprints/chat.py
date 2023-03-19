@@ -41,7 +41,6 @@ def setup(server: "App") -> Blueprint:
                         user_id=user_id,
                         role=data.get("role", "user"),
                         content=data["content"],
-                        user_description=data.get("user_description"),
                         user_name=data.get("user_name"),
                         session_id=data.get("session_id", "0"),
                     )

@@ -89,7 +89,6 @@ class Character:
         role: Literal["user", "assistant"],
         content: str,
         user_name: Optional[str] = None,
-        user_description: Optional[str] = None,
         session_id: Optional[str] = "0",
     ) -> Message:
         """
@@ -108,10 +107,6 @@ class Character:
             The name of the person initiating the chat. The character can refer to this
             to know who it is speaking to. This is unrelated to an actual OptiTalk user.
             Defaults to None.
-        `user_description` : str
-            A description of the person initiating the chat. The character can refer to
-            this to know more about the person it is speaking to. This is unrelated to
-            an actual OptiTalk user. Defaults to None.
         `session_id` : Optional[str]
             The ID of the chat session to use. Defaults to `"0"` which is the default chat
             session when no chat session is provided. If the provided `session_id` does
@@ -137,6 +132,7 @@ class Character:
             session_id=session_id,
             character_id=self.id,
             created_by=user_id,
+            name=user_name,
         )
 
         # Create session if it does not exist
@@ -192,12 +188,15 @@ class Character:
 
         if self.parameters.model in ("gpt-3.5-turbo", "gpt-4"):
             system, context_messages = utils.create_chat_completion_context(
-                self, user_name=user_name, user_description=user_description
+                self, user_name=user_name
             )
             prompt = context_messages
 
             for message in messages:
-                prompt.append({"role": message.role, "content": message.content})
+                message_data = {"role": message.role, "content": message.content}
+                if message.name:
+                    message_data["name"] = message.name
+                prompt.append(message_data)
 
             logger.debug(f"Prompt: {pprint.pformat(prompt)}")
 
@@ -214,11 +213,9 @@ class Character:
             )
 
         else:
-            prompt = utils.create_text_completion_context(
-                self, user_name=user_name, user_description=user_description
-            )
+            prompt = utils.create_text_completion_context(self, user_name=user_name)
             for message in messages:
-                name = "User"
+                name = message.name or "User"
                 if message.role == "assistant":
                     name = "You"
                 prompt += f"{name}: {message.content}\n"

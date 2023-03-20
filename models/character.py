@@ -202,11 +202,6 @@ class Character:
                     message_data["name"] = message.name
                 prompt.append(message_data)
 
-            prompt = utils.limit_chat_completion_tokens(
-                messages=prompt,
-                model=self.parameters.model,
-                max_tokens=self.parameters.max_tokens,
-            )
             logger.debug(f"Prompt: {pprint.pformat(prompt)}")
 
             completion_function = gpt.create_chat_completion
@@ -244,8 +239,11 @@ class Character:
             )
 
         completion = completion_function(**completion_parameters)
+        content = "" if completion[0].result else None
+        if content is not None:
+            for completion in completion:
+                content += " " + completion.result
 
-        content = completion.result.strip() if completion.result else None
         message_intent = None
         if content:
             intents = config.intents

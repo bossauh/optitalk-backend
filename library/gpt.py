@@ -1,12 +1,13 @@
 import datetime
 import logging
 import time
+from typing import Optional
 
 import openai
 from models.open_ai import ChatCompletion, Completion
 from openai.util import convert_to_dict
 
-from library import tasks
+from library import tasks, utils
 
 from .configlib import config
 
@@ -41,7 +42,7 @@ class GPT:
         frequency_penalty: int = 0,
         presence_penalty: float = 0.78,
         **kwargs,
-    ) -> None:
+    ) -> list[Completion]:
         """
         Create a OpenAI text completion. Unlike the chat completion, this is more focused
         on general text completions. It can still be used for chat completions and is
@@ -53,6 +54,8 @@ class GPT:
         - This method does not take into account the amount of tokens in the provided
         `prompt`.
         """
+
+        # TODO: Handle cut off responses due to token limit just like the chat completion does
 
         logger.info("Creating OpenAI text completion...")
 
@@ -102,7 +105,7 @@ class GPT:
         # Save the completion object in the database
         tasks.log_text_completion.delay(**completion_data)
 
-        return completion_object
+        return [completion_object]
 
     def create_chat_completion(
         self,
@@ -114,12 +117,16 @@ class GPT:
         top_p: int = 1,
         frequency_penalty: int = 0,
         presence_penalty: float = 0.78,
+        _previous_completions: Optional[list[ChatCompletion]] = None,
         **kwargs,
-    ) -> ChatCompletion:
+    ) -> list[ChatCompletion]:
         """
         Create a OpenAI Chat completion. While this may be called "chat", this can also
         be used for general purpose text completion and is just as effective as the
         regular text completions.
+
+        This returns a list because if the completion is cut off due to the token limit,
+        it will automatically create a new completion that completes
 
         Notes
         -----
@@ -129,6 +136,9 @@ class GPT:
 
         logger.info("Creating OpenAI chat completion...")
         messages_combined = [{"role": "system", "content": system}] + messages
+        messages_combined = utils.limit_chat_completion_tokens(
+            messages=messages_combined, model=model, max_tokens=max_tokens
+        )
 
         # Make the request and time it
         st = time.perf_counter()
@@ -177,7 +187,31 @@ class GPT:
         # Save the completion object in the database
         tasks.log_chat_completion.delay(**completion_data)
 
-        return completion_object
+        return_value = (_previous_completions or []) + [completion_object]
+
+        # Check if incomplete
+        if completion_object.choices[0]["finish_reason"] == "length":
+            logger.info(
+                f"Creating another OpenAI chat completion for '{completion_object.id}' because the response was cut off due to the token limit."
+            )
+
+            new_messages = [*messages]
+            new_messages.append(completion_object.choices[0]["message"])
+
+            return self.create_chat_completion(
+                system=system,
+                messages=new_messages,
+                model=model,
+                temperature=temperature,
+                max_tokens=max_tokens,
+                top_p=top_p,
+                frequency_penalty=frequency_penalty,
+                presence_penalty=presence_penalty,
+                _previous_completions=return_value,
+                **kwargs,
+            )
+
+        return return_value
 
 
 gpt = GPT()

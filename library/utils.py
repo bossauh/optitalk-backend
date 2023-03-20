@@ -1,5 +1,7 @@
+import logging
 from typing import TYPE_CHECKING, Optional
 
+import tiktoken
 from flask import request, session
 from models.user import Application
 from mongoclass.cursor import Cursor
@@ -8,6 +10,57 @@ from library.system_messages import system_message_handler
 
 if TYPE_CHECKING:
     from models.character import Character
+
+
+logger = logging.getLogger(__name__)
+
+
+def get_total_tokens_from_messages(
+    messages: list[dict[str, str]], model: str = "gpt-3.5-turbo"
+):
+    """Returns the number of tokens used by a list of messages."""
+    try:
+        encoding = tiktoken.encoding_for_model(model)
+    except KeyError:
+        encoding = tiktoken.get_encoding("cl100k_base")
+
+    num_tokens = 0
+    for message in messages:
+        num_tokens += 8
+        for key, value in message.items():
+            num_tokens += len(encoding.encode(value))
+            if key == "name":  # if there's a name, the role is omitted
+                num_tokens += -1  # role is always required and always 1 token
+    num_tokens += 4  # every reply is primed with <im_start>assistant
+    return num_tokens
+
+
+def limit_chat_completion_tokens(
+    messages: list[dict[str, str]], model: str, max_tokens: int
+) -> list[dict[str, str]]:
+    """
+    Limit the amount of messages so that it respects the token limit of OpenAI's GPT
+    models.
+    """
+
+    token_cap = 4090
+    if model == "gpt-4":
+        token_cap = 8100
+
+    messages_tokens = get_total_tokens_from_messages(messages=messages)
+    total_tokens = messages_tokens + max_tokens
+    if (total_tokens) <= token_cap:
+        return messages
+
+    logger.warning(
+        f"There are {total_tokens} in the message list which exceeded the {token_cap} tokens limit. Removing older messages..."
+    )
+    copied_messages = [*messages]
+    copied_messages.pop(1)
+
+    return limit_chat_completion_tokens(
+        messages=copied_messages, model=model, max_tokens=max_tokens
+    )
 
 
 def create_chat_completion_context(

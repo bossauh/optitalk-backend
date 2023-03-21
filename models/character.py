@@ -128,7 +128,8 @@ class Character:
         logger.info(f"Chat as '{role}' with the message '{content}' from '{user_id}'.")
 
         # Clean user_name
-        user_name = re.sub(r"[^\w-]{1,64}", "", user_name)
+        if user_name:
+            user_name = re.sub(r"[^\w-]{1,64}", "", user_name)
 
         new_message = Message(
             content=content,

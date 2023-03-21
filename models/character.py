@@ -65,6 +65,7 @@ class Character:
     created_by: str
     name: str
     description: str
+    knowledge: Optional[list[str]] = None
     parameters: CharacterParameters = dataclasses.field(
         default_factory=lambda: CharacterParameters()
     )

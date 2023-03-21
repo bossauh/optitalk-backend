@@ -22,6 +22,9 @@ POST_CHARACTERS = Schema(
         Required("name"): All(str, Length(min=2, max=24)),
         Required("description"): All(str, Length(min=10, max=800)),
         Optional("model"): Any("basic", "advanced"),
+        Optional("knowledge"): All(
+            [Schema(All(str, min=1, max=250))], Length(min=0, max=10)
+        ),
         Optional("personalities"): All(
             [Schema(All(str, min=1, max=24))], Length(min=0, max=5)
         ),
@@ -40,6 +43,9 @@ PATCH_CHARACTERS = Schema(
         Optional("name"): All(str, Length(min=2, max=24)),
         Optional("description"): All(str, Length(min=10, max=800)),
         Optional("model"): Any("basic", "advanced"),
+        Optional("knowledge"): All(
+            [Schema(All(str, min=1, max=250))], Length(min=0, max=10)
+        ),
         Optional("personalities"): All(
             [Schema(All(str, min=1, max=24))], Length(min=0, max=5)
         ),

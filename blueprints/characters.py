@@ -89,6 +89,7 @@ def setup(server: "App") -> Blueprint:
             example_exchanges=data.get("example_exchanges", []),
             private=data.get("private", False),
             image=data.get("image"),
+            knowledge=data.get("knowledge", []),
         )
         character.save()
 

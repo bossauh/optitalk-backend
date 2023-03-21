@@ -87,6 +87,13 @@ def create_chat_completion_context(
     if user_name:
         context_message["name"] = user_name
 
+    if character.knowledge:
+        context_message["content"] += (
+            f"\n\nKnowledge:\n"
+            + "\n".join([f"- {x}" for x in character.knowledge])
+            + "\n\n"
+        )
+
     if character.personalities:
         context_message["content"] += f"\nPersonalities and Traits: " + ", ".join(
             character.personalities

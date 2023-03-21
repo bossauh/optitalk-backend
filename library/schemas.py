@@ -20,7 +20,7 @@ POST_USERS = Schema(
 POST_CHARACTERS = Schema(
     {
         Required("name"): All(str, Length(min=2, max=24)),
-        Required("description"): All(str, Length(min=10, max=800)),
+        Required("description"): All(str, Length(min=10, max=1024)),
         Optional("model"): Any("basic", "advanced"),
         Optional("knowledge"): All(
             [Schema(All(str, min=1, max=250))], Length(min=0, max=10)

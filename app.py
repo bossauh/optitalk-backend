@@ -4,6 +4,7 @@ import os
 
 import coloredlogs
 from flask import Flask
+from flask_session import Session
 
 coloredlogs.install(level="DEBUG")
 logger = logging.getLogger(__name__)
@@ -12,6 +13,9 @@ logger = logging.getLogger(__name__)
 class App:
     def __init__(self) -> None:
         self.app = Flask(__name__)
+        self.app.config["SESSION_TYPE"] = "redis"
+        Session(self.app)
+
         self.app.secret_key = "aeed32d8aec44a388640b02c18ef6de0"
 
     def register_blueprints(self) -> None:

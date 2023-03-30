@@ -1,12 +1,23 @@
 import logging
 from typing import Optional
 
+from flask import request, session
 from models.user import User
 
 from library import tasks, types
 from library.exceptions import *
+from library.security import route_security
 
 logger = logging.getLogger(__name__)
+
+
+def authorize_session(user_id: str) -> None:
+    """
+    Authorizes the current session.
+    """
+
+    session["user_id"] = user_id
+    session["user_agent"] = request.headers.get("User-Agent")
 
 
 def register_user(

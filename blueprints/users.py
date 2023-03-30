@@ -44,7 +44,7 @@ def setup(server: "App") -> Blueprint:
         if not bcrypt.checkpw(data["password"].encode(), user.password):
             return responses.create_response(status_code=responses.CODE_403)
 
-        session["user_id"] = user.id
+        users.authorize_session(user.id)
 
         return responses.create_response()
 

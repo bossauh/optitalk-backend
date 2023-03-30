@@ -62,6 +62,10 @@ class RouteSecurity:
             if user_id is None:
                 return False
 
+            user_agent = session.get("user_agent")
+            if user_agent != request.headers.get("User-Agent"):
+                return False
+
             return bool(User.count_documents({"id": user_id}))
 
         authentication_methods_mapping = {"session": check_session, "api": check_api}

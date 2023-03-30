@@ -79,7 +79,7 @@ def setup(server: "App") -> Blueprint:
         user.plan.verified = True
         user.save()
 
-        session["user_id"] = user.id
+        users.authorize_session(user.id)
 
         return redirect(redirect_url)
 

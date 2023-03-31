@@ -246,6 +246,8 @@ class Character:
             for completion in completion:
                 content += " " + completion.result
 
+            content = content.strip()
+
         message_intent = None
         if content:
             intents = config.intents

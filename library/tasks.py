@@ -1,11 +1,12 @@
 import logging
+import os
 import pprint
 import time
-import os
 
 from dotenv import load_dotenv
 
-load_dotenv()
+if not os.getenv("PRODUCTION"):
+    load_dotenv()
 
 from typing import Generator, Optional
 

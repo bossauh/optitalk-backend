@@ -5,7 +5,8 @@ import os
 import waitress
 from dotenv import load_dotenv
 
-load_dotenv()
+if not os.getenv("PRODUCTION"):
+    load_dotenv()
 
 import coloredlogs
 from flask import Flask

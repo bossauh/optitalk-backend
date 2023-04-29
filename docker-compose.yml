@@ -1,0 +1,41 @@
+version: "3.9"
+services:
+  web:
+    build: .
+    ports:
+      - "80:80"
+    depends_on:
+      - redis
+      - mongodb
+    env_file:
+      - prod.env
+
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    ports:
+      - "27018:27017"
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "6379:6379"
+
+  celery_worker:
+    build: .
+    command: celery -A library.tasks worker -P eventlet --loglevel=INFO
+    depends_on:
+      - redis
+      - mongodb
+    env_file:
+      - prod.env
+
+  celery_beat:
+    build: .
+    command: celery -A library.tasks beat --loglevel=INFO
+    depends_on:
+      - redis
+      - mongodb
+    env_file:
+      - prod.env

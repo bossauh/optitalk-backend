@@ -2,6 +2,7 @@ import importlib
 import logging
 import os
 
+import redis
 import waitress
 from dotenv import load_dotenv
 

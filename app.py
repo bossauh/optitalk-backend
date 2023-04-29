@@ -2,6 +2,7 @@ import importlib
 import logging
 import os
 
+import waitress
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -51,7 +52,12 @@ class App:
         logger.info("Starting OptiTalk...")
         self.register_blueprints()
 
-        self.app.run(host="127.0.0.1", port=5000, debug=True, use_reloader=False)
+        if os.getenv("PRODUCTION"):
+            logger.info("Starting with waitress server.")
+            waitress.serve(self.app, listen="0.0.0.0:80")
+        else:
+            logger.info("Starting with development server.")
+            self.app.run(host="127.0.0.1", port=5000, debug=True, use_reloader=False)
 
 
 if __name__ == "__main__":

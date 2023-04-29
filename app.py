@@ -20,6 +20,7 @@ class App:
     def __init__(self) -> None:
         self.app = Flask(__name__)
         self.app.config["SESSION_TYPE"] = "redis"
+        self.app.config["SESSION_REDIS"] = redis.from_url(os.environ["CELERY_BROKER_URI"])
         Session(self.app)
 
         self.app.secret_key = "aeed32d8aec44a388640b02c18ef6de0"

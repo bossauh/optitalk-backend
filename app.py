@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 
 if not os.getenv("PRODUCTION"):
     load_dotenv()
+    logging.info("Loaded development .env file.")
 
 import coloredlogs
 from flask import Flask

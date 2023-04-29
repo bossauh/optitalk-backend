@@ -1,3 +1,5 @@
+import os
+
 from mongoclass import MongoClassClient
 
-mongoclass = MongoClassClient("optitalk", "127.0.0.1:27017")
+mongoclass = MongoClassClient(os.environ["MONGODB_DB_NAME"], os.environ["MONGODB_URI"])

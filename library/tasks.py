@@ -1,6 +1,12 @@
 import logging
 import pprint
 import time
+import os
+
+from dotenv import load_dotenv
+
+load_dotenv()
+
 from typing import Generator, Optional
 
 from celery import Celery
@@ -12,8 +18,8 @@ from models.user import Application
 
 app = Celery(
     "optitalk.tasks",
-    broker="redis://127.0.0.1:6379/1",
-    backend="redis://127.0.0.1:6379/1",
+    broker=os.environ["CELERY_BROKER_URI"],
+    backend=os.environ["CELERY_BACKEND_URI"],
 )
 logger = logging.getLogger(__name__)
 

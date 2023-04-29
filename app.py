@@ -2,6 +2,10 @@ import importlib
 import logging
 import os
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 import coloredlogs
 from flask import Flask
 from flask_session import Session

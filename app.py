@@ -12,6 +12,7 @@ if not os.getenv("PRODUCTION"):
 
 import coloredlogs
 from flask import Flask
+from flask_cors import CORS
 from flask_session import Session
 
 coloredlogs.install(level="DEBUG")
@@ -21,6 +22,8 @@ logger = logging.getLogger(__name__)
 class App:
     def __init__(self) -> None:
         self.app = Flask(__name__)
+        CORS(self.app)
+
         self.app.config["SERVER_NAME"] = None
         self.app.config["SESSION_TYPE"] = "redis"
         self.app.config["SESSION_REDIS"] = redis.from_url(

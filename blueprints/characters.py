@@ -32,7 +32,8 @@ def setup(server: "App") -> Blueprint:
         page_size = int(request.args.get("page_size", 25))
         page = int(request.args.get("page", 1))
 
-        private = bool(request.args.get("private", False))
+        private_arg = request.args.get("private", False)
+        private = private_arg.lower() == "true"
         query = {"private": False}
 
         if private:

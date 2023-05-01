@@ -32,10 +32,10 @@ def setup(server: "App") -> Blueprint:
         page_size = int(request.args.get("page_size", 25))
         page = int(request.args.get("page", 1))
 
-        public = bool(request.args.get("public"))
-        query = {"public": True}
+        private = bool(request.args.get("private", False))
+        query = {"private": False}
 
-        if not public:
+        if private:
             user_id = utils.get_user_id_from_request()
             query = {"created_by": user_id}
 

@@ -59,7 +59,7 @@ PATCH_CHARACTERS = Schema(
         Optional("image"): Url(),
     }
 )
-GET_CHARACTERS = Schema({Optional("public"): str, **_PAGING_SCHEMA})
+GET_CHARACTERS = Schema({Optional("private"): str, **_PAGING_SCHEMA})
 POST_CHAT = Schema(
     {
         Required("character_id"): str,

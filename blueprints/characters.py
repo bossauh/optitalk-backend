@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 def setup(server: "App") -> Blueprint:
     app = Blueprint("characters", __name__, url_prefix="/api/characters")
 
-    route_security.patch(app, authentication_methods=["session", "api"])
+    route_security.patch(app, authentication_methods=["session", "api", "rapid-api"])
 
     @app.get("/")
     @route_security.request_args_schema(schema=schemas.GET_CHARACTERS)
@@ -66,9 +66,10 @@ def setup(server: "App") -> Blueprint:
             return responses.create_response(status_code=responses.CODE_500)
 
         data: dict = request.json
+        is_from_rapid_api = utils.is_from_rapid_api()
 
         user_characters = Character.count_documents({"created_by": user_id})
-        if user_characters >= user.plan.max_characters:
+        if user_characters >= user.plan.max_characters and not is_from_rapid_api:
             return responses.create_response(
                 status_code=responses.CODE_409,
                 payload={

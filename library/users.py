@@ -5,10 +5,14 @@ from flask import request, session
 from models.user import User
 
 from library import tasks, types
+from library.configlib import config
 from library.exceptions import *
-from library.security import route_security
 
 logger = logging.getLogger(__name__)
+
+
+def format_rapid_api_user(user: str) -> str:
+    return f"{user}{config.main['rapid_api_user_suffix']}"
 
 
 def authorize_session(user_id: str) -> None:
@@ -40,6 +44,9 @@ def register_user(
     `User` :
         The newly created `User` object.
     """
+
+    if account_type == "rapid-api":
+        email = format_rapid_api_user(email)
 
     if User.count_documents({"email": email}):
         raise AccountAlreadyExists(email=email)

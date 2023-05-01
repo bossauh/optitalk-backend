@@ -163,6 +163,8 @@ class Character:
         if user is None:
             raise UserNotFound(f"User with ID '{user_id}' does not exist.")
 
+        is_rapid_api = utils.is_from_rapid_api()
+
         # Check if the user has capped their requests limit.
         state: Optional[UserPlanState] = UserPlanState.find_class({"id": user_id})
         if state is None:
@@ -178,7 +180,7 @@ class Character:
 
             logger.debug(f"{requests_count=} | {cap=} | {model_type=}")
 
-            if requests_count >= cap:
+            if requests_count >= cap and not is_rapid_api:
                 raise ModelRequestsLimitExceeded(model=model_type, limit=cap)
 
         messages = list(
@@ -187,7 +189,7 @@ class Character:
             .where(
                 f"this.session_id === '{session_id}' && this.character_id === '{self.id}' && this.created_by === '{user_id}'"
             )
-            .limit(user.plan.max_session_history)
+            .limit(user.plan.max_session_history if not is_rapid_api else 100)
         )
         messages.reverse()
         messages.append(new_message)

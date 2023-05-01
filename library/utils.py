@@ -3,9 +3,11 @@ from typing import TYPE_CHECKING, Optional
 
 import tiktoken
 from flask import request, session
-from models.user import Application
+from models.user import Application, User
 from mongoclass.cursor import Cursor
 
+from library import users
+from library.configlib import config
 from library.system_messages import system_message_handler
 
 if TYPE_CHECKING:
@@ -146,6 +148,24 @@ def create_text_completion_context(
     return message
 
 
+def is_from_rapid_api() -> bool:
+    """
+    Detect if the current request context is coming from a authenticated rapid api user.
+    """
+
+    rapid_api_proxy = request.headers.get("X-RapidAPI-Proxy-Secret")
+    rapid_api_user = request.headers.get("X-Rapidapi-User")
+    value = (
+        rapid_api_proxy == config.credentials["rapid_api_proxy"]
+        and rapid_api_user is not None
+    )
+
+    if value:
+        logger.info("Request is from Rapid API")
+
+    return value
+
+
 def get_user_id_from_request() -> Optional[str]:
     """
     Attempt to retrieve the User ID from the current request context.
@@ -154,6 +174,16 @@ def get_user_id_from_request() -> Optional[str]:
     user_id = session.get("user_id")
     if user_id:
         return user_id
+
+    if is_from_rapid_api():
+        rapid_api_user = request.headers.get("X-Rapidapi-User")
+        user_obj: Optional[User] = User.find_class(
+            {"email": users.format_rapid_api_user(rapid_api_user)}
+        )
+        if user_obj is None:
+            return
+
+        return user_obj.id
 
     authorization = request.authorization
     if authorization is None:

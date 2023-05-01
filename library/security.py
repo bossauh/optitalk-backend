@@ -6,7 +6,8 @@ from flask import Blueprint, Flask, request, session, url_for
 from models.user import Application, User
 from voluptuous import Invalid, Schema
 
-from library import responses, types
+from library import responses, types, users, utils
+from library.configlib import config
 
 logger = logging.getLogger(__name__)
 
@@ -68,7 +69,32 @@ class RouteSecurity:
 
             return bool(User.count_documents({"id": user_id}))
 
-        authentication_methods_mapping = {"session": check_session, "api": check_api}
+        def check_rapid_api() -> bool:
+            # First check if the rapid api secret is present and correct
+
+            if not utils.is_from_rapid_api():
+                return False
+
+            user_id = request.headers.get("X-Rapidapi-User")
+
+            # Check if user exists
+            if not User.count_documents(
+                {
+                    "account_type": "rapid-api",
+                    "email": users.format_rapid_api_user(user_id),
+                }
+            ):
+                users.register_user(
+                    email=user_id, password=user_id, account_type="rapid-api"
+                )
+
+            return True
+
+        authentication_methods_mapping = {
+            "rapid-api": check_rapid_api,
+            "session": check_session,
+            "api": check_api,
+        }
 
         @instance.before_request
         def before_request():

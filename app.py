@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 class App:
     def __init__(self) -> None:
         self.app = Flask(__name__)
+        self.app.url_map.strict_slashes = False
         CORS(self.app)
 
         self.app.config["SERVER_NAME"] = None

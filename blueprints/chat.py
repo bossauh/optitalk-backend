@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 # pylint: disable=unused-argument
 def setup(server: "App") -> Blueprint:
     app = Blueprint("chat", __name__, url_prefix="/api/chat")
-    route_security.patch(app, authentication_methods=["session", "api"])
+    route_security.patch(app, authentication_methods=["session", "api", "rapid-api"])
 
     @app.post("/")
     @route_security.request_json_schema(schema=schemas.POST_CHAT)

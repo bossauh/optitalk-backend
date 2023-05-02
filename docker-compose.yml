@@ -18,12 +18,16 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: cyclops
       MONGO_INITDB_ROOT_PASSWORD: GbP9gw4Oi47hS7sd
+    volumes:
+      - mongodb_data:/data/db
 
   redis:
     image: redis:latest
     container_name: redis
     ports:
       - "6379:6379"
+    volumes:
+      - redis_data:/data
 
   celery_worker:
     build: .
@@ -33,6 +37,8 @@ services:
       - mongodb
     env_file:
       - prod.env
+    volumes:
+      - ./celery_beat_schedule:/app/celery_beat_schedule
 
   celery_beat:
     build: .
@@ -42,3 +48,9 @@ services:
       - mongodb
     env_file:
       - prod.env
+    volumes:
+      - ./celery_beat_schedule:/app/celery_beat_schedule
+
+volumes:
+  mongodb_data:
+  redis_data:

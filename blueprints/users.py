@@ -86,9 +86,13 @@ def setup(server: "App") -> Blueprint:
     def is_authenticated():
         """
         Check if the incoming request is authenticated or not. This checks via the session
-        as well as the Authorization header.
+        as well as the Authorization header and also returns additional information
+        about the user.
         """
 
-        return responses.create_response()
+        user_id = utils.get_user_id_from_request()
+        user = User.find_class({"id": user_id})
+
+        return responses.create_response(payload=user.to_json())
 
     return app

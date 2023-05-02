@@ -175,7 +175,10 @@ class Character:
                 raise UserNotFound(f"User with ID '{user_id}' does not exist.")
 
             user = users.register_user(
-                email=user_id, password=user_id, account_type="anonymous"
+                email=user_id,
+                password=user_id,
+                account_type="anonymous",
+                skip_application=True,
             )
             user.id = user_id
             user.plan = Plan(id="anonymous")

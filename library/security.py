@@ -84,7 +84,10 @@ class RouteSecurity:
                 }
             ):
                 users.register_user(
-                    email=user_id, password=user_id, account_type="rapid-api"
+                    email=user_id,
+                    password=user_id,
+                    account_type="rapid-api",
+                    skip_application=True,
                 )
 
             return True

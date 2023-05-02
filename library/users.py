@@ -33,6 +33,7 @@ def register_user(
     password: str,
     account_type: types.AccountType = "default",
     display_name: Optional[str] = None,
+    skip_application: bool = False,
 ) -> User:
     """
     Register a new user to OptiTalk.
@@ -65,11 +66,13 @@ def register_user(
         account_type=account_type,
     )
     user.save()
-    tasks.insert_application.delay(
-        name="Default",
-        user_id=user.id,
-        description="The default application created on account creation.",
-    )
+
+    if not skip_application:
+        tasks.insert_application.delay(
+            name="Default",
+            user_id=user.id,
+            description="The default application created on account creation.",
+        )
 
     logger.info(f"Registered user '{user.id}' ({user.email}).")
     return user

@@ -166,9 +166,12 @@ def is_from_rapid_api() -> bool:
     return value
 
 
-def get_user_id_from_request() -> Optional[str]:
+def get_user_id_from_request(anonymous: bool = False) -> Optional[str]:
     """
     Attempt to retrieve the User ID from the current request context.
+
+    If `anonymous` is True, it will also attempt to find the IP address of the request
+    and consider it as a User ID.
     """
 
     user_id = session.get("user_id")
@@ -186,16 +189,17 @@ def get_user_id_from_request() -> Optional[str]:
         return user_obj.id
 
     authorization = request.authorization
-    if authorization is None:
-        return
+    if authorization:
+        application: Optional[Application] = Application.find_class(
+            {"id": authorization.username}
+        )
+        if application:
+            return application.user_id
 
-    application: Optional[Application] = Application.find_class(
-        {"id": authorization.username}
-    )
-    if application is None:
-        return
+    if anonymous:
+        from library.security import route_security
 
-    return application.user_id
+        return route_security.get_client_ip()
 
 
 def paginate_mongoclass_cursor(

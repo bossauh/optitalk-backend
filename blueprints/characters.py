@@ -23,6 +23,7 @@ def setup(server: "App") -> Blueprint:
 
     @app.get("/")
     @route_security.request_args_schema(schema=schemas.GET_CHARACTERS)
+    @route_security.exclude
     def get_characters():
         """
         Get all of your characters or all publicly available characters.

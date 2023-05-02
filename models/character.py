@@ -7,7 +7,8 @@ import uuid
 from typing import Literal, Optional
 
 from database import mongoclass
-from library import utils
+from IPy import IP
+from library import users, utils
 from library.configlib import config
 from library.exceptions import *
 from library.gpt import gpt
@@ -16,7 +17,7 @@ from library.tasks import increase_model_requests_state, insert_message
 from models.message import Message
 from models.session import ChatSession
 from models.state import UserPlanState
-from models.user import User
+from models.user import Plan, User
 
 logger = logging.getLogger(__name__)
 
@@ -88,8 +89,8 @@ class Character:
     def chat(
         self,
         user_id: str,
-        role: Literal["user", "assistant"],
         content: str,
+        role: Literal["user", "assistant"] = "user",
         user_name: Optional[str] = None,
         session_id: Optional[str] = "0",
     ) -> Message:
@@ -99,12 +100,13 @@ class Character:
 
         Parameters
         ----------
-        `user_id` : str
-            The ID of the user initiating the chat. This is used to ensure that the user's restrictions are met.
-        `role` : Literal["user", "assistant"]
-            The role of the chat.
         `content` : str
             The content of the message.
+        `user_id` : str
+            The ID of the user initiating the chat. This is used to ensure that the
+            user's restrictions are met.
+        `role` : Literal["user", "assistant"]
+            The role of the chat. Defaults to `user`.
         `user_name` : str
             The name of the person initiating the chat. The character can refer to this
             to know who it is speaking to. This is unrelated to an actual OptiTalk user.
@@ -118,6 +120,8 @@ class Character:
         ------
         `UserNotFound` :
             Raised if a user cannot be found with the provided `user_id`.
+        `ModelRequestsLimitExceeded` :
+            When the requests limit has been exceeded.
 
         Returns
         -------
@@ -159,9 +163,23 @@ class Character:
             insert_message.delay(**dataclasses.asdict(new_message))
             return new_message
 
+        anonymous = True
+        try:
+            IP(user_id)
+        except ValueError:
+            anonymous = False
+
         user: Optional[User] = User.find_class({"id": user_id})
         if user is None:
-            raise UserNotFound(f"User with ID '{user_id}' does not exist.")
+            if not anonymous:
+                raise UserNotFound(f"User with ID '{user_id}' does not exist.")
+
+            user = users.register_user(
+                email=user_id, password=user_id, account_type="anonymous"
+            )
+            user.id = user_id
+            user.plan = Plan(id="anonymous")
+            user.save()
 
         is_rapid_api = utils.is_from_rapid_api()
 

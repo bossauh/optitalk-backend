@@ -7,7 +7,6 @@ from models.user import Application, User
 from voluptuous import Invalid, Schema
 
 from library import responses, types, users, utils
-from library.configlib import config
 
 logger = logging.getLogger(__name__)
 

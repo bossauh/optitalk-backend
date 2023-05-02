@@ -15,6 +15,10 @@ def format_rapid_api_user(user: str) -> str:
     return f"{user}{config.main['rapid_api_user_suffix']}"
 
 
+def format_anonymous_user(user: str) -> str:
+    return f"{user}{config.main['anonymous_user_suffix']}"
+
+
 def authorize_session(user_id: str) -> None:
     """
     Authorizes the current session.
@@ -47,6 +51,9 @@ def register_user(
 
     if account_type == "rapid-api":
         email = format_rapid_api_user(email)
+
+    if account_type == "anonymous":
+        email = format_anonymous_user(email)
 
     if User.count_documents({"email": email}):
         raise AccountAlreadyExists(email=email)

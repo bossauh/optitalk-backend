@@ -23,13 +23,19 @@ def setup(server: "App") -> Blueprint:
 
     @app.post("/")
     @route_security.request_json_schema(schema=schemas.POST_CHAT)
+    @route_security.exclude
     def post_chat():
         """
         Chat with a character. Either chat as the "user" role itself or as the "assistant" role.
         """
 
         data: dict = request.json
-        user_id = utils.get_user_id_from_request()
+        user_id = utils.get_user_id_from_request(anonymous=True)
+        if user_id is None:
+            return responses.create_response(
+                status_code=responses.CODE_400,
+                message="User ID or Client IP not found from the request.",
+            )
 
         character: Optional[Character] = Character.find_class(
             {"id": data["character_id"]}
@@ -60,12 +66,19 @@ def setup(server: "App") -> Blueprint:
 
     @app.get("/")
     @route_security.request_args_schema(schema=schemas.GET_CHAT)
+    @route_security.exclude
     def get_chat():
         """
         Retrieve the entire conversation of a character on a specific session.
         """
 
-        user_id = utils.get_user_id_from_request()
+        user_id = utils.get_user_id_from_request(anonymous=True)
+        if user_id is None:
+            return responses.create_response(
+                status_code=responses.CODE_400,
+                message="User ID or Client IP not found from the request.",
+            )
+
         session_id = request.args.get("session_id", "0")
 
         page = int(request.args.get("page", 1))
@@ -92,12 +105,19 @@ def setup(server: "App") -> Blueprint:
 
     @app.get("/sessions")
     @route_security.request_args_schema(schema=schemas.GET_CHAT_SESSIONS)
+    @route_security.exclude
     def get_sessions():
         """
         Retrieve all of your sessions for a specific character.
         """
 
-        user_id = utils.get_user_id_from_request()
+        user_id = utils.get_user_id_from_request(anonymous=True)
+        if user_id is None:
+            return responses.create_response(
+                status_code=responses.CODE_400,
+                message="User ID or Client IP not found from the request.",
+            )
+
         character_id = request.args["character_id"]
 
         page = int(request.args.get("page", 1))

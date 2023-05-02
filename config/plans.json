@@ -26,5 +26,12 @@
     "max_session_history": 50,
     "max_characters": 5000,
     "name": "Advanced"
+  },
+  "anonymous": {
+    "max_basic_model_requests_per_month": 20,
+    "max_advanced_model_requests_per_month": 10,
+    "max_session_history": 15,
+    "max_characters": 8,
+    "name": "Anonymous"
   }
 }

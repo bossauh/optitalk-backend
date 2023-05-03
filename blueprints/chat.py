@@ -93,7 +93,7 @@ def setup(server: "App") -> Blueprint:
                         "session_id": session_id,
                         "created_by": user_id,
                     }
-                ),
+                ).sort("_id", 1),
                 page=page,
                 page_size=page_size,
             )

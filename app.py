@@ -2,7 +2,6 @@ import importlib
 import logging
 import os
 
-import redis
 import waitress
 from dotenv import load_dotenv
 
@@ -15,6 +14,8 @@ from flask import Flask
 from flask_cors import CORS
 from flask_session import Session
 
+from database import mongoclass
+
 coloredlogs.install(level="DEBUG")
 logger = logging.getLogger(__name__)
 
@@ -26,10 +27,8 @@ class App:
         CORS(self.app)
 
         self.app.config["SERVER_NAME"] = None
-        self.app.config["SESSION_TYPE"] = "redis"
-        self.app.config["SESSION_REDIS"] = redis.from_url(
-            os.environ["CELERY_BROKER_URI"]
-        )
+        self.app.config["SESSION_TYPE"] = "mongodb"
+        self.app.config["SESSION_MONGODB"] = mongoclass
         Session(self.app)
 
         self.app.secret_key = "aeed32d8aec44a388640b02c18ef6de0"

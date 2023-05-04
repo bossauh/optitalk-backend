@@ -100,9 +100,6 @@ class RouteSecurity:
 
         @instance.before_request
         def before_request():
-            if request.endpoint in self.excluded:
-                return
-
             client_ip = self.get_client_ip()
 
             for method in authentication_methods:
@@ -112,10 +109,11 @@ class RouteSecurity:
                     )
                     return
 
-            logger.warning(
-                f"Request to '{url_for(request.endpoint)}' from '{client_ip}' with authentication method(s) '{', '.join(authentication_methods)}' is NOT authenticated."
-            )
-            return responses.create_response(status_code=responses.CODE_401)
+            if request.endpoint not in self.excluded:
+                logger.warning(
+                    f"Request to '{url_for(request.endpoint)}' from '{client_ip}' with authentication method(s) '{', '.join(authentication_methods)}' is NOT authenticated."
+                )
+                return responses.create_response(status_code=responses.CODE_401)
 
     def exclude(self, func: Callable) -> Callable:
         """

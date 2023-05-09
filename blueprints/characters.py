@@ -21,6 +21,31 @@ def setup(server: "App") -> Blueprint:
 
     route_security.patch(app, authentication_methods=["session", "api", "rapid-api"])
 
+    @app.get("/details")
+    @route_security.request_args_schema(schema=schemas.GET_CHARACTER_DETAILS)
+    @route_security.exclude
+    def get_character_details():
+        """
+        Get details about a specific character.
+        """
+
+        character_id = request.args["character_id"]
+        character = Character.find_class({"id": character_id, "private": False})
+        if character is None:
+            user_id = utils.get_user_id_from_request(anonymous=True)
+            character = Character.find_class(
+                {"id": character_id, "created_by": user_id}
+            )
+            if character is None:
+                return responses.create_response(
+                    status_code=responses.CODE_404,
+                    payload={
+                        "message": f"Cannot find a character with the ID of '{character_id}'."
+                    },
+                )
+
+        return responses.create_response(payload=character.to_json())
+
     @app.get("/")
     @route_security.request_args_schema(schema=schemas.GET_CHARACTERS)
     @route_security.exclude

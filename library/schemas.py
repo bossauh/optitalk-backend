@@ -74,6 +74,12 @@ GET_CHAT_SESSIONS = Schema({Required("character_id"): str, **_PAGING_SCHEMA})
 GET_CHAT = Schema(
     {Required("character_id"): str, Optional("session_id"): str, **_PAGING_SCHEMA}
 )
+GET_CHAT_COUNT = Schema(
+    {
+        Required("character_id"): str,
+        Optional("session_id"): str,
+    }
+)
 PATCH_CHAT_SESSIONS = Schema({Optional("name"): str})
 PATCH_CHAT_SESSIONS_QUERY_PARAMETERS = Schema(
     {Required("session_id"): str, Required("character_id"): str}

@@ -163,6 +163,28 @@ def setup(server: "App") -> Blueprint:
             objects=sessions, page=page, page_size=page_size
         )
 
+    @app.get("/sessions/count")
+    @route_security.request_args_schema(schema=schemas.GET_CHAT_SESSIONS_COUNT)
+    @route_security.exclude
+    def get_sessions_count():
+        """
+        Retrieve how many sessions do you have with a specific character.
+        """
+
+        user_id = utils.get_user_id_from_request(anonymous=True)
+        if user_id is None:
+            return responses.create_response(
+                status_code=responses.CODE_400,
+                message="User ID or Client IP not found from the request.",
+            )
+
+        character_id = request.args["character_id"]
+        count = ChatSession.count_documents(
+            {"created_by": user_id, "character_id": character_id}
+        )
+
+        return responses.create_response(payload=count)
+
     @app.patch("/sessions")
     @route_security.request_args_schema(
         schema=schemas.PATCH_CHAT_SESSIONS_QUERY_PARAMETERS

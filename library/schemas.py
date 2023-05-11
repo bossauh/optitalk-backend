@@ -92,3 +92,6 @@ DELETE_CHAT_SESSIONS = Schema(
     }
 )
 DELETE_CHAT = Schema({Required("id"): str})
+POST_TASKS_SESSION_AUTO_LABELED = Schema(
+    {Required("user_id"): str, Required("new_name"): str, Required("session_id"): str}
+)

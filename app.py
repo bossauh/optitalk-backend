@@ -2,8 +2,10 @@ import importlib
 import logging
 import os
 
+import eventlet
 import waitress
 from dotenv import load_dotenv
+from flask_socketio import SocketIO
 
 if not os.getenv("PRODUCTION"):
     load_dotenv()
@@ -23,6 +25,9 @@ logger = logging.getLogger(__name__)
 class App:
     def __init__(self) -> None:
         self.app = Flask(__name__)
+        self.socket = SocketIO(
+            self.app, async_mode="eventlet", cors_allowed_origins="*"
+        )
         self.app.url_map.strict_slashes = False
         CORS(self.app)
 
@@ -63,11 +68,14 @@ class App:
         self.register_blueprints()
 
         if os.getenv("PRODUCTION"):
-            logger.info("Starting with waitress server.")
+            logger.info("Starting with eventlet server.")
+            eventlet.wsgi.server(eventlet.listen(("0.0.0.0", 80)), self.app)
             waitress.serve(self.app, listen="0.0.0.0:80")
         else:
             logger.info("Starting with development server.")
-            self.app.run(host="127.0.0.1", port=5000, debug=True, use_reloader=False)
+            self.socket.run(
+                self.app, host="127.0.0.1", port=5000, debug=True, use_reloader=False
+            )
 
 
 if __name__ == "__main__":

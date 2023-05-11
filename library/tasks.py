@@ -3,11 +3,17 @@ import os
 import pprint
 import time
 
+import requests
 from dotenv import load_dotenv
 
 if not os.getenv("PRODUCTION"):
+    HOST = "127.0.0.1"
+    PORT = 5000
     load_dotenv()
     logging.info("Loaded development .env file.")
+else:
+    HOST = "127.0.0.1"
+    PORT = 80
 
 from typing import Generator, Optional
 
@@ -26,6 +32,8 @@ app = Celery(
     backend=os.environ["CELERY_BACKEND_URI"],
 )
 logger = logging.getLogger(__name__)
+
+BASE_URL = f"http://{HOST}:{PORT}/api/tasks"
 
 
 @app.task
@@ -145,6 +153,15 @@ Casual greetings from deadpool
     session.name_changed = True
     session.name = label
     session.save()
+
+    requests.post(
+        BASE_URL + "/session-auto-labeled",
+        json={
+            "user_id": created_by,
+            "new_name": label,
+            "session_id": session_id,
+        },
+    )
 
 
 @app.task

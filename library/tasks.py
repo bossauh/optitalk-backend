@@ -18,6 +18,8 @@ from models.session import ChatSession
 from models.state import UserPlanState
 from models.user import Application
 
+from library.gpt import gpt
+
 app = Celery(
     "optitalk.tasks",
     broker=os.environ["CELERY_BROKER_URI"],
@@ -47,6 +49,26 @@ def insert_message(**attributes):
     message = Message(**attributes)
     message.save()
 
+    messages_count = Message.count_documents(
+        {
+            "session_id": message.session_id,
+            "created_by": message.created_by,
+            "character_id": message.character_id,
+        }
+    )
+    if messages_count == 2:
+        if not ChatSession.count_documents(
+            {"id": message.session_id, "name_changed": True}
+        ):
+            logger.info(
+                "Messages count is 2, auto naming its session since it's not yet manually named."
+            )
+            auto_label_message.delay(
+                session_id=message.session_id,
+                created_by=message.created_by,
+                character_id=message.character_id,
+            )
+
     logger.info(f"Saved message: {pprint.pformat(message)}")
 
 
@@ -71,6 +93,53 @@ def delete_chat_session(query):
 
     session.delete()
     logger.info(f"Deleted session '{session.id}' and {deleted} message(s) from it.")
+
+
+@app.task
+def auto_label_message(session_id: str, created_by: str, character_id: str):
+    system_message = """
+You are a tool whose job is to give a conversation exchange a labeled topic title. You will respond only with the labeled topic title and nothing more.
+
+Example Input:
+User: yo
+Deadpool: What's up what's up are you my buddy Haha! How ya doing mate?
+
+Example Response:
+Casual greetings from deadpool
+"""
+
+    messages: list[Message] = list(
+        Message.find_classes(
+            {
+                "session_id": session_id,
+                "created_by": created_by,
+                "character_id": character_id,
+            }
+        )
+        .sort("_id", -1)
+        .limit(4)
+    )
+    messages.reverse()
+
+    prompt = []
+    for message in messages:
+        prompt.append(f"{message.role.title}: {message.content}")
+    prompt = "\n".join(prompt)
+
+    session: Optional[ChatSession] = ChatSession.find_class(
+        {"id": session_id, "created_by": created_by, "character_id": character_id}
+    )
+    if session is None:
+        return
+
+    response = gpt.create_chat_completion(
+        system=system_message, messages=[{"role": "user", "content": prompt}]
+    )
+    label = response[0].result
+
+    session.name_changed = True
+    session.name = label
+    session.save()
 
 
 @app.task

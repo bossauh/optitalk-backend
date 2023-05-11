@@ -13,6 +13,7 @@ class ChatSession:
     created_by: str
     name: str
     character_id: str
+    name_changed: bool = False
     id: str = dataclasses.field(default_factory=lambda: str(uuid.uuid()))
 
     def messages(self) -> Generator[Message, None, None]:

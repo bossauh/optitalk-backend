@@ -211,6 +211,8 @@ def setup(server: "App") -> Blueprint:
             )
 
         for k, v in request.json.items():
+            if k == "name":
+                setattr(session, "name_changed", True)
             setattr(session, k, v)
 
         session.save()

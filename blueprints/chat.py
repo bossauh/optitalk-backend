@@ -220,12 +220,19 @@ def setup(server: "App") -> Blueprint:
 
     @app.delete("/sessions")
     @route_security.request_args_schema(schema=schemas.DELETE_CHAT_SESSIONS)
+    @route_security.exclude
     def delete_sessions():
         """
         Delete a chat session.
         """
 
-        user_id = utils.get_user_id_from_request()
+        user_id = utils.get_user_id_from_request(anonymous=True)
+        if user_id is None:
+            return responses.create_response(
+                status_code=responses.CODE_400,
+                message="User ID or Client IP not found from the request.",
+            )
+
         session_id = request.args["session_id"]
         character_id = request.args["character_id"]
 

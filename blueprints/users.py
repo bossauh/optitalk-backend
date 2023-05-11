@@ -95,4 +95,13 @@ def setup(server: "App") -> Blueprint:
 
         return responses.create_response(payload=user.to_json())
 
+    @app.get("/ip-address")
+    @route_security.exclude
+    def get_ip_address():
+        """
+        Return the request's IP Address.
+        """
+
+        return responses.create_response(payload=route_security.get_client_ip())
+
     return app

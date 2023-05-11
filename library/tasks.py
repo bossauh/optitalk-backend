@@ -58,7 +58,12 @@ def insert_message(**attributes):
     )
     if messages_count == 2:
         if not ChatSession.count_documents(
-            {"id": message.session_id, "name_changed": True}
+            {
+                "id": message.session_id,
+                "name_changed": True,
+                "character_id": message.character_id,
+                "created_by": message.created_by,
+            }
         ):
             logger.info(
                 "Messages count is 2, auto naming its session since it's not yet manually named."

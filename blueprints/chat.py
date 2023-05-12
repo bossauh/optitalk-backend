@@ -1,3 +1,4 @@
+import dataclasses
 import logging
 from typing import TYPE_CHECKING, Optional
 
@@ -162,6 +163,36 @@ def setup(server: "App") -> Blueprint:
         return responses.create_paginated_response(
             objects=sessions, page=page, page_size=page_size
         )
+
+    @app.get("/session")
+    @route_security.request_args_schema(schema=schemas.GET_CHAT_SESSION)
+    @route_security.exclude
+    def get_session():
+        """
+        Get information about a specific session.
+        """
+
+        user_id = utils.get_user_id_from_request(anonymous=True)
+        if user_id is None:
+            return responses.create_response(
+                status_code=responses.CODE_400,
+                message="User ID or Client IP not found from the request.",
+            )
+
+        character_id = request.args["character_id"]
+        session_id = request.args.get("session_id", "0")
+        session: Optional[ChatSession] = ChatSession.find_class(
+            {"character_id": character_id, "created_by": user_id, "id": session_id}
+        )
+        if session is None:
+            return responses.create_response(
+                status_code=responses.CODE_404,
+                payload={
+                    "message": f"Cannot find a chat session with the id of '{session_id}' and character id of '{character_id}'."
+                },
+            )
+
+        return responses.create_response(payload=dataclasses.asdict(session))
 
     @app.get("/sessions/count")
     @route_security.request_args_schema(schema=schemas.GET_CHAT_SESSIONS_COUNT)

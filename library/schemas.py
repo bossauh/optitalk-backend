@@ -75,6 +75,7 @@ GET_CHAT_SESSIONS_COUNT = Schema({Required("character_id"): str})
 GET_CHAT = Schema(
     {Required("character_id"): str, Optional("session_id"): str, **_PAGING_SCHEMA}
 )
+GET_CHAT_SESSION = Schema({Required("character_id"): str, Optional("session_id"): str})
 GET_CHAT_COUNT = Schema(
     {
         Required("character_id"): str,

@@ -155,7 +155,7 @@ def setup(server: "App") -> Blueprint:
             utils.paginate_mongoclass_cursor(
                 ChatSession.find_classes(
                     {"created_by": user_id, "character_id": character_id}
-                ),
+                ).sort("_id", -1),
                 page=page,
                 page_size=page_size,
             )

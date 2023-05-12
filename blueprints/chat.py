@@ -2,6 +2,7 @@ import dataclasses
 import logging
 from typing import TYPE_CHECKING, Optional
 
+import openai
 from flask import Blueprint, request
 from library import responses, schemas, tasks, utils
 from library.exceptions import *
@@ -54,6 +55,14 @@ def setup(server: "App") -> Blueprint:
                 except ModelRequestsLimitExceeded as e:
                     return responses.create_response(
                         exception=e, status_code=responses.CODE_403
+                    )
+                except openai.APIError:
+                    logger.exception("A OpenAI error has occurred.")
+                    return responses.create_response(
+                        status_code=responses.CODED_500,
+                        payload={
+                            "message": "A unknown model error has occurred, please try again."
+                        },
                     )
 
                 return responses.create_response(payload=response.to_json())

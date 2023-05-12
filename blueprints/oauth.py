@@ -64,7 +64,7 @@ def setup(server: "App") -> Blueprint:
             audience=GOOGLE_CLIENT_ID,
         )
 
-        redirect_url = "/dashboard"
+        redirect_url = "/"
         try:
             user = users.register_user(
                 email=id_info["email"],

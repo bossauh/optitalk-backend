@@ -84,6 +84,7 @@ def setup(server: "App") -> Blueprint:
 
         page = int(request.args.get("page", 1))
         page_size = int(request.args.get("page_size", 25))
+        sort = int(request.args.get("sort", "1"))
 
         messages = [
             x.to_json()
@@ -94,7 +95,7 @@ def setup(server: "App") -> Blueprint:
                         "session_id": session_id,
                         "created_by": user_id,
                     }
-                ).sort("_id", 1),
+                ).sort("_id", sort),
                 page=page,
                 page_size=page_size,
             )

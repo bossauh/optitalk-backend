@@ -223,7 +223,14 @@ class Character:
             prompt = context_messages
 
             for message in messages:
-                message_data = {"role": message.role, "content": message.content}
+                content = message.content
+                if message.role == "assistant":
+                    content = f"Comments: {message.comments}\nContradictions: {message.contradictions}\nResponse: {message.content}"
+
+                message_data = {
+                    "role": message.role,
+                    "content": content,
+                }
                 if message.name:
                     message_data["name"] = message.name
                 prompt.append(message_data)

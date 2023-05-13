@@ -37,15 +37,23 @@ def parse_character_response(
         If a field was not found in the response string, its value in the tuple will be None.
     """
 
-    fields = {"Comments": None, "Contradictions": None, "Response": None}
+    fields = {"Comment": None, "Contradiction": None, "Response": None}
 
     current_field = None
     found_fields = []
     for line in re.split("(\n+)", response):
         for field in fields.keys():
-            if line.startswith(field + ":") and field not in found_fields:
+            if (
+                line.startswith((field + ":", field + "s" + ":"))
+                and field not in found_fields
+            ):
                 current_field = field
-                line = line.replace(field + ": ", "")
+                replaced_line = line.replace(field + ": ", "", 1)
+                if replaced_line == line:
+                    line = line.replace(field + "s" + ": ", "", 1)
+                else:
+                    line = replaced_line
+
                 found_fields.append(field)
 
         if current_field is not None:
@@ -55,7 +63,7 @@ def parse_character_response(
 
     fields = {k: v.strip("\n") if v is not None else None for k, v in fields.items()}
 
-    return (fields["Comments"], fields["Contradictions"], fields["Response"])
+    return (fields["Comment"], fields["Contradiction"], fields["Response"])
 
 
 def get_total_tokens_from_messages(

@@ -61,7 +61,13 @@ def parse_character_response(
                 fields[current_field] = ""
             fields[current_field] += line
 
-    fields = {k: v.strip("\n") if v is not None else None for k, v in fields.items()}
+    fields = {
+        k: v.strip("\n").strip() if v is not None else "None" for k, v in fields.items()
+    }
+    fields = {
+        k: v if v.lower() not in ("none", "n/a", "null", "undefined") else None
+        for k, v in fields.items()
+    }
 
     return (fields["Comment"], fields["Contradiction"], fields["Response"])
 

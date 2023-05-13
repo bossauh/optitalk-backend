@@ -117,6 +117,7 @@ def setup(server: "App") -> Blueprint:
             private=data.get("private", False),
             image=data.get("image"),
             knowledge=data.get("knowledge", []),
+            response_styles=data.get("response_styles", []),
         )
         character.save()
 

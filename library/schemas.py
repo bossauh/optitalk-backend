@@ -34,6 +34,9 @@ POST_CHARACTERS = Schema(
         Optional("example_exchanges"): All(
             [_CHARACTER_EXCHANGE], Length(min=2, max=10)
         ),
+        Optional("response_styles"): All(
+            [Schema(All(str, min=1, max=24))], Length(min=0, max=5)
+        ),
         Optional("private"): bool,
         Optional("image"): Url(),
     }

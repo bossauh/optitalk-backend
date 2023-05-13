@@ -91,27 +91,33 @@ def create_chat_completion_context(
 
     if character.knowledge:
         context_message["content"] += (
-            f"\n\nKnowledge:\n"
+            "\n\nKnowledge:\n"
             + "\n".join([f"- {x}" for x in character.knowledge])
             + "\n\n"
         )
 
     if character.personalities:
-        context_message["content"] += f"\nPersonalities and Traits: " + ", ".join(
+        context_message["content"] += "\nPersonalities and Traits: " + ", ".join(
             character.personalities
         )
 
     if character.favorite_words:
-        context_message["content"] += f"\nFavorite Words: " + ", ".join(
+        context_message["content"] += "\nFavorite Words: " + ", ".join(
             character.favorite_words
         )
 
-    context_message["content"] += "\n\nConversation Continues"
-
-    messages.append(context_message)
+    if character.response_styles:
+        context_message["content"] += "\nResponse Style: " + ", ".join(
+            character.response_styles
+        )
 
     if character.example_exchanges:
-        messages.extend(character.example_exchanges)
+        context_message["content"] += "\n\nExample Messages:"
+        for exchange in character.example_exchanges:
+            context_message["content"] += f"\n{exchange['role']}: {exchange['content']}"
+
+    context_message["content"] += "\n\nConversation Starts/Continues"
+    messages.append(context_message)
 
     return system, messages
 

@@ -74,6 +74,7 @@ class Character:
     personalities: Optional[list[str]] = None
     favorite_words: Optional[list[str]] = None
     example_exchanges: Optional[list[dict[str, str]]] = None
+    response_styles: list[str] = dataclasses.field(default_factory=list)
     id: str = dataclasses.field(default_factory=lambda: str(uuid.uuid4()))
     private: bool = True
     created_at: datetime.datetime = dataclasses.field(

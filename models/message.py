@@ -17,11 +17,16 @@ class Message:
     request.
     """
 
-    content: Optional[str]
     role: str
     session_id: str
     character_id: str
     created_by: str
+
+    # Response
+    content: Optional[str]
+    comments: Optional[str] = None
+    contradictions: Optional[str] = None
+
     name: Optional[str] = None
     id: str = dataclasses.field(default_factory=lambda: str(uuid.uuid4()))
     created_at: datetime.datetime = dataclasses.field(

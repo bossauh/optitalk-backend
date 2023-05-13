@@ -1,4 +1,5 @@
 import logging
+import re
 from typing import TYPE_CHECKING, Optional
 
 import tiktoken
@@ -15,6 +16,46 @@ if TYPE_CHECKING:
 
 
 logger = logging.getLogger(__name__)
+
+
+def parse_character_response(
+    response: str,
+) -> tuple[Optional[str], Optional[str], Optional[str]]:
+    """
+    Parses a character response string into its component fields: "Comments", "Contradictions", and "Response".
+
+    Parameters
+    --------------
+    `response` : str
+        The character response string, which should include the fields "Comments",
+        "Contradictions", and "Response".
+
+    Returns
+    ---------
+    `tuple[Optional[str], Optional[str], Optional[str]]` :
+        A tuple containing the values of the "Comments", "Contradictions", and "Response" fields, in that order.
+        If a field was not found in the response string, its value in the tuple will be None.
+    """
+
+    fields = {"Comments": None, "Contradictions": None, "Response": None}
+
+    current_field = None
+    found_fields = []
+    for line in re.split("(\n+)", response):
+        for field in fields.keys():
+            if line.startswith(field + ":") and field not in found_fields:
+                current_field = field
+                line = line.replace(field + ": ", "")
+                found_fields.append(field)
+
+        if current_field is not None:
+            if fields[current_field] is None:
+                fields[current_field] = ""
+            fields[current_field] += line
+
+    fields = {k: v.strip("\n") if v is not None else None for k, v in fields.items()}
+
+    return (fields["Comments"], fields["Contradictions"], fields["Response"])
 
 
 def get_total_tokens_from_messages(

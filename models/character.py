@@ -265,6 +265,8 @@ class Character:
             )
 
         completion = completion_function(**completion_parameters)
+
+        # Join the multiple completions together
         content = "" if completion[0].result else None
         if content is not None:
             for completion in completion:
@@ -272,6 +274,7 @@ class Character:
 
             content = content.strip()
 
+        # TODO: Remove this, the intent system will get a rework
         message_intent = None
         if content:
             intents = config.intents
@@ -280,8 +283,16 @@ class Character:
                     content = content.replace(intent, "")
                     message_intent = intent
 
+        comments, contradictions, response = utils.parse_character_response(content)
+        if response is None:
+            response = comments or contradictions
+            if response is None:
+                response = content
+
         response_message = Message(
-            content=content,
+            content=response,
+            comments=comments,
+            contradictions=contradictions,
             role="assistant",
             session_id=session_id,
             character_id=self.id,

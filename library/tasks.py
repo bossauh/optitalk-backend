@@ -165,6 +165,35 @@ Casual greetings from deadpool
 
 
 @app.task
+def transfer_user_data(old_id: str, new_id: str):
+    sessions_modified = 0
+    for session in ChatSession.find_classes({"created_by": old_id}):
+        session: ChatSession
+
+        session.created_by = new_id
+        session.save()
+        sessions_modified += 1
+
+    logger.info(
+        f"Transferred {sessions_modified} session(s) from '{old_id}' to '{new_id}'."
+    )
+
+    messages_modified = 0
+    for message in Message.find_classes({"created_by": old_id}):
+        message: Message
+
+        message.created_by = new_id
+        message.save()
+        messages_modified += 1
+
+    logger.info(
+        f"Transferred {messages_modified} message(s) from '{old_id}' to '{new_id}.'"
+    )
+
+    requests.post(BASE_URL + "/user-data-transferred", json={"user_id": new_id})
+
+
+@app.task
 def increase_model_requests_state(id: str, model: str, value: int):
     state: Optional[UserPlanState] = UserPlanState.find_class({"id": id})
     if state is None:

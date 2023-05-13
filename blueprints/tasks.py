@@ -35,6 +35,14 @@ def setup(server: "App") -> Blueprint:
 
         return responses.create_response()
 
+    @app.post("/user-data-transferred")
+    @route_security.request_json_schema(schema=schemas.POST_TASKS_USER_DATA_TRANSFERRED)
+    def post_user_data_transferred():
+        data = request.get_json()
+        server.socket.emit("user-data-transferred", room=data["user_id"])
+
+        return responses.create_response()
+
     @server.socket.on("join-room")
     def on_join_room(id):
         join_room(id)

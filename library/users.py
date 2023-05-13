@@ -24,8 +24,14 @@ def authorize_session(user_id: str) -> None:
     Authorizes the current session.
     """
 
+    from library.security import route_security
+
     session["user_id"] = user_id
     session["user_agent"] = request.headers.get("User-Agent")
+
+    ip = route_security.get_client_ip()
+    if ip:
+        tasks.transfer_user_data.delay(ip, user_id)
 
 
 def register_user(

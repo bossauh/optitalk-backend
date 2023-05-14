@@ -136,7 +136,7 @@ Casual greetings from deadpool
 
     prompt = []
     for message in messages:
-        prompt.append(f"{message.role.title}: {message.content}")
+        prompt.append(f"{message.role.title()}: {message.content}")
     prompt = "\n".join(prompt)
 
     session: Optional[ChatSession] = ChatSession.find_class(

@@ -71,7 +71,7 @@ def setup(server: "App") -> Blueprint:
             x.to_json()
             for x in utils.paginate_mongoclass_cursor(
                 Character.find_classes(query), page_size=page_size, page=page
-            )
+            ).sort("_id", -1)
         ]
 
         return responses.create_paginated_response(

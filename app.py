@@ -12,7 +12,7 @@ if not os.getenv("PRODUCTION"):
     logging.info("Loaded development .env file.")
 
 import coloredlogs
-from flask import Flask
+from flask import Flask, send_from_directory
 from flask_cors import CORS
 from flask_session import Session
 
@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 class App:
     def __init__(self) -> None:
-        self.app = Flask(__name__)
+        self.app = Flask(__name__, static_folder="./build")
         self.socket = SocketIO(
             self.app, async_mode="eventlet", cors_allowed_origins="*"
         )
@@ -63,8 +63,24 @@ class App:
 
         logger.info(f"Registered {i} blueprints.")
 
+    def register_index_route(self) -> None:
+        """
+        Register the routes that will serve the react frontend.
+        """
+
+        @self.app.route("/", defaults={"path": ""})
+        @self.app.route("/<path:path>")
+        def serve_react(path):
+            if path != "" and os.path.exists(
+                (self.app.static_folder or "") + "/" + path
+            ):
+                return send_from_directory(self.app.static_folder, path)
+            else:
+                return send_from_directory(self.app.static_folder, "index.html")
+
     def start(self) -> None:
         logger.info("Starting OptiTalk...")
+        self.register_index_route()
         self.register_blueprints()
 
         if os.getenv("PRODUCTION"):

@@ -19,8 +19,8 @@ POST_USERS = Schema(
 )
 POST_CHARACTERS = Schema(
     {
-        Required("name"): All(str, Length(min=2, max=24)),
-        Required("description"): All(str, Length(min=10, max=1024)),
+        Required("name"): All(str, Length(min=1, max=24)),
+        Required("description"): All(str, Length(min=1, max=1024)),
         Optional("model"): Any("basic", "advanced"),
         Optional("knowledge"): All(
             [Schema(All(str, min=1, max=250))], Length(min=0, max=10)
@@ -32,7 +32,7 @@ POST_CHARACTERS = Schema(
             [Schema(All(str, min=1, max=24))], Length(min=0, max=20)
         ),
         Optional("example_exchanges"): All(
-            [_CHARACTER_EXCHANGE], Length(min=2, max=10)
+            [_CHARACTER_EXCHANGE], Length(min=0, max=10)
         ),
         Optional("response_styles"): All(
             [Schema(All(str, min=1, max=24))], Length(min=0, max=5)
@@ -43,8 +43,8 @@ POST_CHARACTERS = Schema(
 )
 PATCH_CHARACTERS = Schema(
     {
-        Optional("name"): All(str, Length(min=2, max=24)),
-        Optional("description"): All(str, Length(min=10, max=800)),
+        Optional("name"): All(str, Length(min=1, max=24)),
+        Optional("description"): All(str, Length(min=1, max=800)),
         Optional("model"): Any("basic", "advanced"),
         Optional("knowledge"): All(
             [Schema(All(str, min=1, max=250))], Length(min=0, max=10)
@@ -56,7 +56,7 @@ PATCH_CHARACTERS = Schema(
             [Schema(All(str, min=1, max=24))], Length(min=0, max=20)
         ),
         Optional("example_exchanges"): All(
-            [_CHARACTER_EXCHANGE], Length(min=2, max=10)
+            [_CHARACTER_EXCHANGE], Length(min=0, max=10)
         ),
         Optional("response_styles"): All(
             [Schema(All(str, min=1, max=24))], Length(min=0, max=5)

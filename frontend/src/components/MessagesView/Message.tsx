@@ -146,6 +146,7 @@ const Message: FC<MessageProps> = (props) => {
                   );
                 },
               }}
+              className="react-markdown"
             >
               {props.content}
             </ReactMarkdown>

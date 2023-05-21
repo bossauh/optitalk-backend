@@ -12,7 +12,7 @@ if not os.getenv("PRODUCTION"):
     load_dotenv()
     logging.info("Loaded development .env file.")
 else:
-    HOST = "127.0.0.1"
+    HOST = "web"
     PORT = 80
 
 from typing import Generator, Optional

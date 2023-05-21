@@ -26,10 +26,10 @@ logger = logging.getLogger(__name__)
 class App:
     def __init__(self) -> None:
         self.app = Flask(__name__, static_folder="./build")
-        flask_monitor.config.init_from(
-            file=os.path.join(os.getcwd(), "flask_monitor.cfg")
-        )
-        flask_monitor.bind(self.app)
+        # flask_monitor.config.init_from(
+        #     file=os.path.join(os.getcwd(), "flask_monitor.cfg")
+        # )
+        # flask_monitor.bind(self.app)
 
         self.socket = SocketIO(
             self.app, async_mode="eventlet", cors_allowed_origins="*"

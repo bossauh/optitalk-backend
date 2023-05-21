@@ -29,7 +29,9 @@ google_flow = Flow.from_client_secrets_file(
         "https://www.googleapis.com/auth/userinfo.email",
         "openid",
     ],
-    redirect_uri="http://127.0.0.1:5000/oauth/google-callback",
+    redirect_uri="http://optitalk.net/oauth/google-callback"
+    if os.getenv("PRODUCTION")
+    else "http://127.0.0.1:5000/oauth/google-callback",
 )
 
 # TODO: Remove in production

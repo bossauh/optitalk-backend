@@ -8,6 +8,8 @@ services:
       - mongodb
     env_file:
       - prod.env
+    volumes:
+      - ./flask_monitoringdashboard.db:/app/flask_monitoringdashboard.db
 
   mongodb:
     image: mongo:latest

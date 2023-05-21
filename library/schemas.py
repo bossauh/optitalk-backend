@@ -44,7 +44,7 @@ POST_CHARACTERS = Schema(
 PATCH_CHARACTERS = Schema(
     {
         Optional("name"): All(str, Length(min=1, max=24)),
-        Optional("description"): All(str, Length(min=1, max=800)),
+        Optional("description"): All(str, Length(min=1, max=1024)),
         Optional("model"): Any("basic", "advanced"),
         Optional("knowledge"): All(
             [Schema(All(str, min=1, max=250))], Length(min=0, max=10)

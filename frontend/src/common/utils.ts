@@ -63,7 +63,7 @@ export function serializeCharacterFields(data: CharacterEditorFields) {
     response_styles: data.responseStyles,
     example_exchanges: data.exampleExchanges,
     private: data.private,
-    image: data.image,
+    image: data.image === undefined || data.image.trim() === "" ? undefined : data.image,
   };
 }
 

@@ -7,6 +7,7 @@ import socket from "./common/socket";
 import { CharacterType, SessionType } from "./common/types";
 import { deserializeCharacterData } from "./common/utils";
 import StoreContext from "./contexts/store";
+import "./index.css";
 
 // Components
 import FeedbackButton from "./components/FeedbackButton";

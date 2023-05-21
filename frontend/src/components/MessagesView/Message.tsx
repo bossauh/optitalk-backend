@@ -3,6 +3,10 @@ import { Badge, Button, Loading, Text, Tooltip } from "@nextui-org/react";
 import { FC, useContext, useEffect, useState } from "react";
 import { AiOutlineReload } from "react-icons/ai";
 import { HiLightBulb } from "react-icons/hi";
+import { ReactMarkdown } from "react-markdown/lib/react-markdown";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { nord } from "react-syntax-highlighter/dist/esm/styles/prism";
+import remarkGfm from "remark-gfm";
 import { MessageProps } from "../../common/types";
 import StoreContext from "../../contexts/store";
 
@@ -122,13 +126,29 @@ const Message: FC<MessageProps> = (props) => {
           {props.typing ? (
             <Loading type="points-opacity" />
           ) : (
-            <Text
-              css={{
-                whiteSpace: "pre-wrap",
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              components={{
+                code({ node, inline, className, children, ...props }) {
+                  const match = /language-(\w+)/.exec(className || "");
+                  return !inline ? (
+                    <SyntaxHighlighter
+                      {...props}
+                      children={String(children).replace(/\n$/, "")}
+                      style={nord}
+                      language={match ? match[1] : undefined}
+                      PreTag="div"
+                    />
+                  ) : (
+                    <code {...props} className={className}>
+                      {children}
+                    </code>
+                  );
+                },
               }}
             >
               {props.content}
-            </Text>
+            </ReactMarkdown>
           )}
         </Box>
         {props.error && (

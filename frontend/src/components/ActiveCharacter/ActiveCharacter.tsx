@@ -119,6 +119,7 @@ const ActiveCharacter: FC<ActiveCharacterProps> = (props) => {
           <Text
             css={{
               color: "$accents9",
+              whiteSpace: "pre-wrap",
             }}
           >
             {props.description}

@@ -21,3 +21,4 @@ Response: {test} (Your response to the user's message. This can not be None and 
 ```
 
 You can only have one of each fields in the response, meaning only one "Comments", "Contradictions" and "Response" field.
+If your response is cut off, continue it without adding additional comments, at the end of your response, all cut off responses are joined back together so it does not matter.

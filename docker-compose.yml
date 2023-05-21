@@ -8,6 +8,8 @@ services:
       - mongodb
     env_file:
       - prod.env
+    volumes:
+      - app_volume:/app
 
   mongodb:
     image: mongo:latest
@@ -42,3 +44,4 @@ services:
 
 volumes:
   mongodb_data:
+  app_volume:

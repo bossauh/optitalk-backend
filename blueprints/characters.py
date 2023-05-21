@@ -57,11 +57,11 @@ def setup(server: "App") -> Blueprint:
         page_size = int(request.args.get("page_size", 25))
         page = int(request.args.get("page", 1))
 
-        private_arg = request.args.get("private", "False")
-        private = private_arg.lower() == "true"
-        query = {"private": False}
+        my_characters_arg = request.args.get("my_characters", "True")
+        my_characters = my_characters_arg.lower() == "true"
 
-        if private:
+        query = {"private": False}
+        if my_characters:
             user_id = utils.get_user_id_from_request()
             query = {"created_by": user_id}
 

@@ -22,7 +22,7 @@ const MyAccount: FC = () => {
     if (!store?.authenticated && !store?.isAuthenticating) {
       navigate("/");
     } else {
-      fetch("/api/characters?private=True&page_size=9999")
+      fetch("/api/characters?my_characters=True&page_size=9999")
         .then((r) => r.json())
         .then((d) => {
           const deserialized = d.payload.data.map((i: any) => {

@@ -107,7 +107,7 @@ def get_total_tokens_from_messages(
 
 def limit_chat_completion_tokens(
     messages: list[dict[str, str]], model: str, max_tokens: int
-) -> list[dict[str, str]]:
+) -> tuple[list[dict[str, str]], int]:
     """
     Limit the amount of messages so that it respects the token limit of OpenAI's GPT
     models.
@@ -120,13 +120,23 @@ def limit_chat_completion_tokens(
     messages_tokens = get_total_tokens_from_messages(messages=messages)
     total_tokens = messages_tokens + max_tokens
     if (total_tokens) <= token_cap:
-        return messages
+        return messages, max_tokens
 
     logger.warning(
-        f"There are {total_tokens} in the message list which exceeded the {token_cap} tokens limit. Removing older messages..."
+        f"There are {total_tokens} tokens in the message list which exceeded the {token_cap} tokens limit."
     )
+
     copied_messages = [*messages]
-    copied_messages.pop(1)
+    if max_tokens <= 512:
+        copied_messages.pop(1)
+        logger.warning(
+            "Removed one old message because the max tokens parameter is already at the 512 minimum limit."
+        )
+    else:
+        max_tokens = (total_tokens - token_cap) - 1
+        logger.warning(
+            f"Reduced max tokens parameter to {max_tokens} and checking again."
+        )
 
     return limit_chat_completion_tokens(
         messages=copied_messages, model=model, max_tokens=max_tokens

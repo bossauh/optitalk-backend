@@ -136,7 +136,7 @@ class GPT:
 
         logger.info("Creating OpenAI chat completion...")
         messages_combined = [{"role": "system", "content": system}] + messages
-        messages_combined = utils.limit_chat_completion_tokens(
+        messages_combined, max_tokens = utils.limit_chat_completion_tokens(
             messages=messages_combined, model=model, max_tokens=max_tokens
         )
 

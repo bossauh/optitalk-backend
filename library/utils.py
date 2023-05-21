@@ -43,6 +43,7 @@ def parse_character_response(
     lines = []
     for line in re.split("(\n+)", response):
         parts = line.split(" ")
+        print("Parts", parts)
         if parts:
             if ":" in parts[0] and parts[0].lower().startswith(
                 tuple([x.lower() for x in fields.keys()])
@@ -51,6 +52,8 @@ def parse_character_response(
 
         line = " ".join(parts)
         lines.append(line)
+
+    print("Lines", lines)
 
     current_field = None
     found_fields = []
@@ -61,9 +64,9 @@ def parse_character_response(
                 and field not in found_fields
             ):
                 current_field = field
-                replaced_line = line.replace(field + ": ", "", 1)
+                replaced_line = line.replace(field + ":", "", 1)
                 if replaced_line == line:
-                    line = line.replace(field + "s" + ": ", "", 1)
+                    line = line.replace(field + "s" + ":", "", 1)
                 else:
                     line = replaced_line
 

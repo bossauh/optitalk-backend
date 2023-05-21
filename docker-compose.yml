@@ -5,7 +5,6 @@ services:
     ports:
       - "80:80"
     depends_on:
-      - redis
       - mongodb
     env_file:
       - prod.env
@@ -21,21 +20,10 @@ services:
     volumes:
       - mongodb_data:/data/db
 
-  redis:
-    image: redis:latest
-    container_name: redis
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-      - ./redis.conf:/usr/local/etc/redis/redis.conf
-    command: redis-server /usr/local/etc/redis/redis.conf
-
   celery_worker:
     build: .
     command: celery -A library.tasks worker -P eventlet --loglevel=INFO
     depends_on:
-      - redis
       - mongodb
     env_file:
       - prod.env
@@ -46,7 +34,6 @@ services:
     build: .
     command: celery -A library.tasks beat --loglevel=INFO
     depends_on:
-      - redis
       - mongodb
     env_file:
       - prod.env
@@ -55,4 +42,3 @@ services:
 
 volumes:
   mongodb_data:
-  redis_data:

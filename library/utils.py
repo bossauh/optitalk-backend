@@ -43,7 +43,6 @@ def parse_character_response(
     lines = []
     for line in re.split("(\n+)", response):
         parts = line.split(" ")
-        print("Parts", parts)
         if parts:
             if ":" in parts[0] and parts[0].lower().startswith(
                 tuple([x.lower() for x in fields.keys()])
@@ -52,8 +51,6 @@ def parse_character_response(
 
         line = " ".join(parts)
         lines.append(line)
-
-    print("Lines", lines)
 
     current_field = None
     found_fields = []

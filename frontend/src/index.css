@@ -13,3 +13,13 @@ th {
   background: #dedede;
   color: black;
 }
+
+.react-markdown {
+  white-space: pre-wrap;
+  line-height: 15px;
+}
+
+pre {
+  padding: 0px;
+  margin: 0px;
+}

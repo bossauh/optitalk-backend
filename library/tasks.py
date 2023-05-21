@@ -35,6 +35,11 @@ logger = logging.getLogger(__name__)
 
 BASE_URL = f"http://{HOST}:{PORT}/api/tasks"
 
+# Used to ensure only the /api/tasks endpoints are locked up.
+# I know it's not the best but it'll do since those endpoints aren't
+# strictly dangerous if the secret token does get leaked.
+SECRET_TOKEN = "387bf3c1-ec5a-4887-a05d-1d134b60f55c"
+
 
 @app.task
 def log_chat_completion(**attributes):
@@ -161,6 +166,7 @@ Casual greetings from deadpool
             "new_name": label,
             "session_id": session_id,
         },
+        headers={"X-Secret-Token": SECRET_TOKEN},
     )
 
 
@@ -190,7 +196,11 @@ def transfer_user_data(old_id: str, new_id: str):
         f"Transferred {messages_modified} message(s) from '{old_id}' to '{new_id}.'"
     )
 
-    requests.post(BASE_URL + "/user-data-transferred", json={"user_id": new_id})
+    requests.post(
+        BASE_URL + "/user-data-transferred",
+        json={"user_id": new_id},
+        headers={"X-Secret-Token": SECRET_TOKEN},
+    )
 
 
 @app.task

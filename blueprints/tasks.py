@@ -12,6 +12,8 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+SECRET_TOKEN = "387bf3c1-ec5a-4887-a05d-1d134b60f55c"
+
 
 # pylint: disable=unused-argument
 def setup(server: "App") -> Blueprint:
@@ -19,7 +21,9 @@ def setup(server: "App") -> Blueprint:
 
     @app.before_request
     def restrict_to_localhost():
-        if not request.remote_addr.startswith("127.0.0.1"):
+
+        token = request.headers.get("X-Secret-Token")
+        if token != SECRET_TOKEN:
             abort(403)
 
     @app.post("/session-auto-labeled")

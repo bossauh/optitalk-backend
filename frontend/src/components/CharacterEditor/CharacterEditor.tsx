@@ -62,6 +62,7 @@ const CharacterEditor: FC<CharacterEditorProps> = (props) => {
               .then((r) => r.json())
               .then((d) => {
                 storeCtx?.setActiveCharacter(deserializeCharacterData(d.payload));
+                storeCtx?.setActiveSession(undefined);
                 setCookie("activeCharacterId", d.payload.id, { path: "/" });
               });
           }

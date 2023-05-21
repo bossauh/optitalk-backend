@@ -39,9 +39,22 @@ def parse_character_response(
 
     fields = {"Comment": None, "Contradiction": None, "Response": None}
 
+    # Pre-process
+    lines = []
+    for line in re.split("(\n+)", response):
+        parts = line.split(" ")
+        if parts:
+            if ":" in parts[0] and parts[0].lower().startswith(
+                tuple([x.lower() for x in fields.keys()])
+            ):
+                parts[0] = parts[0].title()
+
+        line = " ".join(parts)
+        lines.append(line)
+
     current_field = None
     found_fields = []
-    for line in re.split("(\n+)", response):
+    for line in lines:
         for field in fields.keys():
             if (
                 line.startswith((field + ":", field + "s" + ":"))

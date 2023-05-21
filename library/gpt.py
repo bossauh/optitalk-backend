@@ -117,6 +117,7 @@ class GPT:
         top_p: int = 1,
         frequency_penalty: int = 0,
         presence_penalty: float = 0.78,
+        allow_incomplete: bool = True,
         _previous_completions: Optional[list[ChatCompletion]] = None,
         **kwargs,
     ) -> list[ChatCompletion]:
@@ -190,7 +191,10 @@ class GPT:
         return_value = (_previous_completions or []) + [completion_object]
 
         # Check if incomplete
-        if completion_object.choices[0]["finish_reason"] == "length":
+        if (
+            completion_object.choices[0]["finish_reason"] == "length"
+            and not allow_incomplete
+        ):
             logger.info(
                 f"Creating another OpenAI chat completion for '{completion_object.id}' because the response was cut off due to the token limit."
             )

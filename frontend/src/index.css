@@ -19,6 +19,20 @@ th {
   line-height: 15px;
 }
 
+.react-markdown li {
+  padding: 0px;
+  margin: 0px;
+}
+
+.react-markdown ol,
+.react-markdown ul {
+  padding-left: 10px;
+}
+
+.react-markdown ul {
+  list-style-type: disc;
+}
+
 pre {
   padding: 0px;
   margin: 0px;

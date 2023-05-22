@@ -15,6 +15,7 @@ export function deserializeCharacterData(data: any): CharacterType {
     name: data.name,
     personalities: data.personalities,
     private: data.private,
+    uses: data.uses,
   };
 }
 

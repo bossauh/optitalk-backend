@@ -49,6 +49,7 @@ export interface CharacterType {
   name: string;
   personalities: string[];
   private: boolean;
+  uses: number;
 }
 
 export interface CharacterItemProps extends CharacterType {

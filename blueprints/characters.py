@@ -93,8 +93,11 @@ def setup(server: "App") -> Blueprint:
             ).sort(sort_key, sort_direction)
         ]
 
+        # Get documents count based on query to see how many pages there are
+        total = Character.count_documents(query)
+
         return responses.create_paginated_response(
-            objects=characters, page=page, page_size=page_size
+            objects=characters, page=page, page_size=page_size, total=total
         )
 
     @app.post("/")

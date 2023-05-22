@@ -1,7 +1,8 @@
+import math
 import time
 from typing import Optional
 
-from flask import Response, jsonify, request
+from flask import Response, jsonify
 
 from .types import JsonType, ResponseType, StatusCodeType
 
@@ -136,7 +137,12 @@ def create_response(
 
 
 def create_paginated_response(
-    objects: list, page: int, page_size: int, *args, **kwargs
+    objects: list,
+    page: int,
+    page_size: int,
+    total: Optional[int] = None,
+    *args,
+    **kwargs
 ) -> tuple[Response, int]:
     """
     Create a structured paginated API response.
@@ -149,10 +155,15 @@ def create_paginated_response(
         The current page number.
     `page_size` : int
         The maximum number of items in a page.
+    `total` : int
+        The total amount of items in a page. Defaults to None. If this value
+        is present, it will be used to calculate how many pages there are.
     `*args, **kwargs` :
         Other arguments and keyword arguments to be passed onto `create_response()`.
     """
 
     payload = {"data": objects, "page": page, "page_size": page_size}
+    if total is not None:
+        payload["pages"] = math.ceil(total / page_size)
 
     return create_response(payload=payload, *args, **kwargs)

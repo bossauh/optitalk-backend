@@ -10,6 +10,7 @@ import StoreContext from "./contexts/store";
 import "./index.css";
 
 // Components
+import CharactersView from "./components/CharactersView";
 import FeedbackButton from "./components/FeedbackButton";
 
 // Routes
@@ -19,7 +20,6 @@ import Chat from "./routes/chat";
 import CreateCharacter from "./routes/create-character";
 import GoogleOAuth from "./routes/google-oauth";
 import MyAccount from "./routes/my-account";
-import MyCharacters from "./routes/my-characters";
 
 const theme = createTheme({
   type: "dark",
@@ -60,10 +60,16 @@ const router = createBrowserRouter([
       {
         path: "characters",
         element: <Characters />,
-      },
-      {
-        path: "my-characters",
-        element: <MyCharacters />,
+        children: [
+          {
+            path: "/characters/my-characters",
+            element: <CharactersView key={"my-characters"} params={{ my_characters: "true" }} />,
+          },
+          {
+            path: "/characters/featured",
+            element: <CharactersView key={"featured"} params={{ featured: "true" }} />,
+          },
+        ],
       },
     ],
   },

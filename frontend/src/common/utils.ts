@@ -16,6 +16,7 @@ export function deserializeCharacterData(data: any): CharacterType {
     personalities: data.personalities,
     private: data.private,
     uses: data.uses,
+    responseStyles: data.response_styles,
   };
 }
 

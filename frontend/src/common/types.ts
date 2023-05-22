@@ -50,6 +50,7 @@ export interface CharacterType {
   personalities: string[];
   private: boolean;
   uses: number;
+  responseStyles: string[];
 }
 
 export interface CharacterItemProps extends CharacterType {
@@ -138,4 +139,19 @@ export interface ListFieldProps {
   disabledButtonMessage?: string;
   description?: string;
   maxWidth?: string;
+}
+
+export interface SearchInputProps {
+  placeholder?: string;
+  defaultValue?: string;
+  onSearch: (v: string) => void;
+}
+
+export interface CharactersContextType {
+  query?: string;
+  setQuery: (v: string | undefined) => void;
+}
+
+export interface CharactersViewProps {
+  params?: object;
 }

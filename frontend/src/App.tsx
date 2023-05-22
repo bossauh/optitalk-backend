@@ -29,7 +29,13 @@ const theme = createTheme({
       primaryContainerBackground: "#131516",
 
       background: "#0D0E10",
+
       primary: "#01826C",
+      primaryShadow: "#016856",
+      primaryLight: "#016856",
+      primaryLightHover: "#016856",
+      primaryLightActive: "#014e41",
+
       secondary: "#175873",
       error: "#c63536",
       gradient: "linear-gradient(90deg, rgba(1,130,108,1) 0%, rgba(82,160,229,1) 100%)",

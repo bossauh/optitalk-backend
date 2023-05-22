@@ -68,6 +68,7 @@ PATCH_CHARACTERS = Schema(
 GET_CHARACTERS = Schema(
     {
         Optional("my_characters"): str,
+        Optional("private"): str,
         Optional("featured"): str,
         Optional("sort"): Any("uses", "latest"),
         Optional("q"): str,

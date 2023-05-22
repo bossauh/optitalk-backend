@@ -58,7 +58,10 @@ def setup(server: "App") -> Blueprint:
         page_size = int(request.args.get("page_size", 25))
         page = int(request.args.get("page", 1))
 
-        my_characters = request.args.get("my_characters", "False").lower() == "true" or request.args.get("private", "False").lower() == "true"
+        my_characters = (
+            request.args.get("my_characters", "False").lower() == "true"
+            or request.args.get("private", "False").lower() == "true"
+        )
         featured = request.args.get("featured", "False").lower() == "true"
         sort = request.args.get("sort", "latest")
         q = request.args.get("q")

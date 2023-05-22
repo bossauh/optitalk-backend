@@ -53,7 +53,9 @@ const CharacterEditor: FC<CharacterEditorProps> = (props) => {
       .then((r) => r.json())
       .then((d) => {
         if (d.status_code === 409) {
-          alert("You have reached your characters limit. Please delete some of your old characters to make a new one.");
+          alert(
+            "You have reached your characters limit. You can donate to show support and get past the 8 character limit or you can delete your older characters."
+          );
         } else if (d.status_code !== 200) {
           onError(d);
         } else {

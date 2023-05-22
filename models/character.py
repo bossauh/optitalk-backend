@@ -70,6 +70,8 @@ class Character:
     parameters: CharacterParameters = dataclasses.field(
         default_factory=lambda: CharacterParameters()
     )
+    uses: int = 0
+    featured: bool = False
     image: Optional[str] = None
     personalities: Optional[list[str]] = None
     favorite_words: Optional[list[str]] = None
@@ -314,6 +316,8 @@ class Character:
         increase_model_requests_state.delay(
             id=user_id, model=self.parameters.model, value=1
         )
+        self.uses += 1
+        self.save()
         return response_message
 
 

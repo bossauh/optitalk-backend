@@ -57,13 +57,24 @@ def setup(server: "App") -> Blueprint:
         page_size = int(request.args.get("page_size", 25))
         page = int(request.args.get("page", 1))
 
-        my_characters_arg = request.args.get("my_characters", "True")
-        my_characters = my_characters_arg.lower() == "true"
+        my_characters = request.args.get("my_characters", "False").lower() == "true"
+        featured = request.args.get("featured", "False").lower() == "true"
+        sort = request.args.get("sort", "latest")
 
         query = {"private": False}
+
         if my_characters:
             user_id = utils.get_user_id_from_request()
             query = {"created_by": user_id}
+
+        if featured:
+            query["featured"] = True
+
+        sort_direction = -1
+        sort_key = "_id"
+
+        if sort == "uses":
+            sort_key = "uses"
 
         logger.info(f"Querying characters with the query '{query}'")
 
@@ -71,7 +82,7 @@ def setup(server: "App") -> Blueprint:
             x.to_json()
             for x in utils.paginate_mongoclass_cursor(
                 Character.find_classes(query), page_size=page_size, page=page
-            ).sort("_id", -1)
+            ).sort(sort_key, sort_direction)
         ]
 
         return responses.create_paginated_response(

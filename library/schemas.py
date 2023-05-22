@@ -70,6 +70,7 @@ GET_CHARACTERS = Schema(
         Optional("my_characters"): str,
         Optional("featured"): str,
         Optional("sort"): Any("uses", "latest"),
+        Optional("q"): str,
         **_PAGING_SCHEMA,
     }
 )

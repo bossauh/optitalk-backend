@@ -1,4 +1,5 @@
 import logging
+import re
 from typing import TYPE_CHECKING, Optional
 
 from flask import Blueprint, request
@@ -60,6 +61,7 @@ def setup(server: "App") -> Blueprint:
         my_characters = request.args.get("my_characters", "False").lower() == "true"
         featured = request.args.get("featured", "False").lower() == "true"
         sort = request.args.get("sort", "latest")
+        q = request.args.get("q")
 
         query = {"private": False}
 
@@ -69,6 +71,12 @@ def setup(server: "App") -> Blueprint:
 
         if featured:
             query["featured"] = True
+
+        if q:
+            query["$or"] = [
+                {"name": {"$regex": re.compile(q, re.IGNORECASE)}},
+                {"description": {"$regex": re.compile(q, re.IGNORECASE)}},
+            ]
 
         sort_direction = -1
         sort_key = "_id"

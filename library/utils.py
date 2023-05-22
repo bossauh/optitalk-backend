@@ -133,7 +133,7 @@ def limit_chat_completion_tokens(
             "Removed one old message because the max tokens parameter is already at the 512 minimum limit."
         )
     else:
-        max_tokens = (total_tokens - token_cap) - 1
+        max_tokens = max_tokens - 50
         logger.warning(
             f"Reduced max tokens parameter to {max_tokens} and checking again."
         )

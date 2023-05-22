@@ -6,7 +6,8 @@ import eventlet
 import flask_monitoringdashboard as flask_monitor
 import waitress
 from dotenv import load_dotenv
-from flask_socketio import SocketIO
+
+from library.socketio import socketio
 
 if not os.getenv("PRODUCTION"):
     load_dotenv()
@@ -31,9 +32,7 @@ class App:
         )
         flask_monitor.bind(self.app)
 
-        self.socket = SocketIO(
-            self.app, async_mode="eventlet", cors_allowed_origins="*"
-        )
+        socketio.init_app(self.app)
         self.app.url_map.strict_slashes = False
         CORS(self.app)
 
@@ -95,7 +94,7 @@ class App:
             waitress.serve(self.app, listen="0.0.0.0:80")
         else:
             logger.info("Starting with development server.")
-            self.socket.run(
+            socketio.run(
                 self.app, host="127.0.0.1", port=5000, debug=True, use_reloader=False
             )
 

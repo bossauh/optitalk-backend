@@ -59,7 +59,7 @@ def setup(server: "App") -> Blueprint:
                 except openai.APIError:
                     logger.exception("A OpenAI error has occurred.")
                     return responses.create_response(
-                        status_code=responses.CODED_500,
+                        status_code=responses.CODE_500,
                         payload={
                             "message": "A unknown model error has occurred, please try again."
                         },

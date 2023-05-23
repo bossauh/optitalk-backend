@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 def parse_character_response(
-    response: str,
+    response: str, use_backups: bool = True
 ) -> tuple[Optional[str], Optional[str], Optional[str]]:
     """
     Parses a character response string into its component fields: "Comments", "Contradictions", and "Response".
@@ -29,6 +29,9 @@ def parse_character_response(
     `response` : str
         The character response string, which should include the fields "Comments",
         "Contradictions", and "Response".
+    `use_backups` : bool
+        If parsing fails, use the other fields (and the input) as the response field if
+        the response field happens to be empty. Defaults to True.
 
     Returns
     ---------
@@ -82,10 +85,11 @@ def parse_character_response(
         for k, v in fields.items()
     }
 
-    if fields["Response"] is None:
-        fields["Response"] = fields["Comment"] or fields["Contradiction"]
+    if use_backups:
         if fields["Response"] is None:
-            fields["Response"] = response
+            fields["Response"] = fields["Comment"] or fields["Contradiction"]
+            if fields["Response"] is None:
+                fields["Response"] = response
 
     return (fields["Comment"], fields["Contradiction"], fields["Response"])
 

@@ -293,10 +293,6 @@ class Character:
                     message_intent = intent
 
         comments, contradictions, response = utils.parse_character_response(content)
-        if response is None:
-            response = comments or contradictions
-            if response is None:
-                response = content
 
         response_message = Message(
             content=response,

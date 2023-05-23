@@ -82,6 +82,11 @@ def parse_character_response(
         for k, v in fields.items()
     }
 
+    if fields["Response"] is None:
+        fields["Response"] = fields["Comment"] or fields["Contradiction"]
+        if fields["Response"] is None:
+            fields["Response"] = response
+
     return (fields["Comment"], fields["Contradiction"], fields["Response"])
 
 

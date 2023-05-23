@@ -4,10 +4,12 @@ import time
 from typing import Optional
 
 import openai
+from flask import has_request_context
 from models.open_ai import ChatCompletion, Completion
 from openai.util import convert_to_dict
 
 from library import tasks, utils
+from library.socketio import socketio
 
 from .configlib import config
 
@@ -141,6 +143,11 @@ class GPT:
             messages=messages_combined, model=model, max_tokens=max_tokens
         )
 
+        is_request = has_request_context()
+        user_id = None
+        if is_request:
+            user_id = utils.get_user_id_from_request(anonymous=True)
+
         # Make the request and time it
         st = time.perf_counter()
         response = openai.ChatCompletion.create(
@@ -151,20 +158,61 @@ class GPT:
             top_p=top_p,
             frequency_penalty=frequency_penalty,
             presence_penalty=presence_penalty,
+            stream=True,
             **kwargs,
         )
+
+        chunks = []
+        completion_id = ""
+        finish_reason = None
+        created = time.time()
+
+        for chunk in response:
+            completion_id = chunk["id"]
+            finish_reason = chunk["choices"][0]["finish_reason"]
+            created = chunk["created"]
+
+            content = chunk["choices"][0]["delta"].get("content", "")
+            chunks.append(content)
+
+            if user_id is None:
+                continue
+
+            # Constantly emit the full output to the frontend
+            comments, contradictions, response = utils.parse_character_response(
+                "".join(chunks), use_backups=False
+            )
+            socketio.emit(
+                "realtime-response",
+                {
+                    "response": response,
+                    "comments": comments,
+                    "contradictions": contradictions,
+                },
+                room=user_id,
+            )
+
+        result = "".join(chunks)
         et = round((time.perf_counter() - st) * 1000, 2)
 
+        # Calculate tokens
+        completion_tokens = utils.get_total_tokens_from_messages(
+            [{"role": "assistant", "content": result}]
+        )
+        prompt_tokens = utils.get_total_tokens_from_messages(messages_combined)
+        total_tokens = completion_tokens + prompt_tokens
+
         completion_data = dict(
-            id=response["id"],
-            choices=convert_to_dict(response["choices"]),
-            created=datetime.datetime.fromtimestamp(response["created"]),
+            id=completion_id,
+            result=result,
+            finish_reason=finish_reason,
+            created=datetime.datetime.fromtimestamp(created),
             model=model,
-            object=response["object"],
+            object="chat.completion",
             tt=et,
-            completion_tokens=response["usage"]["completion_tokens"],
-            prompt_tokens=response["usage"]["prompt_tokens"],
-            total_tokens=response["usage"]["total_tokens"],
+            completion_tokens=completion_tokens,
+            prompt_tokens=prompt_tokens,
+            total_tokens=total_tokens,
             temperature=temperature,
             max_tokens=max_tokens,
             top_p=top_p,
@@ -179,7 +227,7 @@ class GPT:
         )
 
         logger.info(
-            f"Created OpenAI chat completion '{response['id']}' for ${cost} ({et}ms)."
+            f"Created OpenAI chat completion '{completion_object.id}' for ${cost} ({et}ms)."
         )
         logger.debug(
             f"Total Tokens: {completion_object.total_tokens} | Prompt Tokens: {completion_object.prompt_tokens} | Completion Tokens: {completion_object.completion_tokens}"
@@ -191,16 +239,15 @@ class GPT:
         return_value = (_previous_completions or []) + [completion_object]
 
         # Check if incomplete
-        if (
-            completion_object.choices[0]["finish_reason"] == "length"
-            and not allow_incomplete
-        ):
+        if completion_object.finish_reason == "length" and not allow_incomplete:
             logger.info(
                 f"Creating another OpenAI chat completion for '{completion_object.id}' because the response was cut off due to the token limit."
             )
 
             new_messages = [*messages]
-            new_messages.append(completion_object.choices[0]["message"])
+            new_messages.append(
+                {"role": "assistant", "content": completion_object.result}
+            )
 
             return self.create_chat_completion(
                 system=system,

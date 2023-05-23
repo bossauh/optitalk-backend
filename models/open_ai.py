@@ -44,7 +44,8 @@ class Completion:
 @dataclasses.dataclass
 class ChatCompletion:
     id: str
-    choices: list[dict]
+    result: Optional[str]
+    finish_reason: Optional[str]
     created: datetime.datetime
     model: str
     object: str
@@ -62,14 +63,3 @@ class ChatCompletion:
     frequency_penalty: int
     presence_penalty: float
     messages: list[dict[str, str]]
-
-    @property
-    def result(self) -> Optional[str]:
-        """
-        Retrieve the completion's result if it exists.
-        """
-
-        if not self.choices:
-            return
-
-        return self.choices[0]["message"]["content"]

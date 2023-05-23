@@ -155,3 +155,9 @@ export interface CharactersContextType {
 export interface CharactersViewProps {
   params?: object;
 }
+
+export interface RealtimeResponseStreamType {
+  response: string | null;
+  comments: string | null;
+  contradictions: string | null;
+}

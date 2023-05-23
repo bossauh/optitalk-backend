@@ -7,7 +7,8 @@ import { ReactMarkdown } from "react-markdown/lib/react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { nord } from "react-syntax-highlighter/dist/esm/styles/prism";
 import remarkGfm from "remark-gfm";
-import { MessageProps } from "../../common/types";
+import socket from "../../common/socket";
+import { MessageProps, RealtimeResponseStreamType } from "../../common/types";
 import StoreContext from "../../contexts/store";
 
 // Components
@@ -20,6 +21,9 @@ const Message: FC<MessageProps> = (props) => {
 
   const [hovered, setHovered] = useState(false);
 
+  // Realtime Response States
+  const [realtimeResponse, setRealtimeResponse] = useState<RealtimeResponseStreamType>();
+
   useEffect(() => {
     if (props.role === "assistant") {
       setName(storeCtx?.activeCharacter?.name);
@@ -28,6 +32,22 @@ const Message: FC<MessageProps> = (props) => {
       setName(storeCtx?.displayName || "You");
     }
   }, [storeCtx?.activeCharacter, storeCtx?.displayName]);
+
+  useEffect(() => {
+    const realtimeResponseCallback = (data: RealtimeResponseStreamType) => {
+      setRealtimeResponse(data);
+    };
+
+    if (props.typing) {
+      socket.on("realtime-response", realtimeResponseCallback);
+    } else {
+      socket.off("realtime-response", realtimeResponseCallback);
+    }
+
+    return () => {
+      socket.off("realtime-response", realtimeResponseCallback);
+    };
+  }, [props.typing]);
 
   return (
     <Box
@@ -99,8 +119,8 @@ const Message: FC<MessageProps> = (props) => {
               <Badge size="sm" color={props.error ? "error" : "primary"}>
                 {props.error ? "Error" : "OptiTalk"}
               </Badge>
-              {props.comments && (
-                <Tooltip content={props.comments}>
+              {(props.comments || (props.typing && realtimeResponse?.comments)) && (
+                <Tooltip content={props.typing ? realtimeResponse?.comments || "" : props.comments}>
                   <Text
                     size={18}
                     css={{
@@ -123,7 +143,7 @@ const Message: FC<MessageProps> = (props) => {
             minWidth: "0px",
           }}
         >
-          {props.typing ? (
+          {props.typing && !realtimeResponse?.response ? (
             <Loading type="points-opacity" />
           ) : (
             <ReactMarkdown
@@ -148,7 +168,7 @@ const Message: FC<MessageProps> = (props) => {
               }}
               className="react-markdown"
             >
-              {props.content}
+              {props.typing ? realtimeResponse?.response || "" : props.content}
             </ReactMarkdown>
           )}
         </Box>

@@ -1,10 +1,10 @@
 import importlib
 import logging
 import os
+from typing import Optional
 
 import eventlet
 import flask_monitoringdashboard as flask_monitor
-import waitress
 from dotenv import load_dotenv
 
 from library.socketio import socketio
@@ -19,6 +19,10 @@ from flask_cors import CORS
 from flask_session import Session
 
 from database import mongoclass
+from models.character import Character
+from models.knowledge import Knowledge
+from models.state import UserPlanState
+from models.user import User
 
 coloredlogs.install(level="DEBUG")
 logger = logging.getLogger(__name__)
@@ -83,15 +87,64 @@ class App:
             else:
                 return send_from_directory(self.app.static_folder, "index.html")
 
+    def prelaunch(self) -> None:
+        """
+        This function's purpose is to perform feature related operations before the
+        launch of a version. Things like transferring user data, etc.
+        """
+
+        logger.info("Transferring old character knowledge to new...")
+        for character in Character.find_classes({}):
+            character: Character
+            if not character.knowledge:
+                continue
+
+            for k in character.knowledge:
+                knowledge = Knowledge(
+                    character_id=character.id,
+                    created_by=character.created_by,
+                    content=k,
+                )
+
+                try:
+                    knowledge.update_embeddings()
+                except Exception:
+                    logger.exception(
+                        f"Error converting knowledge '{k}' from character '{character}'."
+                    )
+
+                knowledge.save()
+
+            character.knowledge = []
+            character.save()
+            logger.info(f"Cleared old knowledge of '{character}'")
+
+        logger.info("Adjusting user plan states...")
+        for user in User.find_classes({}):
+            user: User
+            state: Optional[UserPlanState] = UserPlanState.find_class({"id": user.id})
+            if state is None:
+                continue
+
+            if (
+                state.basic_model_requests
+                > user.plan.max_basic_model_requests_per_month
+            ):
+                state.basic_model_requests = (
+                    user.plan.max_basic_model_requests_per_month
+                )
+                state.save()
+
     def start(self) -> None:
         logger.info("Starting OptiTalk...")
         self.register_index_route()
         self.register_blueprints()
 
+        self.prelaunch()
+
         if os.getenv("PRODUCTION"):
             logger.info("Starting with eventlet server.")
             eventlet.wsgi.server(eventlet.listen(("0.0.0.0", 80)), self.app)
-            waitress.serve(self.app, listen="0.0.0.0:80")
         else:
             logger.info("Starting with development server.")
             socketio.run(

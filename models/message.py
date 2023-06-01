@@ -26,7 +26,9 @@ class Message:
     content: Optional[str]
     comments: Optional[str] = None
     contradictions: Optional[str] = None
+    knowledge_hint: Optional[str] = None
 
+    processing_time: Optional[float] = None
     name: Optional[str] = None
     id: str = dataclasses.field(default_factory=lambda: str(uuid.uuid4()))
     created_at: datetime.datetime = dataclasses.field(

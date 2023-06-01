@@ -13,6 +13,7 @@ import StoreContext from "../../contexts/store";
 
 // Components
 import Box from "../Box";
+import Details from "./Details";
 
 const Message: FC<MessageProps> = (props) => {
   const storeCtx = useContext(StoreContext);
@@ -172,6 +173,7 @@ const Message: FC<MessageProps> = (props) => {
             </ReactMarkdown>
           )}
         </Box>
+
         {props.error && (
           <Button
             icon={<AiOutlineReload size={18} />}
@@ -185,6 +187,8 @@ const Message: FC<MessageProps> = (props) => {
             Retry
           </Button>
         )}
+
+        {!props.typing && props.processingTime && <Details message={props} hovered={hovered} />}
       </Box>
     </Box>
   );

@@ -53,7 +53,11 @@ const CharacterItem: FC<CharacterItemProps> = (props) => {
         },
       }}
       isHoverable
+      isPressable
       variant="shadow"
+      onPress={() => {
+        navigate("/character/" + props.id);
+      }}
     >
       <Card.Header
         css={{
@@ -154,9 +158,6 @@ const CharacterItem: FC<CharacterItemProps> = (props) => {
             gap: "10px",
           }}
         >
-          {/* <Button auto light>
-            More Details
-          </Button> */}
           <Button
             onPress={() => {
               if (store?.activeCharacter?.id === props.id) {
@@ -200,7 +201,7 @@ const CharacterItem: FC<CharacterItemProps> = (props) => {
                   minWidth: "40px",
                 }}
                 onPress={() => {
-                  navigate("/ec/" + props.id);
+                  navigate("/create-character?characterId=" + props.id);
                 }}
               />
             </Box>

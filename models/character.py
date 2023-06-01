@@ -3,8 +3,9 @@ import datetime
 import logging
 import pprint
 import re
+import time
 import uuid
-from typing import Literal, Optional
+from typing import Literal, Optional, Union
 
 from database import mongoclass
 from IPy import IP
@@ -12,8 +13,15 @@ from library import users, utils
 from library.configlib import config
 from library.exceptions import *
 from library.gpt import gpt
-from library.tasks import increase_model_requests_state, insert_message
+from library.security import route_security
+from library.tasks import (
+    increase_model_requests_state,
+    insert_message,
+    log_time_took_metric,
+)
+from openai.embeddings_utils import cosine_similarity, get_embedding
 
+from models.knowledge import Knowledge
 from models.message import Message
 from models.session import ChatSession
 from models.state import UserPlanState
@@ -66,7 +74,6 @@ class Character:
     created_by: str
     name: str
     description: str
-    knowledge: Optional[list[str]] = dataclasses.field(default_factory=list)
     parameters: CharacterParameters = dataclasses.field(
         default_factory=lambda: CharacterParameters()
     )
@@ -83,11 +90,76 @@ class Character:
         default_factory=datetime.datetime.now
     )
 
+    # Unused old fields
+    knowledge: Optional[list[str]] = dataclasses.field(default_factory=list)
+
+    def __str__(self) -> str:
+        return f"{self.name} ({self.id})"
+
     def to_json(self) -> dict:
         data = dataclasses.asdict(self)
         data.pop("parameters", None)
 
         return data
+
+    def _get_knowledge_ranking(
+        self, content: str
+    ) -> list[dict[str, Union[str, float]]]:
+        """
+        Return a ranking list of how similar the content is to the items in the
+        knowledge base of this character. The return value is already sorted from
+        highest to lowest.
+        """
+
+        st = time.perf_counter()
+
+        if not Knowledge.count_documents({"character_id": self.id}):
+            return []
+
+        rankings = []
+        content_embedding = get_embedding(content, engine="text-embedding-ada-002")
+        for knowledge in Knowledge.find_classes({"character_id": self.id}):
+            if not knowledge.embeddings:
+                continue
+
+            ranking = {
+                "content": knowledge.content,
+                "similarity": cosine_similarity(
+                    content_embedding, knowledge.embeddings
+                ),
+            }
+            rankings.append(ranking)
+        rankings.sort(key=lambda x: x["similarity"], reverse=True)
+
+        et = time.perf_counter() - st
+        log_time_took_metric.delay(
+            name="get-knowledge-base-ranking-against-user-input",
+            user_id=utils.get_user_id_from_request(),
+            duration=et,
+            character_id=self.id,
+            ip_address=route_security.get_client_ip(),
+        )
+
+        return rankings
+
+    def _get_knowledge_hint(self, content: str) -> Optional[str]:
+        """
+        Try and get a knowledge hint based on the provided content.
+        """
+
+        rankings = self._get_knowledge_ranking(content)
+        if not rankings:
+            return
+
+        if rankings[0]["similarity"] < 0.76:
+            return
+
+        hints = [rankings[0]["content"]]
+        if len(rankings) > 1:
+            if rankings[1]["similarity"] >= 0.74:
+                hints.append(rankings[1]["content"])
+
+        return "\n".join(hints)
 
     def chat(
         self,
@@ -216,6 +288,12 @@ class Character:
             .limit(user.plan.max_session_history if not is_rapid_api else 100)
         )
         messages.reverse()
+
+        # Get the knowledge hint
+        knowledge_hint = self._get_knowledge_hint(content)
+        if knowledge_hint:
+            new_message.knowledge_hint = knowledge_hint
+
         messages.append(new_message)
 
         if self.parameters.model in ("gpt-3.5-turbo", "gpt-4"):
@@ -226,8 +304,13 @@ class Character:
 
             for message in messages:
                 content = message.content
+
                 if message.role == "assistant":
                     content = f"Comments: {message.comments}\nContradictions: {message.contradictions}\nResponse: {message.content}"
+                else:
+                    content = f"Response: {message.content}"
+                    if message.knowledge_hint:
+                        content += f"\nKnowledge Hint (The user does not know about this hint): {message.knowledge_hint}"
 
                 message_data = {
                     "role": message.role,
@@ -273,7 +356,12 @@ class Character:
                 presence_penalty=self.parameters.presence_penalty,
             )
 
+        processing_st = time.perf_counter()
         completion = completion_function(**completion_parameters)
+        processing_time = time.perf_counter() - processing_st
+
+        # Remove knowledge hint from the user's message
+        new_message.knowledge_hint = None
 
         # Join the multiple completions together
         content = "" if completion[0].result else None
@@ -305,6 +393,8 @@ class Character:
             completion_model=self.parameters.model,
             completion_id=completion.id,
             intent=message_intent,
+            knowledge_hint=knowledge_hint,
+            processing_time=processing_time,
         )
 
         insert_message.delay(**dataclasses.asdict(new_message))

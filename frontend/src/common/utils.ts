@@ -1,6 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 
-import { CharacterEditorFields, CharacterType, MessageType, SessionType } from "./types";
+import {
+  CharacterEditorFields,
+  CharacterType,
+  KnowledgeType,
+  MessageType,
+  SessionType,
+  UserPlanDetails,
+} from "./types";
 
 export function deserializeCharacterData(data: any): CharacterType {
   return {
@@ -38,6 +45,8 @@ export function deserializeMessageData(data: any): MessageType {
     id: data.id,
     comments: data.comments,
     contradictions: data.contradictions,
+    knowledgeHint: data.knowledge_hint,
+    processingTime: data.processing_time,
   };
 }
 
@@ -55,11 +64,31 @@ export function deserializeCharacterFields(data: any): CharacterEditorFields {
   };
 }
 
+export function deserializeKnowledge(data: any): KnowledgeType {
+  return {
+    characterId: data.character_id,
+    content: data.content,
+    createdBy: data.created_by,
+    id: data.id,
+  };
+}
+
+export function deserializeUserPlanDetails(data: any): UserPlanDetails {
+  return {
+    characters: data.characters,
+    id: data.id,
+    maxCharacters: data.max_characters,
+    maxRequests: data.max_requests,
+    name: data.name,
+    requests: data.requests,
+    verified: data.verified,
+  };
+}
+
 export function serializeCharacterFields(data: CharacterEditorFields) {
   return {
     name: data.name,
     description: data.description,
-    knowledge: data.knowledge,
     personalities: data.personalities,
     favorite_words: data.favoriteWords,
     response_styles: data.responseStyles,

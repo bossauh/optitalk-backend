@@ -7,6 +7,8 @@ from database import mongoclass
 from library import types
 from library.configlib import config
 
+from .state import UserPlanState
+
 
 @mongoclass.mongoclass()
 @dataclasses.dataclass
@@ -50,6 +52,26 @@ class Plan:
             config.plans[self.id]["name"],
         )
 
+    def to_json(self, user_id: Optional[str] = None) -> dict:
+        from .character import Character
+
+        state = None
+        if user_id:
+            state: Optional[UserPlanState] = UserPlanState.find_class({"id": user_id})
+
+        data = {
+            "id": self.id,
+            "verified": self.verified,
+            "name": self.name,
+            "max_requests": self.max_basic_model_requests_per_month,
+            "max_characters": self.max_characters,
+        }
+        if state is not None:
+            data["requests"] = state.basic_model_requests
+            data["characters"] = Character.count_documents({"created_by": user_id})
+
+        return data
+
 
 @mongoclass.mongoclass()
 @dataclasses.dataclass
@@ -89,6 +111,7 @@ class User:
         """
 
         data = dataclasses.asdict(self)
+        data["plan"] = self.plan.to_json(self.id)
         data.pop("password")
         data.pop("admin")
         data.pop("account_type")

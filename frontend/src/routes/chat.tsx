@@ -58,9 +58,9 @@ const Chat: FC = () => {
           let message: string;
           if (!storeCtx?.authenticated) {
             message =
-              "Oops! It seems like you've hit the limit of 20 messages per month on your unregistered account. But don't worry! You can get an awesome boost of 400 messages per month by simply registering. And hey, if you want to show some love and support our project, you can donate and receive an extra 1000 messages and the ability to create past 8 characters.";
+              "Oops! It seems like you've hit the limit of 20 messages per month on your unregistered account. I did this to reduce spam. You can login and get 150 more messages. Additionally, subscription plans are also available [here](https://www.buymeacoffee.com/philippemathew/membership) which provides up to thousands of messages, it is also a way for you to support me and the development of this project as this can get quite expensive to operate.";
           } else {
-            message = `Oh no! It seems you've reached your current limit, which allows for a maximum of ${d.payload.limit} messages per month. By donating and showing support, you're entitled to getting an extra 1000 messages and the ability to create past 8 characters. Subscription plans are currently in the works.`;
+            message = `Oh no! It seems you've reached your current limit, which allows for a maximum of ${d.payload.limit} messages per month. You can [pick a subscription plan here](https://www.buymeacoffee.com/philippemathew/membership) in order to get more messages as well as support me and the development of this project.`;
           }
 
           setError({ message: message });

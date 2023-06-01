@@ -112,7 +112,7 @@ const CharactersView: FC<CharactersViewProps> = (props) => {
         },
       }}
     >
-      {characters.length > 0 && !isLoading && <Pagination total={pages} page={page} onChange={onPageChange} noMargin />}
+      {characters.length > 0 && <Pagination total={pages} page={page} onChange={onPageChange} noMargin />}
       <Box
         css={{
           display: "flex",
@@ -138,11 +138,12 @@ const CharactersView: FC<CharactersViewProps> = (props) => {
             <Text>No Items</Text>
           </Box>
         )}
-        {isLoading && characters.length < 1 ? (
+        {isLoading ? (
           <Box
             css={{
               mx: "auto",
-              mt: "200px",
+              mt: "100px",
+              height: "100vh",
             }}
           >
             <Loading size="xl" />

@@ -19,6 +19,7 @@ from typing import Generator, Optional
 
 from celery import Celery
 from models.message import Message
+from models.metric import TimeTookMetric
 from models.open_ai import ChatCompletion, Completion
 from models.session import ChatSession
 from models.state import UserPlanState
@@ -227,6 +228,12 @@ def increase_model_requests_state(id: str, model: str, value: int):
     )
 
     state.save()
+
+
+@app.task
+def log_time_took_metric(**params):
+    time_took_metric = TimeTookMetric(**params)
+    time_took_metric.save()
 
 
 @app.task

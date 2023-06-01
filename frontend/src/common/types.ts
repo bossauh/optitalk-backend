@@ -1,3 +1,15 @@
+import React from "react";
+
+export interface UserPlanDetails {
+  characters: number;
+  id: string;
+  maxCharacters: number;
+  maxRequests: number;
+  name: string;
+  requests: number;
+  verified: boolean;
+}
+
 export interface StoreContextType {
   authenticated: boolean;
   userId?: string;
@@ -10,6 +22,19 @@ export interface StoreContextType {
 
   activeSession?: SessionType;
   setActiveSession: (v: SessionType | undefined) => void;
+
+  openModal: (
+    content: React.ReactNode,
+    variant: "error" | "success" | "warning" | "info",
+    title?: string,
+    hideIn?: number
+  ) => void;
+
+  userPlanDetails?: UserPlanDetails;
+}
+
+export interface CharacterViewOutletContextType {
+  details: CharacterType;
 }
 
 export interface LayoutContextType {
@@ -58,19 +83,6 @@ export interface CharacterItemProps extends CharacterType {
   isOwner?: boolean;
 }
 
-export interface CharacterEditorFields {
-  name: string;
-  description: string;
-  knowledge?: string[];
-  personalities?: string[];
-  favoriteWords?: string[];
-  responseStyles?: string[];
-  exampleExchanges?: ExampleExchange[];
-  private?: boolean;
-  image?: string;
-  [key: string]: any;
-}
-
 export interface SessionType {
   characterId: string;
   createdBy: string;
@@ -87,6 +99,13 @@ export interface MessageType {
   id: string;
   comments?: string | null;
   contradictions?: string | null;
+  knowledgeHint?: string | null;
+  processingTime?: number | null;
+}
+
+export interface MessageDetailsProps {
+  message: MessageProps;
+  hovered: boolean;
 }
 
 export interface MessageProps extends MessageType {
@@ -160,4 +179,47 @@ export interface RealtimeResponseStreamType {
   response: string | null;
   comments: string | null;
   contradictions: string | null;
+}
+
+export interface CharacterEditorFields {
+  name: string;
+  description: string;
+  personalities?: string[];
+  favoriteWords?: string[];
+  responseStyles?: string[];
+  exampleExchanges?: ExampleExchange[];
+  private?: boolean;
+  image?: string;
+  [key: string]: any;
+}
+
+export interface CharacterEditorContextType {
+  onSubmit: () => void;
+  fields: CharacterEditorFields;
+  setFields: React.Dispatch<React.SetStateAction<CharacterEditorFields>>;
+  id: string | null;
+  method: string;
+  knowledge: KnowledgePatchType[];
+  setKnowledge: React.Dispatch<React.SetStateAction<KnowledgePatchType[]>>;
+  setLoadingOpen: (value: boolean) => void;
+}
+
+export interface KnowledgeType {
+  characterId: string;
+  createdBy: string;
+  id: string;
+  content: string;
+}
+
+export interface KnowledgePatchType {
+  id?: string;
+  content: string;
+}
+
+export interface GlobalModalPopupProps {
+  hideIn?: number;
+  content: React.ReactNode;
+  variant: "error" | "success" | "warning" | "info";
+  title?: string;
+  showCounter: number;
 }

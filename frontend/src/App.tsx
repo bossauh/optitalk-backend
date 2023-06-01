@@ -4,17 +4,23 @@ import { FC, useEffect, useState } from "react";
 import { useCookies } from "react-cookie";
 import { RouterProvider, createBrowserRouter } from "react-router-dom";
 import socket from "./common/socket";
-import { CharacterType, SessionType } from "./common/types";
-import { deserializeCharacterData } from "./common/utils";
+import { CharacterType, GlobalModalPopupProps, SessionType, UserPlanDetails } from "./common/types";
+import { deserializeCharacterData, deserializeUserPlanDetails } from "./common/utils";
 import StoreContext from "./contexts/store";
 import "./index.css";
 
 // Components
+import CharacterBasicInformationEditor from "./components/CharacterBasicInformationEditor";
+import CharacterConversationEditor from "./components/CharacterConversationEditor";
+import CharacterKnowledgeEditor from "./components/CharacterKnowledgeEditor";
+import CharacterViewConversation from "./components/CharacterViewConversation";
+import CharacterViewKnowledge from "./components/CharacterViewKnowledge/CharacterViewKnowledge";
 import CharactersView from "./components/CharactersView";
-import FeedbackButton from "./components/FeedbackButton";
+import GlobalModalPopup from "./components/GlobalModalPopup";
 
 // Routes
 import Index from "./routes";
+import CharacterView from "./routes/character-view";
 import Characters from "./routes/characters";
 import Chat from "./routes/chat";
 import CreateCharacter from "./routes/create-character";
@@ -71,6 +77,20 @@ const router = createBrowserRouter([
           },
         ],
       },
+      {
+        path: "/character/:characterId",
+        element: <CharacterView />,
+        children: [
+          {
+            path: "example-conversation",
+            element: <CharacterViewConversation />,
+          },
+          {
+            path: "knowledge-base",
+            element: <CharacterViewKnowledge />,
+          },
+        ],
+      },
     ],
   },
   {
@@ -88,6 +108,20 @@ const router = createBrowserRouter([
   {
     path: "/create-character",
     element: <CreateCharacter />,
+    children: [
+      {
+        path: "",
+        element: <CharacterBasicInformationEditor />,
+      },
+      {
+        path: "knowledge",
+        element: <CharacterKnowledgeEditor />,
+      },
+      {
+        path: "example-conversation",
+        element: <CharacterConversationEditor />,
+      },
+    ],
   },
 ]);
 
@@ -97,12 +131,19 @@ const App: FC = () => {
   const [userId, setUserId] = useState<string>();
   const [displayName, setDisplayName] = useState<string>();
   const [email, setEmail] = useState<string>();
+  const [userPlanDetails, setUserPlanDetails] = useState<UserPlanDetails>();
 
   // Character related states
   const [activeCharacter, setActiveCharacter] = useState<CharacterType>();
   const [activeSession, setActiveSession] = useState<SessionType>();
 
   const [cookies, , ,] = useCookies(["activeCharacterId"]);
+
+  const [globalModal, setGlobalModal] = useState<GlobalModalPopupProps>({
+    content: "",
+    showCounter: 0,
+    variant: "info",
+  });
 
   useEffect(() => {
     if (activeCharacter === undefined && cookies.activeCharacterId) {
@@ -125,6 +166,7 @@ const App: FC = () => {
           setAuthenticated(false);
           setDisplayName(undefined);
           setEmail(undefined);
+          setUserPlanDetails(undefined);
 
           fetch("/api/users/ip-address")
             .then((r) => r.json())
@@ -136,6 +178,7 @@ const App: FC = () => {
           setDisplayName(d.payload.display_name);
           setEmail(d.payload.email);
           setUserId(d.payload.id);
+          setUserPlanDetails(deserializeUserPlanDetails(d.payload.plan));
         }
 
         setIsAuthenticating(false);
@@ -179,6 +222,18 @@ const App: FC = () => {
           activeSession: activeSession,
           setActiveSession: setActiveSession,
           isAuthenticating: isAuthenticating,
+          openModal(content, variant, title, hideIn) {
+            setGlobalModal((prev) => {
+              return {
+                content: content,
+                variant: variant,
+                title: title,
+                hideIn: hideIn,
+                showCounter: prev.showCounter + 1,
+              };
+            });
+          },
+          userPlanDetails: userPlanDetails,
         }}
       >
         <div
@@ -187,7 +242,14 @@ const App: FC = () => {
             position: "relative",
           }}
         >
-          <FeedbackButton />
+          <GlobalModalPopup
+            content={globalModal.content}
+            showCounter={globalModal.showCounter}
+            variant={globalModal.variant}
+            hideIn={globalModal.hideIn}
+            title={globalModal.title}
+          />
+          {/* <FeedbackButton /> */}
           <RouterProvider router={router} />
         </div>
       </StoreContext.Provider>

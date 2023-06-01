@@ -6,8 +6,8 @@ import { CharacterType } from "../../common/types";
 import StoreContext from "../../contexts/store";
 
 // Components
+import { truncateText } from "../../common/utils";
 import Box from "../Box";
-import ListField from "./ListField";
 
 const ActiveCharacterItem: FC<CharacterType> = (props) => {
   const [sessionsCount, setSessionsCount] = useState(0);
@@ -49,7 +49,7 @@ const ActiveCharacterItem: FC<CharacterType> = (props) => {
             size="sm"
             icon={<AiFillEdit size={17} />}
             onPress={() => {
-              navigate("/ec/" + props.id);
+              navigate("/create-character?characterId=" + props.id);
             }}
           />
         )}
@@ -74,6 +74,16 @@ const ActiveCharacterItem: FC<CharacterType> = (props) => {
             display: "flex",
             flexDirection: "column",
             flex: 1,
+            cursor: "pointer",
+            transition: "transform 0.2s, box-shadow 0.2s",
+            boxShadow: "$xs",
+            "&:hover": {
+              transform: "translateY(-5px)",
+              boxShadow: "$md",
+            },
+          }}
+          onClick={() => {
+            navigate("/character/" + props.id);
           }}
         >
           <Box
@@ -104,18 +114,10 @@ const ActiveCharacterItem: FC<CharacterType> = (props) => {
               </Text>
             </Box>
           </Box>
-          <Text
-            css={{
-              whiteSpace: "pre-wrap",
-              maxHeight: "250px",
-              overflowY: "auto",
-            }}
-          >
-            {props.description}
-          </Text>
+          <Text>{truncateText(props.description, 700)}</Text>
         </Box>
 
-        {!(
+        {/* {!(
           props.personalities.length === 0 &&
           props.favoriteWords.length === 0 &&
           props.responseStyles.length === 0 &&
@@ -163,7 +165,7 @@ const ActiveCharacterItem: FC<CharacterType> = (props) => {
               />
             )}
           </Box>
-        )}
+        )} */}
       </Box>
     </Box>
   );

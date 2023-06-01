@@ -1,12 +1,14 @@
 import logging
 import re
+import time
 from typing import TYPE_CHECKING, Optional
 
 from flask import Blueprint, request
-from library import responses, schemas, utils
+from library import responses, schemas, tasks, utils
 from library.configlib import config
 from library.security import route_security
 from models.character import Character, CharacterParameters
+from models.knowledge import Knowledge
 from models.user import User
 
 if TYPE_CHECKING:
@@ -128,7 +130,8 @@ def setup(server: "App") -> Blueprint:
             )
 
         # Get the real model name
-        model = data.get("model", "basic")
+        # model = data.get("model", "basic")
+        model = "basic"  # Only the basic model is available
         model = config.model_mappings[model]
 
         character = Character(
@@ -141,12 +144,114 @@ def setup(server: "App") -> Blueprint:
             example_exchanges=data.get("example_exchanges", []),
             private=data.get("private", False),
             image=data.get("image"),
-            knowledge=data.get("knowledge", []),
             response_styles=data.get("response_styles", []),
         )
         character.save()
+        logger.info(f"Created new character named '{character.name} ({character.id}).'")
+
+        # Start saving the knowledge base
+        knowledge_base = data.get("knowledge", [])
+
+        st = time.perf_counter()
+        for knowledge in knowledge_base:
+            k = Knowledge(
+                character_id=character.id, created_by=user_id, content=knowledge
+            )
+
+            try:
+                k.update_embeddings()
+            except Exception:
+                logger.exception(f"Error updating embeddings for knowledge '{k.id}'.")
+
+            k.save()
+
+        et = time.perf_counter() - st
+        tasks.log_time_took_metric.delay(
+            name="save-full-knowledge-base",
+            user_id=user_id,
+            duration=et,
+            character_id=character.id,
+            ip_address=route_security.get_client_ip(),
+        )
 
         return responses.create_response(payload=character.to_json())
+
+    @app.get("/knowledge")
+    @route_security.request_args_schema(schema=schemas.GET_CHARACTERS_KNOWLEDGE)
+    @route_security.exclude
+    def get_characters_knowledge():
+        character_id = request.args["character_id"]
+        page = int(request.args.get("page", "1"))
+        page_size = int(request.args.get("page_size", "25"))
+
+        query = {"character_id": character_id}
+
+        knowledge = [
+            x.to_json()
+            for x in utils.paginate_mongoclass_cursor(
+                Knowledge.find_classes(query), page_size=page_size, page=page
+            )
+        ]
+
+        total = Knowledge.count_documents(query)
+        return responses.create_paginated_response(
+            objects=knowledge, page=page, page_size=page_size, total=total
+        )
+
+    @app.delete("/knowledge")
+    @route_security.request_args_schema(schema=schemas.DELETE_CHARACTERS_KNOWLEDGE)
+    def delete_characters_knowledge():
+        id = request.args["id"]
+        user_id = utils.get_user_id_from_request()
+        knowledge = Knowledge.find_class({"id": id, "created_by": user_id})
+
+        if knowledge is None:
+            return responses.create_response(
+                payload={"message": f"Can't find knowledge with ID of '{id}'."},
+                status_code=responses.CODE_404,
+            )
+
+        knowledge.delete()
+        return responses.create_response(status_code=responses.CODE_200)
+
+    @app.patch("/knowledge")
+    @route_security.request_json_schema(schema=schemas.PATCH_CHARACTERS_KNOWLEDGE)
+    def patch_characters_knowledge():
+        data = request.get_json()
+        knowledge = data["knowledge_base"]
+
+        user_id = utils.get_user_id_from_request()
+        for item in knowledge:
+            id = item.get("id")
+            if id is None:
+                k = Knowledge(
+                    character_id=data["character_id"],
+                    created_by=user_id,
+                    content=item["content"],
+                )
+            else:
+                k = Knowledge.find_class({"id": id, "created_by": user_id})
+                if not k:
+                    continue
+
+            if k.content != item["content"] or id is None:
+                k.content = item["content"]
+                try:
+                    k.update_embeddings()
+                except Exception:
+                    logger.exception(
+                        f"Error updating embeddings for knowledge '{k.id}'."
+                    )
+                    return responses.create_response(
+                        payload={
+                            "message": "Error updating knowledge. Please try again."
+                        },
+                        status_code=responses.CODE_500,
+                    )
+
+                k.save()
+
+        return responses.create_response()
 
     @app.patch("/")
     @route_security.request_json_schema(schema=schemas.PATCH_CHARACTERS)
@@ -178,7 +283,8 @@ def setup(server: "App") -> Blueprint:
         data: dict = request.json
         if "model" in data:
             data["parameters"] = CharacterParameters(
-                model=config.model_mappings[data["model"]]
+                # model=config.model_mappings[data["model"]]
+                model=config.model_mappings["basic"]
             )
             data.pop("model")
 

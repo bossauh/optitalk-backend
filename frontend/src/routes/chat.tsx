@@ -11,6 +11,7 @@ import StoreContext from "../contexts/store";
 // Components
 import Box from "../components/Box";
 import ChatBox from "../components/ChatBox";
+import Footer from "../components/Footer";
 import MessagesView from "../components/MessagesView";
 import NoCharacterSelected from "../components/NoCharacterSelected";
 
@@ -151,7 +152,7 @@ const Chat: FC = () => {
         height: `calc(100vh - ${(layoutCtx?.topBarHeight === undefined ? 0 : layoutCtx.topBarHeight) + 30}px)`,
         display: "flex",
         flexDirection: "column",
-        pb: "30px",
+        // pb: "30px",
         flexWrap: "nowrap",
         gap: "10px",
       }}
@@ -199,6 +200,9 @@ const Chat: FC = () => {
       )}
       <Box
         css={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "10px",
           mx: "100px",
           "@mdMax": {
             mx: "70px",
@@ -213,6 +217,14 @@ const Chat: FC = () => {
           placeholder="Enter Chat"
           disabled={storeCtx?.activeCharacter === undefined || showTyping}
         />
+        <Box
+          css={{
+            pb: "10px",
+            alignSelf: "center",
+          }}
+        >
+          <Footer />
+        </Box>
       </Box>
     </Container>
   );

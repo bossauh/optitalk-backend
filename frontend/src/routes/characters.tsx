@@ -8,6 +8,7 @@ import ActiveCharacterItem from "../components/ActiveCharacterItem";
 import Box from "../components/Box";
 import CharactersCategoryBar from "../components/CharactersCategoryBar";
 import CharactersView from "../components/CharactersView";
+import Footer from "../components/Footer";
 import SearchInput from "../components/SearchInput";
 import StoreContext from "../contexts/store";
 
@@ -38,6 +39,7 @@ const Characters: FC = () => {
         display: "flex",
         flexDirection: "column",
         gap: "30px",
+        pb: "15px",
       }}
     >
       {storeCtx?.activeCharacter && <ActiveCharacterItem {...storeCtx.activeCharacter} />}
@@ -64,6 +66,13 @@ const Characters: FC = () => {
         >
           {outlet || <CharactersView />}
         </CharactersContext.Provider>
+      </Box>
+      <Box
+        css={{
+          mx: "auto",
+        }}
+      >
+        <Footer />
       </Box>
     </Container>
   );

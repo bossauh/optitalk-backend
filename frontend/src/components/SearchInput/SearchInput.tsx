@@ -11,7 +11,7 @@ const SearchInput: FC<SearchInputProps> = (props) => {
       placeholder={props.placeholder}
       size="lg"
       contentRightStyling={false}
-      defaultValue={props.defaultValue}
+      initialValue={props.defaultValue}
       contentRight={
         <Button
           css={{

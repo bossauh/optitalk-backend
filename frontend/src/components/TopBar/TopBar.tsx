@@ -16,7 +16,7 @@ const links = [
     name: "Chat",
   },
   {
-    path: "/characters",
+    path: "/characters/featured",
     name: "Characters",
   },
 ];

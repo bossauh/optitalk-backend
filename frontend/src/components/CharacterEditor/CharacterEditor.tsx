@@ -147,7 +147,7 @@ const CharacterEditor: FC<CharacterEditorProps> = (props) => {
             });
           }}
           minLength={10}
-          maxLength={1024}
+          maxLength={2048}
         />
         <Text
           css={{

@@ -20,7 +20,7 @@ POST_USERS = Schema(
 POST_CHARACTERS = Schema(
     {
         Required("name"): All(str, Length(min=1, max=64)),
-        Required("description"): All(str, Length(min=1, max=1024)),
+        Required("description"): All(str, Length(min=1, max=2048)),
         Optional("model"): Any("basic", "advanced"),
         Optional("knowledge"): All(
             [Schema(All(str, min=1, max=1024))], Length(min=0, max=1000)
@@ -44,7 +44,7 @@ POST_CHARACTERS = Schema(
 PATCH_CHARACTERS = Schema(
     {
         Optional("name"): All(str, Length(min=1, max=64)),
-        Optional("description"): All(str, Length(min=1, max=1024)),
+        Optional("description"): All(str, Length(min=1, max=2048)),
         Optional("model"): Any("basic", "advanced"),
         # Optional("knowledge"): All(
         #     [Schema(All(str, min=1, max=250))], Length(min=0, max=10)

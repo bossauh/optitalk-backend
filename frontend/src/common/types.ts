@@ -169,6 +169,7 @@ export interface SearchInputProps {
 export interface CharactersContextType {
   query?: string;
   setQuery: (v: string | undefined) => void;
+  sort: "latest" | "uses";
 }
 
 export interface CharactersViewProps {

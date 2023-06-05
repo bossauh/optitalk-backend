@@ -9,7 +9,7 @@ const SearchInput: FC<SearchInputProps> = (props) => {
   return (
     <Input
       placeholder={props.placeholder}
-      size="lg"
+      size="md"
       contentRightStyling={false}
       initialValue={props.defaultValue}
       contentRight={
@@ -22,6 +22,7 @@ const SearchInput: FC<SearchInputProps> = (props) => {
             props.onSearch(value);
           }}
           icon={<AiOutlineSearch size={20} />}
+          size="md"
         />
       }
       onKeyDown={(e) => {
@@ -31,6 +32,9 @@ const SearchInput: FC<SearchInputProps> = (props) => {
       }}
       onChange={(e) => {
         setValue(e.currentTarget.value);
+      }}
+      css={{
+        flex: 1,
       }}
     />
   );

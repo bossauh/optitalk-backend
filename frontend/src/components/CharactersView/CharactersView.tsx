@@ -25,7 +25,12 @@ const CharactersView: FC<CharactersViewProps> = (props) => {
 
   // Function to construct the API URL
   const constructUrl = () => {
-    let params: { [key: string]: string } = { page: String(page), page_size: "6", ...props.params };
+    let params: { [key: string]: string } = {
+      page: String(page),
+      page_size: "6",
+      sort: charactersCtx?.sort || "uses",
+      ...props.params,
+    };
 
     // Add query to params if it exists
     if (charactersCtx?.query) {
@@ -93,7 +98,7 @@ const CharactersView: FC<CharactersViewProps> = (props) => {
 
   useEffect(() => {
     fetchCharacters(false);
-  }, [page]);
+  }, [page, charactersCtx?.sort]);
 
   useEffect(() => {
     charactersCtx?.setQuery(undefined);

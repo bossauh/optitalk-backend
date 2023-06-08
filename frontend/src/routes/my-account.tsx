@@ -98,18 +98,18 @@ const MyAccount: FC = () => {
           mt: "20px",
         }}
       >
-        <Text h2>Subscription Plans</Text>
+        <Text h2>Donator Perks</Text>
         <Text
           css={{
             maxWidth: "700px",
           }}
         >
-          You can subscribe to plans to increase your limit, it is also a way for users to support the development of
-          this platform. To subscribe to a plan, simply go to{" "}
+          You can subscribe to buymeacoffee memberships to increase your limit, it is also a way for users to support
+          the development of this platform. To subscribe to a plan, simply go to{" "}
           <a href="https://www.buymeacoffee.com/philippemathew/membership">this page</a> and select your plan. Don't
           forget to include the email you used for optitalk on the message box.
         </Text>
-        <Box
+        {/* <Box
           css={{
             bg: "$accents0",
             p: "15px",
@@ -124,7 +124,7 @@ const MyAccount: FC = () => {
             itself. Everyone who purchased via buy me a coffee will have their subscription transferred to stripe once
             it is integrated.
           </Text>
-        </Box>
+        </Box> */}
       </Box>
     </Container>
   );

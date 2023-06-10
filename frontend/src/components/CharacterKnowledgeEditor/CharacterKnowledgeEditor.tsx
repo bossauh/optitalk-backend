@@ -83,6 +83,11 @@ const CharacterKnowledgeEditor: FC = () => {
                   aria-label="Knowledge"
                   required
                   maxLength={1024}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                    }
+                  }}
                 />
                 <Button
                   light

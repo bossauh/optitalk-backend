@@ -95,6 +95,11 @@ const CharacterConversationEditor: FC = () => {
                       return { ...prev, exampleExchanges: list };
                     });
                   }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                    }
+                  }}
                   required
                   maxLength={2048}
                   contentRight={

@@ -85,6 +85,11 @@ const ListField: FC<{
                   return { ...prev, [props.field]: oldList };
                 });
               }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                }
+              }}
               key={`${i}-${idx}`}
             />
           );
@@ -100,6 +105,7 @@ const ListField: FC<{
               if (e.key === "Enter") {
                 onNewItem(value);
                 e.currentTarget.value = "";
+                e.preventDefault();
               }
             }}
             onBlur={(e) => {

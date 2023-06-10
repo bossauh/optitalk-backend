@@ -127,6 +127,9 @@ const CharacterKnowledgeEditor: FC = () => {
                   }
                   e.currentTarget.value = "";
                 }
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                }
               }}
               disabled={(context?.knowledge.length || 0) >= 500}
               maxLength={1024}

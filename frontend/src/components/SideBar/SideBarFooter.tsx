@@ -25,7 +25,6 @@ const SideBarFooter: FC = () => {
         auto
         css={{
           width: "100%",
-          height: "70px",
         }}
         color="gradient"
         onPress={() => {
@@ -45,7 +44,6 @@ const SideBarFooter: FC = () => {
           auto
           css={{
             width: "100%",
-            height: "70px",
           }}
           color="secondary"
           onPress={() => {
@@ -60,7 +58,6 @@ const SideBarFooter: FC = () => {
           auto
           css={{
             width: "100%",
-            height: "70px",
           }}
           color="primary"
           onPress={() => {

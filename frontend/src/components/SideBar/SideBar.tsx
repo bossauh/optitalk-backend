@@ -139,7 +139,7 @@ const SideBar: FC<SideBarProps> = (props) => {
           px: 0,
           py: 0,
           overflowY: "auto",
-          maxHeight: "calc(100vh - 200px)",
+          maxHeight: "calc(100vh - 250px)",
         }}
         // @ts-expect-error
         ref={sessionsRef}

@@ -80,7 +80,7 @@ const CharacterBasicInformationEditor: FC = () => {
             }}
             initialValue={context?.fields.description}
             label="Description*"
-            placeholder="Tip: Refer to your character in third person and get as detailed as possible. Maximum of 1024 characters."
+            placeholder="Tip: Refer to your character in third person and get as detailed as possible. Maximum of 2048 characters."
             minRows={200}
             maxRows={15}
             onBlur={(e) => {
@@ -90,7 +90,7 @@ const CharacterBasicInformationEditor: FC = () => {
               });
             }}
             minLength={1}
-            maxLength={1024}
+            maxLength={2048}
             required
           />
           <ListField

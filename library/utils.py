@@ -1,5 +1,6 @@
 import logging
 import re
+import time
 from typing import TYPE_CHECKING, Optional
 
 import tiktoken
@@ -149,7 +150,11 @@ def limit_chat_completion_tokens(
     if model == "gpt-4":
         token_cap = 8100
 
+    st = time.perf_counter()
     messages_tokens = get_total_tokens_from_messages(messages=messages)
+    et = time.perf_counter() - st
+    logger.debug(f"{messages_tokens} Tokens. Took {et} seconds to calculate.")
+
     total_tokens = messages_tokens + max_tokens
     if (total_tokens) <= token_cap:
         return messages, max_tokens

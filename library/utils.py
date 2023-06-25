@@ -145,44 +145,34 @@ def limit_chat_completion_tokens(
     models.
     """
 
-    token_cap = 4090 if model != "gpt-4" else 8100
-    total_tokens = get_total_tokens_from_messages(messages=messages) + max_tokens
+    token_cap = 4090
+    if model == "gpt-4":
+        token_cap = 8100
 
-    if total_tokens <= token_cap:
+    messages_tokens = get_total_tokens_from_messages(messages=messages)
+    total_tokens = messages_tokens + max_tokens
+    if (total_tokens) <= token_cap:
         return messages, max_tokens
 
     logger.warning(
         f"There are {total_tokens} tokens in the message list which exceeded the {token_cap} tokens limit."
     )
 
-    # Create a copy of messages
-    new_messages = messages.copy()
-
-    # In case max_tokens is already at minimum, start removing messages
+    copied_messages = [*messages]
     if max_tokens <= 512:
-        while total_tokens > token_cap and len(new_messages) > 1:
-            # Remove the oldest message
-            new_messages.pop(0)
-            # Recalculate the total_tokens
-            total_tokens = (
-                get_total_tokens_from_messages(messages=new_messages) + max_tokens
-            )
-            logger.warning(
-                "Removed one old message because the max tokens parameter is already at the 512 minimum limit."
-            )
-        return new_messages, max_tokens
-
-    # If we are here, it means we have some room for reducing max_tokens
-    while total_tokens > token_cap:
-        max_tokens = max_tokens - 50
-        total_tokens = (
-            get_total_tokens_from_messages(messages=new_messages) + max_tokens
+        copied_messages.pop(1)
+        logger.warning(
+            "Removed one old message because the max tokens parameter is already at the 512 minimum limit."
         )
+    else:
+        max_tokens = max_tokens - 50
         logger.warning(
             f"Reduced max tokens parameter to {max_tokens} and checking again."
         )
 
-    return new_messages, max_tokens
+    return limit_chat_completion_tokens(
+        messages=copied_messages, model=model, max_tokens=max_tokens
+    )
 
 
 def create_chat_completion_context(

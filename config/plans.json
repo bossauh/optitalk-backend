@@ -2,14 +2,14 @@
   "free": {
     "max_basic_model_requests_per_month": 1000,
     "max_advanced_model_requests_per_month": 80,
-    "max_session_history": 100,
+    "max_session_history": 50,
     "max_characters": 8,
     "name": "Free"
   },
   "basic": {
     "max_basic_model_requests_per_month": 2500,
     "max_advanced_model_requests_per_month": 30,
-    "max_session_history": 100,
+    "max_session_history": 50,
     "max_characters": 200,
     "name": "Basic"
   },
@@ -30,7 +30,7 @@
   "anonymous": {
     "max_basic_model_requests_per_month": 20,
     "max_advanced_model_requests_per_month": 10,
-    "max_session_history": 100,
+    "max_session_history": 30,
     "max_characters": 8,
     "name": "Anonymous"
   },

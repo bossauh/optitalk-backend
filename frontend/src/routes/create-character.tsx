@@ -70,6 +70,28 @@ const CreateCharacter: FC = () => {
 
     const onSuccess = () => {
       setLoadingOpen(false);
+      navigate("/characters/my-characters");
+      storeCtx?.openModal(
+        <Box
+          css={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: "5px",
+          }}
+        >
+          <Text
+            css={{
+              textAlign: "center",
+            }}
+          >
+            Your Character has been created. Check the My Characters tab for your character.
+          </Text>
+        </Box>,
+        "success",
+        "Character Created",
+        2_000
+      );
     };
 
     const updateKnowledge = () => {

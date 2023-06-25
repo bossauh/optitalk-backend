@@ -279,6 +279,7 @@ class Character:
             if requests_count >= cap and not is_rapid_api:
                 raise ModelRequestsLimitExceeded(model=model_type, limit=cap)
 
+        fetch_messages_st = time.perf_counter()
         messages = list(
             Message.find_classes(
                 {
@@ -291,11 +292,16 @@ class Character:
             .limit(user.plan.max_session_history if not is_rapid_api else 100)
         )
         messages.reverse()
+        fetch_messages_et = time.perf_counter() - fetch_messages_st
+        logger.debug(f"Fetching the messages took {fetch_messages_et}.")
 
         # Get the knowledge hint
+        fetch_knowledge_st = time.perf_counter()
         knowledge_hint = self._get_knowledge_hint(content)
         if knowledge_hint:
             new_message.knowledge_hint = knowledge_hint
+        fetch_knowledge_et = time.perf_counter() - fetch_knowledge_st
+        logger.debug(f"Fetching the knowledge hint took {fetch_knowledge_et}.")
 
         messages.append(new_message)
 

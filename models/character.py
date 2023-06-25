@@ -280,11 +280,14 @@ class Character:
                 raise ModelRequestsLimitExceeded(model=model_type, limit=cap)
 
         messages = list(
-            Message.find_classes({})
-            .sort("_id", -1)
-            .where(
-                f"this.session_id === '{session_id}' && this.character_id === '{self.id}' && this.created_by === '{user_id}'"
+            Message.find_classes(
+                {
+                    "session_id": session_id,
+                    "character_id": self.id,
+                    "created_by": user_id,
+                }
             )
+            .sort("_id", -1)
             .limit(user.plan.max_session_history if not is_rapid_api else 100)
         )
         messages.reverse()

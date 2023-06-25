@@ -1,4 +1,9 @@
 import importlib
+
+import eventlet
+
+eventlet.monkey_patch()
+
 import logging
 import os
 from typing import Optional

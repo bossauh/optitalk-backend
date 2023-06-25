@@ -70,7 +70,7 @@ const CreateCharacter: FC = () => {
 
     const onSuccess = () => {
       setLoadingOpen(false);
-      navigate("/characters/my-characters");
+      navigate("/my-characters");
       storeCtx?.openModal(
         <Box
           css={{

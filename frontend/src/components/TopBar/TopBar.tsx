@@ -12,11 +12,11 @@ import Box from "../Box";
 
 const links = [
   {
-    path: "/",
+    path: "/chat",
     name: "Chat",
   },
   {
-    path: "/characters/featured",
+    path: "/",
     name: "Characters",
   },
 ];

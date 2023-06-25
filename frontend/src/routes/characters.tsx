@@ -88,7 +88,7 @@ const Characters: FC = () => {
             sort: sort,
           }}
         >
-          {outlet || <CharactersView />}
+          {outlet || <CharactersView key={"featured"} params={{ featured: "true" }} />}
         </CharactersContext.Provider>
       </Box>
       <Box

@@ -20,9 +20,9 @@ const CharactersCategoryBar: FC = () => {
         },
       }}
     >
-      <Item title="Featured" path="/characters/featured" top />
-      <Item title="Public" path="/characters" />
-      <Item title="My Characters" path="/characters/my-characters" bottom />
+      <Item title="Featured" path="/" top />
+      <Item title="Public" path="/public" />
+      <Item title="My Characters" path="/my-characters" bottom />
     </Box>
   );
 };

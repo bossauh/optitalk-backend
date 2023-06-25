@@ -66,7 +66,7 @@ const Session: FC<SessionType> = (props) => {
         position: "relative",
       }}
       onClick={() => {
-        navigate(`/s/${props.id}`);
+        navigate(`/chat/s/${props.id}`);
 
         if (!props.new) {
           storeCtx?.setActiveSession(props);

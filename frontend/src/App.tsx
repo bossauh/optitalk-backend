@@ -56,25 +56,25 @@ const router = createBrowserRouter([
     children: [
       {
         path: "",
-        element: <Chat />,
+        element: <Characters />,
         children: [
           {
-            path: "/s/:sessionId",
-            element: <div>Session</div>,
+            path: "/my-characters",
+            element: <CharactersView key={"my-characters"} params={{ my_characters: "true" }} />,
+          },
+          {
+            path: "/public",
+            element: <CharactersView />,
           },
         ],
       },
       {
-        path: "characters",
-        element: <Characters />,
+        path: "/chat",
+        element: <Chat />,
         children: [
           {
-            path: "/characters/my-characters",
-            element: <CharactersView key={"my-characters"} params={{ my_characters: "true" }} />,
-          },
-          {
-            path: "/characters/featured",
-            element: <CharactersView key={"featured"} params={{ featured: "true" }} />,
+            path: "/chat/s/:sessionId",
+            element: <div>Session</div>,
           },
         ],
       },

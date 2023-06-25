@@ -105,6 +105,7 @@ def get_total_tokens_from_messages(
     except KeyError:
         print("Warning: model not found. Using cl100k_base encoding.")
         encoding = tiktoken.get_encoding("cl100k_base")
+
     if model == "gpt-3.5-turbo":
         print(
             "Warning: gpt-3.5-turbo may change over time. Returning num tokens assuming gpt-3.5-turbo-0301."
@@ -115,10 +116,9 @@ def get_total_tokens_from_messages(
             "Warning: gpt-4 may change over time. Returning num tokens assuming gpt-4-0314."
         )
         return get_total_tokens_from_messages(messages, model="gpt-4-0314")
-    elif model == "gpt-3.5-turbo-0301":
-        tokens_per_message = (
-            4  # every message follows <|start|>{role/name}\n{content}<|end|>\n
-        )
+
+    if model == "gpt-3.5-turbo-0301":
+        tokens_per_message = 4  # every message follows {role/name}\n{content}\n
         tokens_per_name = -1  # if there's a name, the role is omitted
     elif model == "gpt-4-0314":
         tokens_per_message = 3
@@ -127,14 +127,18 @@ def get_total_tokens_from_messages(
         raise NotImplementedError(
             f"""num_tokens_from_messages() is not implemented for model {model}. See https://github.com/openai/openai-python/blob/main/chatml.md for information on how messages are converted to tokens."""
         )
-    num_tokens = 0
+
+    num_tokens = (
+        tokens_per_message * len(messages) + len(messages) * 3
+    )  # every reply is primed with assistant
+    num_names = sum([1 for message in messages if "name" in message])
+    num_tokens += num_names * tokens_per_name
+
     for message in messages:
-        num_tokens += tokens_per_message
         for key, value in message.items():
-            num_tokens += len(encoding.encode(value))
-            if key == "name":
-                num_tokens += tokens_per_name
-    num_tokens += 3  # every reply is primed with <|start|>assistant<|message|>
+            if key != "name":
+                num_tokens += len(encoding.encode(value))
+
     return num_tokens
 
 

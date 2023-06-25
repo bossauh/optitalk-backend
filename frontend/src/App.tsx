@@ -17,6 +17,7 @@ import CharacterViewConversation from "./components/CharacterViewConversation";
 import CharacterViewKnowledge from "./components/CharacterViewKnowledge/CharacterViewKnowledge";
 import CharactersView from "./components/CharactersView";
 import GlobalModalPopup from "./components/GlobalModalPopup";
+import HighTrafficWarning from "./components/HighTrafficWarning";
 
 // Routes
 import Index from "./routes";
@@ -242,6 +243,7 @@ const App: FC = () => {
             position: "relative",
           }}
         >
+          <HighTrafficWarning />
           <GlobalModalPopup
             content={globalModal.content}
             showCounter={globalModal.showCounter}

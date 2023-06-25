@@ -70,7 +70,12 @@ const CreateCharacter: FC = () => {
 
     const onSuccess = () => {
       setLoadingOpen(false);
-      navigate("/my-characters");
+
+      if (httpMethod === "POST") {
+        navigate("/my-characters");
+      } else {
+        navigate(`/character/${characterId}`);
+      }
       storeCtx?.openModal(
         <Box
           css={{
@@ -85,11 +90,13 @@ const CreateCharacter: FC = () => {
               textAlign: "center",
             }}
           >
-            Your Character has been created. Check the My Characters tab for your character.
+            {httpMethod === "POST"
+              ? "Your Character has been created. Check the My Characters tab for your character."
+              : "Changes to the character has been saved."}
           </Text>
         </Box>,
         "success",
-        "Character Created",
+        httpMethod === "POST" ? "Character Created" : "Character Saved",
         2_000
       );
     };

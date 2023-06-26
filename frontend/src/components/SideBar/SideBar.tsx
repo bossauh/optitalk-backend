@@ -113,7 +113,7 @@ const SideBar: FC<SideBarProps> = (props) => {
               size="sm"
               onPress={() => {
                 store?.setActiveSession(undefined);
-                navigate("/");
+                navigate("/chat");
               }}
             />
           </div>

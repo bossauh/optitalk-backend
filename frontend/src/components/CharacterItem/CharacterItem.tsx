@@ -166,6 +166,7 @@ const CharacterItem: FC<CharacterItemProps> = (props) => {
               } else {
                 store?.setActiveCharacter(props);
                 setCookie("activeCharacterId", props.id, { path: "/" });
+                navigate("/chat");
               }
               store?.setActiveSession(undefined);
             }}

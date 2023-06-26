@@ -6,7 +6,6 @@ eventlet.monkey_patch()
 
 import logging
 import os
-from typing import Optional
 
 import eventlet
 import flask_monitoringdashboard as flask_monitor
@@ -24,10 +23,6 @@ from flask_cors import CORS
 from flask_session import Session
 
 from database import mongoclass
-from models.character import Character
-from models.knowledge import Knowledge
-from models.state import UserPlanState
-from models.user import User
 
 coloredlogs.install(level="DEBUG")
 logger = logging.getLogger(__name__)

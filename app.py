@@ -98,48 +98,6 @@ class App:
         launch of a version. Things like transferring user data, etc.
         """
 
-        logger.info("Transferring old character knowledge to new...")
-        for character in Character.find_classes({}):
-            character: Character
-            if not character.knowledge:
-                continue
-
-            for k in character.knowledge:
-                knowledge = Knowledge(
-                    character_id=character.id,
-                    created_by=character.created_by,
-                    content=k,
-                )
-
-                try:
-                    knowledge.update_embeddings()
-                except Exception:
-                    logger.exception(
-                        f"Error converting knowledge '{k}' from character '{character}'."
-                    )
-
-                knowledge.save()
-
-            character.knowledge = []
-            character.save()
-            logger.info(f"Cleared old knowledge of '{character}'")
-
-        logger.info("Adjusting user plan states...")
-        for user in User.find_classes({}):
-            user: User
-            state: Optional[UserPlanState] = UserPlanState.find_class({"id": user.id})
-            if state is None:
-                continue
-
-            if (
-                state.basic_model_requests
-                > user.plan.max_basic_model_requests_per_month
-            ):
-                state.basic_model_requests = (
-                    user.plan.max_basic_model_requests_per_month
-                )
-                state.save()
-
     def start(self) -> None:
         logger.info("Starting OptiTalk...")
         self.register_index_route()

@@ -29,7 +29,7 @@ google_flow = Flow.from_client_secrets_file(
         "https://www.googleapis.com/auth/userinfo.email",
         "openid",
     ],
-    redirect_uri="http://optitalk.net/oauth/google-callback"
+    redirect_uri="https://optitalk.net/oauth/google-callback"
     if os.getenv("PRODUCTION")
     else "http://127.0.0.1:5000/oauth/google-callback",
 )
@@ -45,15 +45,18 @@ def setup(server: "App") -> Blueprint:
     @app.get("/google-oauth")
     def google_oauth():
         authorization_url, state = google_flow.authorization_url()
+
         session["google-oauth-state"] = state
+
         return redirect(authorization_url)
 
     @app.get("/google-callback")
     def google_oauth_callback():
-        google_flow.fetch_token(authorization_response=request.url)
-        time.sleep(1)
         if session["google-oauth-state"] != request.args["state"]:
             return responses.create_response(status_code=responses.CODE_500)
+
+        google_flow.fetch_token(authorization_response=request.url)
+        time.sleep(1)
 
         credentials = google_flow.credentials
         request_session = requests.session()

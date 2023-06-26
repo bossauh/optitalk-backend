@@ -22,17 +22,20 @@ logger = logging.getLogger(__name__)
 GOOGLE_CLIENT_ID = (
     "642032225194-h2pemvbhf6ueuiscfgdthsh9dqm399u5.apps.googleusercontent.com"
 )
-google_flow = Flow.from_client_secrets_file(
-    client_secrets_file=os.path.join(os.getcwd(), "data", "google-client-secret.json"),
-    scopes=[
-        "https://www.googleapis.com/auth/userinfo.profile",
-        "https://www.googleapis.com/auth/userinfo.email",
-        "openid",
-    ],
-    redirect_uri="https://optitalk.net/oauth/google-callback"
-    if os.getenv("PRODUCTION")
-    else "http://127.0.0.1:5000/oauth/google-callback",
-)
+
+def get_flow():
+    google_flow = Flow.from_client_secrets_file(
+        client_secrets_file=os.path.join(os.getcwd(), "data", "google-client-secret.json"),
+        scopes=[
+            "https://www.googleapis.com/auth/userinfo.profile",
+            "https://www.googleapis.com/auth/userinfo.email",
+            "openid",
+        ],
+        redirect_uri="https://optitalk.net/oauth/google-callback"
+        if os.getenv("PRODUCTION")
+        else "http://127.0.0.1:5000/oauth/google-callback",
+    )
+    return google_flow
 
 # TODO: Remove in production
 os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
@@ -44,6 +47,7 @@ def setup(server: "App") -> Blueprint:
 
     @app.get("/google-oauth")
     def google_oauth():
+        google_flow = get_flow()
         authorization_url, state = google_flow.authorization_url()
 
         session["google-oauth-state"] = state
@@ -54,6 +58,8 @@ def setup(server: "App") -> Blueprint:
     def google_oauth_callback():
         if session["google-oauth-state"] != request.args["state"]:
             return responses.create_response(status_code=responses.CODE_500)
+        
+        google_flow = get_flow()
 
         google_flow.fetch_token(authorization_response=request.url)
         time.sleep(1)

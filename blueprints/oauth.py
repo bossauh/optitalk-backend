@@ -23,9 +23,12 @@ GOOGLE_CLIENT_ID = (
     "642032225194-h2pemvbhf6ueuiscfgdthsh9dqm399u5.apps.googleusercontent.com"
 )
 
+
 def get_flow():
     google_flow = Flow.from_client_secrets_file(
-        client_secrets_file=os.path.join(os.getcwd(), "data", "google-client-secret.json"),
+        client_secrets_file=os.path.join(
+            os.getcwd(), "data", "google-client-secret.json"
+        ),
         scopes=[
             "https://www.googleapis.com/auth/userinfo.profile",
             "https://www.googleapis.com/auth/userinfo.email",
@@ -36,6 +39,7 @@ def get_flow():
         else "http://127.0.0.1:5000/oauth/google-callback",
     )
     return google_flow
+
 
 # TODO: Remove in production
 os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
@@ -51,17 +55,17 @@ def setup(server: "App") -> Blueprint:
         authorization_url, state = google_flow.authorization_url()
 
         session["google-oauth-state"] = state
+        time.sleep(0.7)
 
         return redirect(authorization_url)
 
     @app.get("/google-callback")
     def google_oauth_callback():
         google_flow = get_flow()
-        time.sleep(0.1)
+        time.sleep(0.6)
 
         if session["google-oauth-state"] != request.args["state"]:
             return responses.create_response(status_code=responses.CODE_500)
-        
 
         google_flow.fetch_token(authorization_response=request.url)
         time.sleep(1)

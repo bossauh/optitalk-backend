@@ -125,7 +125,7 @@ def setup(server: "App") -> Blueprint:
             return responses.create_response(
                 status_code=responses.CODE_409,
                 payload={
-                    "message": "You have reached your maximum amount of characters. Either upgrade to a higher plan or delete some of your old characters."
+                    "message": "You have reached your maximum amount of characters. Either upgrade to OptiTalk+ for just 4.99$/month to get unlimited messages and characters or delete your previous characters."
                 },
             )
 

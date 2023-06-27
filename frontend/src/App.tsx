@@ -1,7 +1,11 @@
 /* eslint-disable react-hooks/exhaustive-deps */
+import { MantineProvider } from "@mantine/core";
+import { ModalsProvider } from "@mantine/modals";
 import { NextUIProvider, createTheme } from "@nextui-org/react";
+import { PayPalScriptProvider } from "@paypal/react-paypal-js";
 import { FC, useEffect, useState } from "react";
 import { useCookies } from "react-cookie";
+import { AiFillCheckCircle, AiFillWarning } from "react-icons/ai";
 import { RouterProvider, createBrowserRouter } from "react-router-dom";
 import socket from "./common/socket";
 import { CharacterType, GlobalModalPopupProps, SessionType, UserPlanDetails } from "./common/types";
@@ -10,6 +14,7 @@ import StoreContext from "./contexts/store";
 import "./index.css";
 
 // Components
+import { Notifications, notifications } from "@mantine/notifications";
 import CharacterBasicInformationEditor from "./components/CharacterBasicInformationEditor";
 import CharacterConversationEditor from "./components/CharacterConversationEditor";
 import CharacterKnowledgeEditor from "./components/CharacterKnowledgeEditor";
@@ -27,6 +32,18 @@ import Chat from "./routes/chat";
 import CreateCharacter from "./routes/create-character";
 import GoogleOAuth from "./routes/google-oauth";
 import MyAccount from "./routes/my-account";
+import OptitalkPlus from "./routes/optitalk-plus";
+
+const paypalOptions = {
+  clientId:
+    process.env.NODE_ENV === "development"
+      ? "ATWCvBPme3ENsidiBpqGCDWcNjB3pWygeA8vcTJ0hai1xWTM9UgOKo7eGbF8JVpXKMgpL6qmra4DanUM"
+      : "AbJ6Nu-m0TPh5bnQd2EpezR2RUqglatKGXuJvJtIvhmR1zMG5haEVbRz68BRRn1VgtpEfChNzwySfdNz",
+  intent: "subscription",
+  vault: true,
+  currency: "USD",
+  components: "buttons",
+};
 
 const theme = createTheme({
   type: "dark",
@@ -124,6 +141,10 @@ const router = createBrowserRouter([
       },
     ],
   },
+  {
+    path: "/optitalk-plus",
+    element: <OptitalkPlus />,
+  },
 ]);
 
 const App: FC = () => {
@@ -146,19 +167,7 @@ const App: FC = () => {
     variant: "info",
   });
 
-  useEffect(() => {
-    if (activeCharacter === undefined && cookies.activeCharacterId) {
-      fetch(`/api/characters/details?character_id=${cookies.activeCharacterId}`)
-        .then((r) => r.json())
-        .then((d) => {
-          if (d.status_code === 200) {
-            setActiveCharacter(deserializeCharacterData(d.payload));
-          }
-        });
-    }
-  }, [cookies]);
-
-  useEffect(() => {
+  const fetchUserData = () => {
     setIsAuthenticating(true);
     fetch("/api/users/is-authenticated")
       .then((r) => r.json())
@@ -179,11 +188,31 @@ const App: FC = () => {
           setDisplayName(d.payload.display_name);
           setEmail(d.payload.email);
           setUserId(d.payload.id);
-          setUserPlanDetails(deserializeUserPlanDetails(d.payload.plan));
+
+          // Get plan details
+          let plan = deserializeUserPlanDetails(d.payload.plan);
+          setUserPlanDetails(plan);
+          console.debug("User Plan", plan);
         }
 
         setIsAuthenticating(false);
       });
+  };
+
+  useEffect(() => {
+    if (activeCharacter === undefined && cookies.activeCharacterId) {
+      fetch(`/api/characters/details?character_id=${cookies.activeCharacterId}`)
+        .then((r) => r.json())
+        .then((d) => {
+          if (d.status_code === 200) {
+            setActiveCharacter(deserializeCharacterData(d.payload));
+          }
+        });
+    }
+  }, [cookies]);
+
+  useEffect(() => {
+    fetchUserData();
   }, []);
 
   useEffect(() => {
@@ -199,14 +228,55 @@ const App: FC = () => {
   }, [userId]);
 
   useEffect(() => {
-    const listener = () => {
+    const dataTransferred = () => {
       window.location.reload();
     };
 
-    socket.on("user-data-transferred", listener);
+    const subscriptionActivated = () => {
+      notifications.show({
+        color: "teal",
+        title: "OptiTalk+ Activated!",
+        message: "You are now using OptiTalk+. The page will reload in a few seconds.",
+        icon: <AiFillCheckCircle />,
+        onClose: () => {
+          window.location.reload();
+        },
+      });
+    };
+
+    const subscriptionPaused = () => {
+      notifications.show({
+        color: "orange",
+        title: "Subscription Paused",
+        message:
+          "Your subscription has been paused. This could be because PayPal has failed to charge your account. Please visit your PayPal page.",
+        icon: <AiFillWarning />,
+        onClose: () => {
+          fetchUserData();
+        },
+      });
+    };
+    const subscriptionCancelled = () => {
+      notifications.show({
+        color: "red",
+        title: "Subscription Cancelled",
+        message: "Your subscription has been cancelled from within PayPal.",
+        onClose: () => {
+          fetchUserData();
+        },
+      });
+    };
+
+    socket.on("user-subscription-activated", subscriptionActivated);
+    socket.on("user-subscription-paused", subscriptionPaused);
+    socket.on("user-subscription-cancelled", subscriptionCancelled);
+    socket.on("user-data-transferred", dataTransferred);
 
     return () => {
-      socket.off("user-data-transferred", listener);
+      socket.off("user-subscription-activated", subscriptionActivated);
+      socket.off("user-subscription-paused", subscriptionPaused);
+      socket.off("user-subscription-cancelled", subscriptionCancelled);
+      socket.off("user-data-transferred", dataTransferred);
     };
   }, []);
 
@@ -243,16 +313,27 @@ const App: FC = () => {
             position: "relative",
           }}
         >
-          <HighTrafficWarning />
-          <GlobalModalPopup
-            content={globalModal.content}
-            showCounter={globalModal.showCounter}
-            variant={globalModal.variant}
-            hideIn={globalModal.hideIn}
-            title={globalModal.title}
-          />
-          {/* <FeedbackButton /> */}
-          <RouterProvider router={router} />
+          <MantineProvider
+            theme={{
+              colorScheme: "dark",
+            }}
+          >
+            <ModalsProvider>
+              <Notifications />
+              {/* <HighTrafficWarning /> */}
+              <GlobalModalPopup
+                content={globalModal.content}
+                showCounter={globalModal.showCounter}
+                variant={globalModal.variant}
+                hideIn={globalModal.hideIn}
+                title={globalModal.title}
+              />
+
+              <PayPalScriptProvider options={paypalOptions}>
+                <RouterProvider router={router} />
+              </PayPalScriptProvider>
+            </ModalsProvider>
+          </MantineProvider>
         </div>
       </StoreContext.Provider>
     </NextUIProvider>

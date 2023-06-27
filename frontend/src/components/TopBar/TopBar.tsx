@@ -12,12 +12,12 @@ import Box from "../Box";
 
 const links = [
   {
-    path: "/chat",
-    name: "Chat",
-  },
-  {
     path: "/",
     name: "Characters",
+  },
+  {
+    path: "/chat",
+    name: "Chat",
   },
 ];
 
@@ -75,7 +75,11 @@ const TopBar: FC<TopBarProps> = (props) => {
             let active = false;
 
             if (i.path === "/") {
-              active = location.pathname === "/" || location.pathname.startsWith("/s");
+              active =
+                location.pathname === "/" ||
+                location.pathname.startsWith("/public") ||
+                location.pathname.startsWith("/my-characters") ||
+                location.pathname.startsWith("/character/");
             } else {
               active = location.pathname.startsWith(i.path);
             }

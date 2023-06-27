@@ -8,7 +8,6 @@ import ActiveCharacterItem from "../components/ActiveCharacterItem";
 import Box from "../components/Box";
 import CharactersCategoryBar from "../components/CharactersCategoryBar";
 import CharactersView from "../components/CharactersView";
-import Footer from "../components/Footer";
 import SearchInput from "../components/SearchInput";
 import StoreContext from "../contexts/store";
 
@@ -36,7 +35,7 @@ const Characters: FC = () => {
   return (
     <Container
       css={{
-        mt: "50px",
+        mt: "20px",
         display: "flex",
         flexDirection: "column",
         gap: "30px",
@@ -90,13 +89,6 @@ const Characters: FC = () => {
         >
           {outlet || <CharactersView key={"featured"} params={{ featured: "true" }} />}
         </CharactersContext.Provider>
-      </Box>
-      <Box
-        css={{
-          mx: "auto",
-        }}
-      >
-        <Footer />
       </Box>
     </Container>
   );

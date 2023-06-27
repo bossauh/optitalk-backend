@@ -74,6 +74,16 @@ export function deserializeKnowledge(data: any): KnowledgeType {
 }
 
 export function deserializeUserPlanDetails(data: any): UserPlanDetails {
+  let status: "pending" | "activated" | null = null;
+
+  if (data.subscription_id) {
+    if (data.id === "free") {
+      status = "pending";
+    } else if (data.id === "basic") {
+      status = "activated";
+    }
+  }
+
   return {
     characters: data.characters,
     id: data.id,
@@ -82,6 +92,8 @@ export function deserializeUserPlanDetails(data: any): UserPlanDetails {
     name: data.name,
     requests: data.requests,
     verified: data.verified,
+    subscriptionId: data.subscription_id,
+    subscriptionStatus: status,
   };
 }
 

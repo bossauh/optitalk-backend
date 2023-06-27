@@ -133,3 +133,5 @@ POST_TASKS_SESSION_AUTO_LABELED = Schema(
     {Required("user_id"): str, Required("new_name"): str, Required("session_id"): str}
 )
 POST_TASKS_USER_DATA_TRANSFERRED = Schema({Required("user_id"): str})
+POST_ADD_SUBSCRIPTION_ID = Schema({Required("id"): str})
+POST_SUBSCRIPTION_CANCEL = Schema({Required("reason"): str})

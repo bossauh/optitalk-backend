@@ -1,44 +1,23 @@
 {
   "free": {
-    "max_basic_model_requests_per_month": 1000,
-    "max_advanced_model_requests_per_month": 80,
+    "max_basic_model_requests_per_hour": 20,
+    "max_advanced_model_requests_per_hour": 10,
     "max_session_history": 25,
     "max_characters": 8,
     "name": "Free"
   },
   "basic": {
-    "max_basic_model_requests_per_month": 2500,
-    "max_advanced_model_requests_per_month": 30,
+    "max_basic_model_requests_per_hour": 2500,
+    "max_advanced_model_requests_per_hour": 80,
     "max_session_history": 25,
-    "max_characters": 200,
-    "name": "Basic"
-  },
-  "premium": {
-    "max_basic_model_requests_per_month": 10000,
-    "max_advanced_model_requests_per_month": 500,
-    "max_session_history": 100,
-    "max_characters": 1000,
-    "name": "Premium"
-  },
-  "advanced": {
-    "max_basic_model_requests_per_month": 17000,
-    "max_advanced_model_requests_per_month": 1500,
-    "max_session_history": 100,
-    "max_characters": 5000,
-    "name": "Advanced"
+    "max_characters": 10000,
+    "name": "Plus"
   },
   "anonymous": {
-    "max_basic_model_requests_per_month": 20,
-    "max_advanced_model_requests_per_month": 10,
+    "max_basic_model_requests_per_hour": 5,
+    "max_advanced_model_requests_per_hour": 10,
     "max_session_history": 30,
     "max_characters": 8,
     "name": "Anonymous"
-  },
-  "donator": {
-    "max_basic_model_requests_per_month": 1000,
-    "max_advanced_model_requests_per_month": 10,
-    "max_session_history": 500,
-    "max_characters": 150,
-    "name": "Donator"
   }
 }

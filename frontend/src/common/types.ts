@@ -8,6 +8,8 @@ export interface UserPlanDetails {
   name: string;
   requests: number;
   verified: boolean;
+  subscriptionId?: string | null;
+  subscriptionStatus: "pending" | "activated" | null;
 }
 
 export interface StoreContextType {

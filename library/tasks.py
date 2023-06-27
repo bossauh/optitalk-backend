@@ -237,22 +237,22 @@ def log_time_took_metric(**params):
 
 
 @app.task
-def reset_users_state_monthly_cap():
+def reset_users_state_hourly_cap():
     states: Generator[UserPlanState, None, None] = UserPlanState.find_classes({})
     for state in states:
-        if time.time() - state.timestamp >= 2.628e6:
+        if time.time() - state.timestamp >= 3600:
             state.advanced_model_requests = 0
             state.basic_model_requests = 0
             state.timestamp = time.time()
             state.save()
 
-            logger.info(f"Reset monthly cap for user '{state.id}'")
+            logger.info(f"Reset hourly cap for user '{state.id}'")
 
 
 @app.on_after_configure.connect
 def setup_periodic_tasks(sender, **kwargs):
     sender.add_periodic_task(
         schedule=10.0,
-        sig=reset_users_state_monthly_cap.s(),
-        name="reset users monthly cap",
+        sig=reset_users_state_hourly_cap.s(),
+        name="reset users hourly cap",
     )

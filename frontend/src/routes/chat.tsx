@@ -59,9 +59,9 @@ const Chat: FC = () => {
           let message: string;
           if (!storeCtx?.authenticated) {
             message =
-              "Oops! It seems like you've hit the limit of 20 messages per month on your unregistered account. I did this to reduce spam. You can login and get 1,000 more messages. Additionally, donator plans are also available [here](https://www.buymeacoffee.com/philippemathew/membership) which provides up to thousands of messages, it is also a way for you to support me and the development of this project as this can get quite expensive to operate.";
+              "Oops! It seems like you've hit the limit of 5 messages per hour on non-registered accounts. Please register your account by clicking the Sign Up button at the sidebar to continue.";
           } else {
-            message = `Oh no! It seems you've reached your current limit, which allows for a maximum of ${d.payload.limit} messages per month. You can [pick a subscription plan here](https://www.buymeacoffee.com/philippemathew/membership) in order to get more messages as well as support me and the development of this project.`;
+            message = `Oh no! It seems you've reached the 20 messages per hour limit. You can either wait for an hour or [upgrade to OptiTalk+](/optitalk-plus) to enjoy unlimited messages, characters, and many more benefits for just 4.99$.`;
           }
 
           setError({ message: message });
@@ -76,7 +76,8 @@ const Chat: FC = () => {
       .catch((error) => {
         setShowTyping(false);
         setError({
-          message: "An error occurred while trying to send a request to the OptiTalk API. Please try again.",
+          message:
+            "Too much traffic. Please retry. This is a temporary problem that we are working on solving as soon as possible.",
         });
         console.error(error);
       });

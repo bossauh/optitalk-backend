@@ -25,10 +25,9 @@ const DarkOverlay: FC<DarkOverlayProps> = (props) => {
         position: "fixed",
         zIndex: props.zIndex || 201,
         backgroundColor: props.active ? "rgba(0, 0, 0, 0.5)" : "rgba(0, 0, 0, 0)",
-        transition: `background-color 0.2s, opacity 0.2s, visibility 0.2s, blur 0.1s`,
+        transition: `background-color 0.2s, opacity 0.2s, visibility 0.2s`,
         visibility: shown ? "visible" : "hidden",
         opacity: shown ? 1 : 0,
-        backdropFilter: shown ? "blur(2px)" : "blur(0px)",
       }}
       onClick={() => {
         props.setActive(false);

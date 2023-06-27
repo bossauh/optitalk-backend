@@ -14,11 +14,8 @@ from library.configlib import config
 from library.exceptions import *
 from library.gpt import gpt
 from library.security import route_security
-from library.tasks import (
-    increase_model_requests_state,
-    insert_message,
-    log_time_took_metric,
-)
+from library.tasks import (increase_model_requests_state, insert_message,
+                           log_time_took_metric)
 from openai.embeddings_utils import cosine_similarity, get_embedding
 
 from models.knowledge import Knowledge
@@ -267,11 +264,11 @@ class Character:
             UserPlanState(id=user_id).save()
         else:
             requests_count = state.advanced_model_requests
-            cap = user.plan.max_advanced_model_requests_per_month
+            cap = user.plan.max_advanced_model_requests_per_hour
             model_type = "advanced"
             if self.parameters.model in ("gpt-3.5-turbo", "gpt-4"):
                 requests_count = state.basic_model_requests
-                cap = user.plan.max_basic_model_requests_per_month
+                cap = user.plan.max_basic_model_requests_per_hour
                 model_type = "basic"
 
             logger.debug(f"{requests_count=} | {cap=} | {model_type=}")
@@ -289,7 +286,7 @@ class Character:
                 }
             )
             .sort("_id", -1)
-            .limit(user.plan.max_session_history if not is_rapid_api else 100)
+            .limit(user.plan.max_session_history)
         )
         messages.reverse()
         fetch_messages_et = time.perf_counter() - fetch_messages_st

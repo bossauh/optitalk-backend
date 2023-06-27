@@ -15,20 +15,21 @@ from .state import UserPlanState
 class Plan:
     id: str = "free"
     verified: bool = False
+    subscription_id: Optional[str] = None
     restrictions: dict = dataclasses.field(default_factory=lambda: {})
 
     @property
-    def max_basic_model_requests_per_month(self) -> int:
+    def max_basic_model_requests_per_hour(self) -> int:
         return self.restrictions.get(
-            "max_basic_model_requests_per_month",
-            config.plans[self.id]["max_basic_model_requests_per_month"],
+            "max_basic_model_requests_per_hour",
+            config.plans[self.id]["max_basic_model_requests_per_hour"],
         )
 
     @property
-    def max_advanced_model_requests_per_month(self) -> int:
+    def max_advanced_model_requests_per_hour(self) -> int:
         return self.restrictions.get(
-            "max_advanced_model_requests_per_month",
-            config.plans[self.id]["max_advanced_model_requests_per_month"],
+            "max_advanced_model_requests_per_hour",
+            config.plans[self.id]["max_advanced_model_requests_per_hour"],
         )
 
     @property
@@ -63,8 +64,9 @@ class Plan:
             "id": self.id,
             "verified": self.verified,
             "name": self.name,
-            "max_requests": self.max_basic_model_requests_per_month,
+            "max_requests": self.max_basic_model_requests_per_hour,
             "max_characters": self.max_characters,
+            "subscription_id": self.subscription_id,
         }
         if state is not None:
             data["requests"] = state.basic_model_requests
@@ -103,6 +105,9 @@ class User:
     @property
     def applications(self) -> Generator[Application, None, None]:
         return Application.find_classes({"user_id": self.id})
+
+    def __str__(self) -> str:
+        return f"{self.display_name} - {self.email} ({self.id})"
 
     def to_json(self) -> dict:
         """

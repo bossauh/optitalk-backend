@@ -137,7 +137,7 @@ const Message: FC<MessageProps> = (props) => {
         </Box>
         <Box
           css={{
-            bg: props.role === "user" ? "$primary" : props.error ? "$error" : "$accents1",
+            bg: props.role === "user" ? "$primary" : props.error ? "$red300" : "$accents1",
             borderRadius: "15px",
             padding: "10px",
             maxWidth: "700px",

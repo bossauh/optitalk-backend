@@ -76,7 +76,7 @@ const CharacterView: FC = () => {
           }}
           size="sm"
           onPress={() => {
-            navigate("/");
+            navigate(-1);
           }}
         />
       </Box>

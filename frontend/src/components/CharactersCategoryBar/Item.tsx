@@ -43,6 +43,11 @@ const Item: FC<{ title: string; path: string; top?: boolean; bottom?: boolean; n
       onPress={() => {
         navigate(props.path);
       }}
+      onMouseDown={(e) => {
+        if (e.button === 1) {
+          window.open(props.path, "_blank");
+        }
+      }}
       icon={
         props.new ? (
           <Badge color="primary" size="xs">

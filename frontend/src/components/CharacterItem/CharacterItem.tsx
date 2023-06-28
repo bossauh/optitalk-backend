@@ -45,6 +45,14 @@ const CharacterItem: FC<CharacterItemProps> = (props) => {
     setIsOwner(false);
   }, [store?.userId]);
 
+  const openCharacter = (newTab: boolean) => {
+    if (newTab) {
+      let popup = window.open("/character/" + props.id, "_blank");
+    } else {
+      navigate("/character/" + props.id);
+    }
+  };
+
   return (
     <Card
       css={{
@@ -58,7 +66,13 @@ const CharacterItem: FC<CharacterItemProps> = (props) => {
       isPressable
       variant="shadow"
       onPress={() => {
-        navigate("/character/" + props.id);
+        openCharacter(false);
+      }}
+      onMouseDown={(e) => {
+        if (e.button === 1) {
+          openCharacter(true);
+          e.preventDefault();
+        }
       }}
     >
       <Card.Header

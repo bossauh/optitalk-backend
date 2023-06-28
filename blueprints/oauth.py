@@ -55,14 +55,14 @@ def setup(server: "App") -> Blueprint:
         authorization_url, state = google_flow.authorization_url()
 
         session["google-oauth-state"] = state
-        time.sleep(0.7)
+        time.sleep(1)
 
         return redirect(authorization_url)
 
     @app.get("/google-callback")
     def google_oauth_callback():
         google_flow = get_flow()
-        time.sleep(0.6)
+        time.sleep(1)
 
         if session["google-oauth-state"] != request.args["state"]:
             return responses.create_response(status_code=responses.CODE_500)

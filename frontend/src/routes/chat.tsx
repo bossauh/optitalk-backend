@@ -156,6 +156,7 @@ const Chat: FC = () => {
         // pb: "30px",
         flexWrap: "nowrap",
         gap: "10px",
+        padding: 0,
       }}
       fluid
       responsive={false}

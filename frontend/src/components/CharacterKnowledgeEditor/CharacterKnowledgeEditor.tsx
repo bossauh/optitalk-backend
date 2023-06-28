@@ -84,7 +84,7 @@ const CharacterKnowledgeEditor: FC = () => {
                   required
                   maxLength={1024}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter") {
+                    if (e.key === "Enter" && !e.shiftKey) {
                       e.preventDefault();
                     }
                   }}
@@ -126,7 +126,7 @@ const CharacterKnowledgeEditor: FC = () => {
                   if (context) {
                     context.setKnowledge((prev) => {
                       let list = [...prev];
-                      list.push({ content: value });
+                      list.push({ content: value.trim() });
                       return list;
                     });
                   }

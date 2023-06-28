@@ -33,16 +33,29 @@ const Chat: FC = () => {
   };
   const messagesRef = useRef<HTMLDivElement | null>(null);
 
+  const getMessagePayload = (message: MessageType, session: SessionType) => {
+    let payload = {
+      character_id: message.characterId,
+      content: message.content,
+      session_id: session.id,
+    };
+
+    if (storeCtx?.authenticated && storeCtx.displayName) {
+      if (storeCtx.displayName.length < 100 && storeCtx.displayName.length > 0) {
+        // @ts-expect-error
+        payload.user_name = storeCtx.displayName;
+      }
+    }
+
+    return payload;
+  };
+
   const postMessage = (message: MessageType, session: SessionType) => {
     setShowTyping(true);
     fetch("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        character_id: message.characterId,
-        content: message.content,
-        session_id: session.id,
-      }),
+      body: JSON.stringify(getMessagePayload(message, session)),
     })
       .then((r) => r.json())
       .then((d) => {

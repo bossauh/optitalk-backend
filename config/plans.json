@@ -1,6 +1,6 @@
 {
   "free": {
-    "max_basic_model_requests_per_hour": 20,
+    "max_basic_model_requests_per_hour": 15,
     "max_advanced_model_requests_per_hour": 10,
     "max_session_history": 25,
     "max_characters": 8,
@@ -9,7 +9,7 @@
   "basic": {
     "max_basic_model_requests_per_hour": 2500,
     "max_advanced_model_requests_per_hour": 80,
-    "max_session_history": 25,
+    "max_session_history": 50,
     "max_characters": 10000,
     "name": "Plus"
   },

@@ -30,7 +30,7 @@ const Footer: FC = () => {
           </>
         ) : (
           <>
-            Messages are limited to <Text span> 20 messages per hour. </Text>{" "}
+            Messages are limited to <Text span> 15 messages per 3 hours. </Text>{" "}
             <Link
               onPress={() => {
                 navigate("/optitalk-plus");

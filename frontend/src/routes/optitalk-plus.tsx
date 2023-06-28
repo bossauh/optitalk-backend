@@ -8,6 +8,14 @@ import { useNavigate } from "react-router";
 const OptiTalkPlus: FC = () => {
   const navigate = useNavigate();
 
+  const addingSubscriptionIdFailed = () => {
+    notifications.show({
+      color: "red",
+      title: "Error while processing your PayPal payment.",
+      message: "Please contact philmattdev@gmail.com for immediate assistance.",
+    });
+  };
+
   return (
     <MediaQuery
       largerThan="lg"
@@ -179,14 +187,13 @@ const OptiTalkPlus: FC = () => {
                           .then((r) => r.json())
                           .then((d) => {
                             if (d.status_code !== 200) {
-                              notifications.show({
-                                color: "red",
-                                title: "Error while processing your PayPal payment.",
-                                message: "Please contact philmattdev@gmail.com for immediate assistance.",
-                              });
+                              addingSubscriptionIdFailed();
                             } else {
                               window.location.href = "/";
                             }
+                          })
+                          .catch(() => {
+                            addingSubscriptionIdFailed();
                           });
                       });
                     }}

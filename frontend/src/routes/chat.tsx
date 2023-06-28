@@ -61,7 +61,7 @@ const Chat: FC = () => {
             message =
               "Oops! It seems like you've hit the limit of 5 messages per hour on non-registered accounts. Please register your account by clicking the Sign Up button at the sidebar to continue.";
           } else {
-            message = `Oh no! It seems you've reached the 20 messages per hour limit. You can either wait for an hour or [upgrade to OptiTalk+](/optitalk-plus) to enjoy unlimited messages, characters, and many more benefits for just 4.99$.`;
+            message = `Oh no! It seems you've reached the 15 messages per 3 hours limit. You can either wait for 3 hours or [upgrade to OptiTalk+](/optitalk-plus) to enjoy unlimited messages, characters, and many more benefits for just 4.99$.`;
           }
 
           setError({ message: message });

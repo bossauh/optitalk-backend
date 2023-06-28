@@ -240,7 +240,7 @@ def log_time_took_metric(**params):
 def reset_users_state_hourly_cap():
     states: Generator[UserPlanState, None, None] = UserPlanState.find_classes({})
     for state in states:
-        if time.time() - state.timestamp >= 3600:
+        if time.time() - state.timestamp >= 10800:
             state.advanced_model_requests = 0
             state.basic_model_requests = 0
             state.timestamp = time.time()

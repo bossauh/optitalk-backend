@@ -7,6 +7,7 @@ import CharacterEditorContext from "../contexts/character-editor";
 import StoreContext from "../contexts/store";
 
 // Components
+import { Anchor, Flex } from "@mantine/core";
 import { deserializeCharacterFields, serializeCharacterFields } from "../common/utils";
 import Box from "../components/Box";
 import CharacterCreationNavBar from "../components/CharacterCreationNavBar/CharacterCreationNavBar";
@@ -184,6 +185,10 @@ const CreateCharacter: FC = () => {
   }, []);
 
   useEffect(() => {
+    storeCtx?.fetchUserData();
+  }, []);
+
+  useEffect(() => {
     console.info("Character Fields", characterFields);
   }, [characterFields]);
 
@@ -199,6 +204,38 @@ const CreateCharacter: FC = () => {
       }}
     >
       <TopBarSecondary title={characterId ? "Edit Character" : "Create a Character"} />
+      <Box>
+        {(storeCtx?.userPlanDetails?.characters || 0) >= (storeCtx?.userPlanDetails?.maxCharacters || 0) ? (
+          <Flex direction="column" gap={2}>
+            <Text color="warning">
+              You have already reached or exceeded your maximum characters of {storeCtx?.userPlanDetails?.maxCharacters}
+            </Text>
+            <Text size="$sm">
+              You can subscribe to <Anchor href="/optitalk-plus">OptiTalk+</Anchor> to get unlimited characters and
+              messages.
+            </Text>
+          </Flex>
+        ) : storeCtx?.userPlanDetails?.id === "basic" ? (
+          <Text>
+            You are using{" "}
+            <Text span color="primary">
+              OptiTalk+
+            </Text>
+            . You can create unlimited characters.
+          </Text>
+        ) : (
+          <Flex direction="column" gap={2}>
+            <Text>
+              You have created {storeCtx?.userPlanDetails?.characters} out of {storeCtx?.userPlanDetails?.maxCharacters}{" "}
+              characters.
+            </Text>
+            <Text size="$sm">
+              You can subscribe to <Anchor href="/optitalk-plus">OptiTalk+</Anchor> to get unlimited characters and
+              messages.
+            </Text>
+          </Flex>
+        )}
+      </Box>
 
       <CharacterEditorContext.Provider
         value={{

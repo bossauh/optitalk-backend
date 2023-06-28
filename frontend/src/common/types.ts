@@ -33,6 +33,7 @@ export interface StoreContextType {
   ) => void;
 
   userPlanDetails?: UserPlanDetails;
+  fetchUserData: () => void;
 }
 
 export interface CharacterViewOutletContextType {

@@ -305,6 +305,7 @@ const App: FC = () => {
             });
           },
           userPlanDetails: userPlanDetails,
+          fetchUserData: fetchUserData,
         }}
       >
         <div

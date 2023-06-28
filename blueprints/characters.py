@@ -7,7 +7,7 @@ from flask import Blueprint, request
 from library import responses, schemas, tasks, utils
 from library.configlib import config
 from library.security import route_security
-from models.character import Character, CharacterParameters
+from models.character import Character, CharacterParameters, FavoriteCharacter
 from models.knowledge import Knowledge
 from models.user import User
 
@@ -49,6 +49,60 @@ def setup(server: "App") -> Blueprint:
 
         return responses.create_response(payload=character.to_json())
 
+    @app.post("/add-to-favorites")
+    @route_security.request_args_schema(schema=schemas.POST_CHARACTERS_ADD_TO_FAVORITES)
+    def add_to_favorites():
+        """
+        Add a character to your favorites.
+        """
+
+        user_id = utils.get_user_id_from_request()
+        if user_id is None:
+            return responses.create_response(status_code=responses.CODE_400)
+
+        data = request.args
+        character_id = data["id"]
+        character: Optional[Character] = Character.find_class({"id": character_id})
+        if character is None:
+            return responses.create_response(status_code=responses.CODE_404)
+
+        if FavoriteCharacter.count_documents(
+            {"user_id": user_id, "character_id": character_id}
+        ):
+            return responses.create_response(status_code=responses.CODE_409)
+
+        if character.private and character.created_by != user_id:
+            return responses.create_response(status_code=responses.CODE_403)
+
+        FavoriteCharacter(user_id=user_id, character_id=character.id).save()
+
+        return responses.create_response()
+
+    @app.delete("/remove-from-favorites")
+    @route_security.request_args_schema(
+        schema=schemas.DELETE_CHARACTERS_ADD_TO_FAVORITES
+    )
+    def remove_from_favorites():
+        user_id = utils.get_user_id_from_request()
+        if user_id is None:
+            return responses.create_response(status_code=responses.CODE_400)
+
+        data = request.args
+        character_id = data["id"]
+        character: Optional[Character] = Character.find_class({"id": character_id})
+        if character is None:
+            return responses.create_response(status_code=responses.CODE_404)
+
+        fc = FavoriteCharacter.find_class(
+            {"user_id": user_id, "character_id": character_id}
+        )
+        if not fc:
+            return responses.create_response(status_code=responses.CODE_404)
+
+        fc.delete()
+
+        return responses.create_response()
+
     @app.get("/")
     @route_security.request_args_schema(schema=schemas.GET_CHARACTERS)
     @route_security.exclude
@@ -65,13 +119,21 @@ def setup(server: "App") -> Blueprint:
             or request.args.get("private", "False").lower() == "true"
         )
         featured = request.args.get("featured", "False").lower() == "true"
+        favorites = request.args.get("favorites", "False").lower() == "true"
         sort = request.args.get("sort", "latest")
         q = request.args.get("q")
+        user_id = utils.get_user_id_from_request()
 
         query = {"private": False}
 
+        if favorites:
+            favorite_ids = [
+                x.character_id
+                for x in FavoriteCharacter.find_classes({"user_id": user_id})
+            ]
+            query["id"] = {"$in": favorite_ids}
+
         if my_characters:
-            user_id = utils.get_user_id_from_request()
             query = {"created_by": user_id}
 
         if featured:

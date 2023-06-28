@@ -15,6 +15,7 @@ const CharacterView: FC = () => {
   const navigate = useNavigate();
 
   const [details, setDetails] = useState<CharacterType>();
+  const [favorite, setFavorite] = useState(false);
   const [loading, setLoading] = useState(true);
   const [sessions, setSessions] = useState(0);
   const outlet = useOutlet({ details: details });
@@ -31,6 +32,7 @@ const CharacterView: FC = () => {
         if (d.status_code === 200) {
           const deserialized = deserializeCharacterData(d.payload);
           setDetails(deserialized);
+          setFavorite(deserialized.favorite);
         }
       })
       .catch((e) => {
@@ -122,6 +124,7 @@ const CharacterView: FC = () => {
                   display: "flex",
                   flexDirection: "column",
                   gap: "5px",
+                  alignItems: "center",
                 }}
               >
                 <Button
@@ -149,6 +152,33 @@ const CharacterView: FC = () => {
                     Edit
                   </Button>
                 )}
+                <Tooltip content={!store?.authenticated ? "Please login to save characters" : undefined}>
+                  <Button
+                    size="xs"
+                    disabled={!store?.authenticated}
+                    onPress={() => {
+                      let url = "/api/characters/add-to-favorites";
+                      let method = "POST";
+
+                      if (favorite) {
+                        url = "/api/characters/remove-from-favorites";
+                        method = "DELETE";
+                      }
+
+                      fetch(url + "?id=" + details.id, { method: method })
+                        .then((r) => r.json())
+                        .then((d) => {
+                          if (favorite) {
+                            setFavorite(false);
+                          } else {
+                            setFavorite(true);
+                          }
+                        });
+                    }}
+                  >
+                    {favorite ? "Unfavorite" : "Add to Favorites"}
+                  </Button>
+                </Tooltip>
               </Box>
             </Box>
             <Box>

@@ -24,6 +24,7 @@ export function deserializeCharacterData(data: any): CharacterType {
     private: data.private,
     uses: data.uses,
     responseStyles: data.response_styles,
+    favorite: data.favorite,
   };
 }
 

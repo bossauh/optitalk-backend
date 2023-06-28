@@ -79,6 +79,7 @@ export interface CharacterType {
   private: boolean;
   uses: number;
   responseStyles: string[];
+  favorite: boolean;
 }
 
 export interface CharacterItemProps extends CharacterType {

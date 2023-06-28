@@ -14,8 +14,11 @@ from library.configlib import config
 from library.exceptions import *
 from library.gpt import gpt
 from library.security import route_security
-from library.tasks import (increase_model_requests_state, insert_message,
-                           log_time_took_metric)
+from library.tasks import (
+    increase_model_requests_state,
+    insert_message,
+    log_time_took_metric,
+)
 from openai.embeddings_utils import cosine_similarity, get_embedding
 
 from models.knowledge import Knowledge
@@ -96,6 +99,19 @@ class Character:
     def to_json(self) -> dict:
         data = dataclasses.asdict(self)
         data.pop("parameters", None)
+
+        try:
+            user_id = utils.get_user_id_from_request()
+        except Exception:
+            user_id = None
+
+        if user_id is not None:
+            if FavoriteCharacter.count_documents(
+                {"user_id": user_id, "character_id": self.id}
+            ):
+                data["favorite"] = True
+            else:
+                data["favorite"] = False
 
         return data
 
@@ -415,7 +431,6 @@ class Character:
 
 @mongoclass.mongoclass()
 @dataclasses.dataclass
-class CharacterUser:
+class FavoriteCharacter:
     user_id: str
     character_id: str
-    latest_session: str

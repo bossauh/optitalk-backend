@@ -17,11 +17,14 @@ const CharactersCategoryBar: FC = () => {
         "@mdMax": {
           width: "100%",
           flexDirection: "row",
+          flexWrap: "wrap",
+          borderRadius: "0px",
         },
       }}
     >
       <Item title="Featured" path="/" top />
       <Item title="Public" path="/public" />
+      <Item title="Favorites" path="/my-favorites" new />
       <Item title="My Characters" path="/my-characters" bottom />
     </Box>
   );

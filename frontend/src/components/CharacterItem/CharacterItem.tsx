@@ -1,8 +1,9 @@
 /* eslint-disable react-hooks/exhaustive-deps */
+import { notifications } from "@mantine/notifications";
 import { Button, Card, Text, Tooltip } from "@nextui-org/react";
 import { FC, useContext, useEffect, useState } from "react";
 import { useCookies } from "react-cookie";
-import { AiFillDelete, AiFillEdit } from "react-icons/ai";
+import { AiFillDelete, AiFillEdit, AiFillHeart, AiOutlineHeart } from "react-icons/ai";
 import { useNavigate } from "react-router-dom";
 import { CharacterItemProps } from "../../common/types";
 import { truncateText } from "../../common/utils";
@@ -17,6 +18,7 @@ const CharacterItem: FC<CharacterItemProps> = (props) => {
 
   const [descriptionLength, setDescriptionLength] = useState(110);
   const [isOwner, setIsOwner] = useState(false);
+  const [favorite, setFavorite] = useState(props.favorite);
 
   const [, setCookie, removeCookie] = useCookies(["activeCharacterId"]);
 
@@ -62,21 +64,75 @@ const CharacterItem: FC<CharacterItemProps> = (props) => {
       <Card.Header
         css={{
           gap: "10px",
+          justifyContent: "space-between",
         }}
       >
-        <img
-          src={props.image || "/images/character-icon.png"}
-          alt="Character"
-          width={40}
-          height={40}
-          style={{
-            borderRadius: "100px",
-            objectFit: "cover",
+        <Box
+          css={{
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
           }}
-        />
-        <Text size={18} b>
-          {props.name}
-        </Text>
+        >
+          <img
+            src={props.image || "/images/character-icon.png"}
+            alt="Character"
+            width={40}
+            height={40}
+            style={{
+              borderRadius: "100px",
+              objectFit: "cover",
+            }}
+          />
+          <Text size={18} b>
+            {props.name}
+          </Text>
+        </Box>
+        <Tooltip content={!store?.authenticated ? "Please login to favorite characters" : undefined}>
+          <Box>
+            <Button
+              icon={favorite ? <AiFillHeart size={18} /> : <AiOutlineHeart size={18} />}
+              size="sm"
+              css={{
+                maxW: "30px",
+                minWidth: "30px",
+              }}
+              // light
+              disabled={!store?.authenticated}
+              onPress={() => {
+                if (favorite) {
+                  fetch("/api/characters/remove-from-favorites?id=" + props.id, { method: "DELETE" })
+                    .then((r) => r.json())
+                    .then((d) => {
+                      if (d.status_code !== 200) {
+                        notifications.show({
+                          title: "Error removing character from favorites",
+                          message: "Please try again. If the problem persists, contact us.",
+                          color: "red",
+                        });
+                      } else {
+                        setFavorite(false);
+                      }
+                    });
+                } else {
+                  fetch("/api/characters/add-to-favorites?id=" + props.id, { method: "POST" })
+                    .then((r) => r.json())
+                    .then((d) => {
+                      if (d.status_code !== 200) {
+                        notifications.show({
+                          title: "Error adding character to favorites",
+                          message: "Please try again. If the problem persists, contact us.",
+                          color: "red",
+                        });
+                      } else {
+                        setFavorite(true);
+                      }
+                    });
+                }
+              }}
+            />
+          </Box>
+        </Tooltip>
       </Card.Header>
       <Card.Divider />
       <Card.Body

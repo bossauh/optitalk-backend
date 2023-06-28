@@ -83,6 +83,10 @@ const router = createBrowserRouter([
             path: "/public",
             element: <CharactersView />,
           },
+          {
+            path: "/my-favorites",
+            element: <CharactersView key="my-favorites" params={{ favorites: "true" }} />,
+          },
         ],
       },
       {

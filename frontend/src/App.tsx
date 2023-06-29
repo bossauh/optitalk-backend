@@ -50,9 +50,9 @@ const theme = createTheme({
   theme: {
     colors: {
       primaryTextGradient: "90deg, rgba(1,130,108,1) 0%, rgba(82,160,229,1) 100%",
-      primaryContainerBackground: "#131516",
+      primaryContainerBackground: "#141517",
 
-      background: "#0D0E10",
+      background: "#1A1B1E",
 
       primary: "#01826C",
       primaryShadow: "#016856",
@@ -74,20 +74,20 @@ const router = createBrowserRouter([
       {
         path: "",
         element: <Characters />,
-        children: [
-          {
-            path: "/my-characters",
-            element: <CharactersView key={"my-characters"} params={{ my_characters: "true" }} />,
-          },
-          {
-            path: "/public",
-            element: <CharactersView />,
-          },
-          {
-            path: "/my-favorites",
-            element: <CharactersView key="my-favorites" params={{ favorites: "true" }} />,
-          },
-        ],
+        // children: [
+        //   {
+        //     path: "/my-characters",
+        //     element: <CharactersView key={"my-characters"} params={{ my_characters: "true" }} />,
+        //   },
+        //   {
+        //     path: "/public",
+        //     element: <CharactersView />,
+        //   },
+        //   {
+        //     path: "/my-favorites",
+        //     element: <CharactersView key="my-favorites" params={{ favorites: "true" }} />,
+        //   },
+        // ],
       },
       {
         path: "/chat",
@@ -321,6 +321,7 @@ const App: FC = () => {
           <MantineProvider
             theme={{
               colorScheme: "dark",
+              primaryColor: "teal",
             }}
           >
             <ModalsProvider>

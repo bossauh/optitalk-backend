@@ -1,95 +1,239 @@
-import { Container, Dropdown } from "@nextui-org/react";
-import { FC, useContext, useEffect, useState } from "react";
-import { useOutlet, useSearchParams } from "react-router-dom";
-import CharactersContext from "../contexts/characters";
-
-// Components
-import ActiveCharacterItem from "../components/ActiveCharacterItem";
-import Box from "../components/Box";
-import CharactersCategoryBar from "../components/CharactersCategoryBar";
-import CharactersView from "../components/CharactersView";
-import SearchInput from "../components/SearchInput";
-import StoreContext from "../contexts/store";
+/* eslint-disable react-hooks/exhaustive-deps */
+import {
+  Container,
+  Flex,
+  Loader,
+  MediaQuery,
+  Pagination,
+  Tabs,
+  TabsValue,
+  Text,
+  Title,
+  useMantineTheme,
+} from "@mantine/core";
+import { useMediaQuery } from "@mantine/hooks";
+import { notifications } from "@mantine/notifications";
+import { FC, useEffect, useState } from "react";
+import { FaUserAlt } from "react-icons/fa";
+import { MdFavorite, MdFeaturedPlayList, MdPublic } from "react-icons/md";
+import { useSearchParams } from "react-router-dom";
+import { CharacterType } from "../common/types";
+import { deserializeCharacterData } from "../common/utils";
+import CharacterItem from "../components/CharacterItem";
+import CharactersSearchBox from "../components/CharactersSearchBox";
 
 const Characters: FC = () => {
-  const [searchQuery, setSearchQuery] = useState<string>();
-  const [sort, setSort] = useState<"uses" | "latest">("uses");
+  const [searchParams, setSearchParams] = useSearchParams({ tab: "featured", page: "1", sort: "uses", q: "" });
 
-  const outlet = useOutlet();
-  const [searchParams] = useSearchParams();
+  const [characters, setCharacters] = useState<CharacterType[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [maxPages, setMaxPages] = useState(1);
 
-  const storeCtx = useContext(StoreContext);
+  // Theme and layout states
+  const theme = useMantineTheme();
+  const isSm = useMediaQuery(`(max-width: ${theme.breakpoints.sm})`);
 
-  // Function to handle searches
-  const onSearch = (q: string) => {
-    setSearchQuery(q);
+  const onPageChange = (page: number) => {
+    let newParams = new URLSearchParams(searchParams);
+    newParams.set("page", page.toString());
+    setSearchParams(newParams);
   };
 
-  useEffect(() => {
-    const q = searchParams.get("q");
-    if (q) {
-      setSearchQuery(q);
+  const onTabsChange = (value: TabsValue) => {
+    let v = value?.toString();
+    if (v) {
+      let newParams = new URLSearchParams(searchParams);
+      newParams.set("tab", v);
+      newParams.set("page", "1");
+      setSearchParams(newParams);
     }
+  };
+
+  const deconstructTab = (value: string) => {
+    let params: { [key: string]: string } = {};
+    if (value === "featured") {
+      params.featured = "true";
+    } else if (value === "my-characters") {
+      params.my_characters = "true";
+    } else if (value === "favorites") {
+      params.favorites = "true";
+    }
+
+    return params;
+  };
+
+  const constructQueryUrl = () => {
+    let params: { [key: string]: string } = {
+      page: searchParams.get("page") as string,
+      page_size: "21",
+      sort: searchParams.get("sort") as string,
+      ...deconstructTab(searchParams.get("tab") as string),
+    };
+
+    if (searchParams.get("q")) {
+      params.q = searchParams.get("q") as string;
+    }
+
+    console.debug("Query Params", params);
+
+    // Create the query URL itself
+    const urlParams = new URLSearchParams(params);
+    const queryString = "?" + urlParams.toString();
+    const url = "/api/characters" + queryString;
+
+    return url;
+  };
+
+  const fetchCharacters = () => {
+    const url = constructQueryUrl();
+
+    const onError = () => {
+      notifications.show({
+        title: "An error has occurred while trying to fetch characters.",
+        message: "Please try again by reloading the page. If the error persists, contact us.",
+        color: "red",
+      });
+    };
+
+    setIsLoading(true);
+
+    fetch(url)
+      .then((r) => r.json())
+      .then((data) => {
+        console.debug("Results", data);
+        if (data.status_code !== 200) {
+          onError();
+        } else {
+          const deserialized = data.payload.data.map((item: any) => deserializeCharacterData(item));
+
+          setCharacters(deserialized);
+          setMaxPages(data.payload.pages);
+          setIsLoading(false);
+        }
+      });
+  };
+
+  const paginationBox = (
+    <Pagination
+      value={parseInt(searchParams.get("page") as string)}
+      total={maxPages}
+      size="sm"
+      onChange={onPageChange}
+    />
+  );
+
+  useEffect(() => {
+    fetchCharacters();
   }, [searchParams]);
 
   return (
-    <Container
-      css={{
-        mt: "20px",
-        display: "flex",
-        flexDirection: "column",
-        gap: "30px",
-        pb: "15px",
-      }}
-    >
-      {storeCtx?.activeCharacter && <ActiveCharacterItem {...storeCtx.activeCharacter} />}
-
-      <Box
-        css={{
-          display: "flex",
-          gap: "10px",
-          alignItems: "center",
+    <Container fluid mt="lg" mx="xs" mb="xl">
+      <CharactersSearchBox />
+      <MediaQuery
+        largerThan="sm"
+        styles={{
+          flexDirection: "row",
         }}
       >
-        <SearchInput placeholder="Search Character" onSearch={onSearch} defaultValue={searchParams.get("q") || ""} />
-        <Dropdown>
-          <Dropdown.Button size="sm">Sort By</Dropdown.Button>
-          <Dropdown.Menu
-            disallowEmptySelection
-            selectedKeys={[sort]}
-            selectionMode="single"
-            onSelectionChange={(e: any) => {
-              setSort(e.currentKey);
+        <Flex direction="column" gap="md" mt="lg">
+          <Tabs
+            value={searchParams.get("tab")}
+            orientation={isSm ? "horizontal" : "vertical"}
+            onTabChange={onTabsChange}
+          >
+            <Tabs.List>
+              <Tabs.Tab value="featured" icon={<MdFeaturedPlayList />}>
+                Featured
+              </Tabs.Tab>
+              <Tabs.Tab value="public" icon={<MdPublic />}>
+                Public
+              </Tabs.Tab>
+              <Tabs.Tab value="my-characters" icon={<FaUserAlt />}>
+                My Characters
+              </Tabs.Tab>
+              <Tabs.Tab value="favorites" icon={<MdFavorite color="red" />}>
+                Favorites
+              </Tabs.Tab>
+            </Tabs.List>
+          </Tabs>
+          <Container
+            fluid
+            sx={{
+              flex: 1,
+              width: "100%",
             }}
           >
-            <Dropdown.Item key="latest">Latest</Dropdown.Item>
-            <Dropdown.Item key="uses">Most Popular</Dropdown.Item>
-          </Dropdown.Menu>
-        </Dropdown>
-      </Box>
-
-      <Box
-        css={{
-          display: "flex",
-          alignItems: "start",
-          gap: "20px",
-          "@mdMax": {
-            flexDirection: "column",
-          },
-        }}
-      >
-        <CharactersCategoryBar />
-
-        <CharactersContext.Provider
-          value={{
-            query: searchQuery,
-            setQuery: setSearchQuery,
-            sort: sort,
-          }}
-        >
-          {outlet || <CharactersView key={"featured"} params={{ featured: "true" }} />}
-        </CharactersContext.Provider>
-      </Box>
+            <Flex direction="column" gap="sm">
+              {paginationBox}
+              {isLoading ? (
+                <Flex
+                  direction="column"
+                  gap="sm"
+                  mt="lg"
+                  sx={{
+                    alignSelf: "center",
+                  }}
+                  align="center"
+                >
+                  <Title
+                    order={3}
+                    sx={(theme) => ({
+                      color: theme.colors.dark[1],
+                    })}
+                  >
+                    Fetching Characters...
+                  </Title>
+                  <Loader size="md" />
+                </Flex>
+              ) : characters.length > 0 ? (
+                <MediaQuery
+                  largerThan="xs"
+                  styles={{
+                    flexDirection: "row",
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <Flex direction="column" gap="sm">
+                    {characters.map((i) => {
+                      return <CharacterItem key={i.id} {...i} />;
+                    })}
+                  </Flex>
+                </MediaQuery>
+              ) : (
+                <Flex
+                  direction="column"
+                  gap="xs"
+                  mt="xl"
+                  sx={{
+                    alignSelf: "center",
+                  }}
+                  align="center"
+                >
+                  <Title order={3}>
+                    {searchParams.get("q") && searchParams.get("tab") !== "favorites"
+                      ? "No results"
+                      : searchParams.get("tab") === "featured"
+                      ? "No featured characters"
+                      : searchParams.get("tab") === "my-characters"
+                      ? "You don't have any characters yet"
+                      : "No Favorite Characters"}
+                  </Title>
+                  <Text fz="sm" maw="350px" align="center">
+                    {searchParams.get("q") && searchParams.get("tab") !== "favorites"
+                      ? "Try a different search term instead."
+                      : searchParams.get("tab") === "featured"
+                      ? "This should NEVER happen. Please reload the site."
+                      : searchParams.get("tab") === "my-characters"
+                      ? `Create your first character by clicking the Create Character button at the top (or sidebar if you're in mobile).`
+                      : "You have no favorite characters yet. You can favorite a character by clicking on the heart icon beside the character's name."}
+                  </Text>
+                </Flex>
+              )}
+              {paginationBox}
+            </Flex>
+          </Container>
+        </Flex>
+      </MediaQuery>
     </Container>
   );
 };

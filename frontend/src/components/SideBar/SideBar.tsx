@@ -86,6 +86,7 @@ const SideBar: FC<SideBarProps> = (props) => {
         background: "$primaryContainerBackground",
         zIndex: 202,
       }}
+      variant="flat"
     >
       <Card.Header
         css={{

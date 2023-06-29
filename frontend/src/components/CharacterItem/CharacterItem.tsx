@@ -1,338 +1,213 @@
 /* eslint-disable react-hooks/exhaustive-deps */
+import {
+  ActionIcon,
+  Anchor,
+  Avatar,
+  Card,
+  Flex,
+  Group,
+  MediaQuery,
+  Menu,
+  Text,
+  ThemeIcon,
+  Title,
+  Tooltip,
+} from "@mantine/core";
+import { useClipboard } from "@mantine/hooks";
+import { modals } from "@mantine/modals";
 import { notifications } from "@mantine/notifications";
-import { Button, Card, Text, Tooltip } from "@nextui-org/react";
 import { FC, useContext, useEffect, useState } from "react";
-import { useCookies } from "react-cookie";
-import { AiFillDelete, AiFillEdit, AiFillHeart, AiOutlineHeart } from "react-icons/ai";
-import { useNavigate } from "react-router-dom";
-import { CharacterItemProps } from "../../common/types";
-import { truncateText, useMediaQuery } from "../../common/utils";
+import { AiFillDelete, AiFillEdit } from "react-icons/ai";
+import { BsFillChatDotsFill, BsRobot } from "react-icons/bs";
+import { HiEllipsisVertical } from "react-icons/hi2";
+import { IoCopy } from "react-icons/io5";
+import { MdFavorite, MdOutlineFavoriteBorder } from "react-icons/md";
+import { CharacterType } from "../../common/types";
+import { deleteCharacter, formatNumber, toggleFavorite } from "../../common/utils";
 import StoreContext from "../../contexts/store";
 
-// Components
-import Box from "../Box";
-import DeleteCharacter from "./DeleteCharacter";
-
-const CharacterItem: FC<CharacterItemProps> = (props) => {
+const CharacterItem: FC<CharacterType> = (props) => {
+  const clipboard = useClipboard();
   const store = useContext(StoreContext);
 
-  const [descriptionLength, setDescriptionLength] = useState(110);
-  const [isOwner, setIsOwner] = useState(false);
   const [favorite, setFavorite] = useState(props.favorite);
-  const isMobile = useMediaQuery("(max-width: 960px)");
-
-  const [, setCookie, removeCookie] = useCookies(["activeCharacterId"]);
-
-  const navigate = useNavigate();
+  const [isOwner, setIsOwner] = useState(false);
+  const [deleted, setDeleted] = useState(false);
 
   useEffect(() => {
-    let newState = 110;
-    if (props.personalities.length === 0) {
-      newState += 40;
-    }
-    if (props.favoriteWords.length === 0) {
-      newState += 40;
-    }
-    setDescriptionLength(isMobile ? 110 : newState);
-  }, [isMobile]);
-
-  useEffect(() => {
-    if (store?.userId) {
+    if (store?.authenticated && !store.isAuthenticating) {
       if (props.createdBy === store.userId) {
         setIsOwner(true);
         return;
       }
     }
     setIsOwner(false);
-  }, [store?.userId]);
-
-  const openCharacter = (newTab: boolean) => {
-    if (newTab) {
-      window.open("/character/" + props.id, "_blank");
-    } else {
-      navigate("/character/" + props.id);
-    }
-  };
+  }, [store?.authenticated, store?.isAuthenticating]);
 
   return (
-    <Card
-      css={{
-        w: "300px",
-        h: "400px",
-        transition: "height 0.15s, max-height 0.15s",
-        "@smMax": {
-          w: "280px",
-          h: "auto",
-          maxH: "300px",
-        },
-      }}
-      isHoverable
-      isPressable
-      variant="shadow"
-      onPress={() => {
-        openCharacter(false);
-      }}
-      onMouseDown={(e) => {
-        if (e.button === 1) {
-          openCharacter(true);
-          e.preventDefault();
-        }
+    <MediaQuery
+      largerThan="xs"
+      styles={{
+        width: "300px",
       }}
     >
-      <Card.Header
-        css={{
-          gap: "10px",
-          justifyContent: "space-between",
-        }}
-      >
-        <Box
-          css={{
-            display: "flex",
-            alignItems: "center",
-            gap: "10px",
-          }}
-        >
-          <img
-            src={props.image || "/images/character-icon.png"}
-            alt="Character"
-            width={35}
-            height={35}
-            style={{
-              borderRadius: "100px",
-              objectFit: "cover",
-            }}
-          />
-          <Text
-            size={18}
-            b
-            css={{
-              "@smMax": {
-                fontSize: "16px",
-              },
-            }}
-          >
-            {props.name}
-          </Text>
-        </Box>
-        <Tooltip content={!store?.authenticated ? "Please login to favorite characters" : undefined}>
-          <Box>
-            <Button
-              icon={favorite ? <AiFillHeart size={18} /> : <AiOutlineHeart size={18} />}
-              size="sm"
-              css={{
-                maxW: "30px",
-                minWidth: "30px",
-              }}
-              // light
-              disabled={!store?.authenticated}
-              bordered={!favorite}
-              onPress={() => {
-                if (favorite) {
-                  fetch("/api/characters/remove-from-favorites?id=" + props.id, { method: "DELETE" })
-                    .then((r) => r.json())
-                    .then((d) => {
-                      if (d.status_code !== 200) {
-                        notifications.show({
-                          title: "Error removing character from favorites",
-                          message: "Please try again. If the problem persists, contact us.",
-                          color: "red",
-                        });
-                      } else {
-                        setFavorite(false);
-                      }
-                    });
-                } else {
-                  fetch("/api/characters/add-to-favorites?id=" + props.id, { method: "POST" })
-                    .then((r) => r.json())
-                    .then((d) => {
-                      if (d.status_code !== 200) {
-                        notifications.show({
-                          title: "Error adding character to favorites",
-                          message: "Please try again. If the problem persists, contact us.",
-                          color: "red",
-                        });
-                      } else {
-                        setFavorite(true);
-                      }
-                    });
-                }
-              }}
-            />
-          </Box>
-        </Tooltip>
-      </Card.Header>
-      <Card.Divider />
-      <Card.Body
-        css={{
+      <Card
+        shadow="xs"
+        padding="xs"
+        radius="sm"
+        sx={{
+          overflow: "visible",
+          transition: "filter 0.2s",
+          position: "relative",
+          cursor: deleted ? "not-allowed" : "unset",
+          filter: deleted ? "grayscale(90%) opacity(0.8)" : "unset",
           display: "flex",
           flexDirection: "column",
-          gap: "10px",
         }}
       >
-        <Box
-          css={{
-            display: "flex",
-            gap: "2px",
-            flexDirection: "column",
-          }}
-        >
-          <Text h5>Description</Text>
-          <Text
-            css={{
-              color: "$accents8",
-              fontSize: "16px",
-              "@smMax": {
-                fontSize: "15px",
-              },
-            }}
+        {deleted && (
+          <Title
+            order={4}
+            sx={(theme) => ({
+              position: "absolute",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              background: theme.colors.dark[8],
+              padding: theme.spacing.md,
+              borderRadius: theme.radius.md,
+              zIndex: 400,
+            })}
           >
-            {truncateText(props.description, descriptionLength)}
-          </Text>
-        </Box>
-        <Text
-          css={{
-            display: "none",
-            color: "$accents8",
-            textDecoration: "underline",
-            "@smMax": {
-              display: "block",
-            },
-          }}
-          size="small"
-        >
-          See More
-        </Text>
-        <Box
-          css={{
-            "@smMax": {
-              display: "none",
-            },
-          }}
-        >
-          {props.favoriteWords.length > 0 && (
-            <Box
-              css={{
-                display: "flex",
-                gap: "7px",
-              }}
-            >
-              <Text h5>Favorite Words:</Text>
-              <Text
-                css={{
-                  color: "$accents8",
-                }}
-              >
-                {(function () {
-                  let joined = props.favoriteWords.join(", ");
-                  return truncateText(joined, 20);
-                })()}
-              </Text>
-            </Box>
-          )}
-          {props.personalities.length > 0 && (
-            <Box
-              css={{
-                display: "flex",
-                gap: "7px",
-              }}
-            >
-              <Text h5>Personalities:</Text>
-              <Text
-                css={{
-                  color: "$accents8",
-                }}
-              >
-                {(function () {
-                  let joined = props.personalities.join(", ");
-                  return truncateText(joined, 23);
-                })()}
-              </Text>
-            </Box>
-          )}
-        </Box>
-      </Card.Body>
-      <Card.Divider />
-      <Card.Footer
-        css={{
-          display: "block",
-        }}
-      >
-        <Box
-          css={{
-            display: "flex",
-            justifyContent: isOwner ? "space-between" : "center",
-            alignItems: "center",
-            gap: "10px",
-          }}
-        >
-          <Button
-            onPress={() => {
-              if (store?.activeCharacter?.id === props.id) {
-                store?.setActiveCharacter(undefined);
-                removeCookie("activeCharacterId", { path: "/" });
-              } else {
-                store?.setActiveCharacter(props);
-                setCookie("activeCharacterId", props.id, { path: "/" });
-                navigate("/chat");
-              }
-              store?.setActiveSession(undefined);
-            }}
-            shadow={store?.activeCharacter?.id === props.id}
-            auto
-            color={store?.activeCharacter?.id === props.id ? "error" : "primary"}
-            size="sm"
-            css={{
-              "@smMax": {
-                size: "25px",
-              },
-            }}
-          >
-            {store?.activeCharacter?.id === props.id ? "Unselect" : "Use Character"}
-          </Button>
-          {isOwner && (
-            <Box
-              css={{
-                display: "flex",
-                alignItems: "center",
-                gap: "5px",
-              }}
-            >
-              <Tooltip trigger="click" content={<DeleteCharacter id={props.id} onDelete={props.onDelete} />}>
-                <Button
-                  icon={<AiFillDelete />}
-                  color="error"
-                  css={{
-                    maxW: "40px",
-                    minWidth: "40px",
-                    "@smMax": {
-                      size: "25px",
-                    },
+            Character Deleted
+          </Title>
+        )}
+        <Card.Section withBorder inheritPadding py="xs">
+          <Group spacing="sm" position="apart" noWrap>
+            <Group spacing="xs" noWrap>
+              <Avatar src={props.image} color="default">
+                <BsRobot size="25px" />
+              </Avatar>
+              <Flex direction="column" gap={2}>
+                <MediaQuery
+                  largerThan="sm"
+                  styles={{
+                    maxWidth: "150px",
                   }}
-                  size="sm"
-                  bordered
-                />
+                >
+                  <Text truncate fz="sm">
+                    {props.name}
+                  </Text>
+                </MediaQuery>
+                <Group spacing={1}>
+                  <ThemeIcon variant="light" color="dark.1" size="xs">
+                    <BsFillChatDotsFill size={12} />
+                  </ThemeIcon>
+                  <Text fz="xs">{formatNumber(props.uses)}</Text>
+                </Group>
+              </Flex>
+            </Group>
+            <Group spacing="xs" noWrap>
+              <Tooltip
+                label={store?.authenticated ? undefined : "Please login to favorite characters."}
+                hidden={store?.authenticated}
+              >
+                <span>
+                  <ActionIcon
+                    color="teal"
+                    variant={favorite ? "filled" : "outline"}
+                    onClick={() => {
+                      toggleFavorite(props.id, props.name, favorite, setFavorite);
+                    }}
+                    disabled={!store?.authenticated}
+                  >
+                    {favorite ? <MdFavorite /> : <MdOutlineFavoriteBorder />}
+                  </ActionIcon>
+                </span>
               </Tooltip>
-              <Button
-                icon={<AiFillEdit />}
-                color="primary"
-                css={{
-                  maxW: "40px",
-                  minWidth: "40px",
-                  "@smMax": {
-                    size: "25px",
-                  },
-                }}
-                onPress={() => {
-                  navigate("/create-character?characterId=" + props.id);
-                }}
-                size="sm"
-                bordered
-              />
-            </Box>
-          )}
-        </Box>
-      </Card.Footer>
-    </Card>
+              <Menu>
+                <Menu.Target>
+                  <ActionIcon variant="light">
+                    <HiEllipsisVertical size={20} />
+                  </ActionIcon>
+                </Menu.Target>
+                <Menu.Dropdown>
+                  <Menu.Item
+                    icon={<IoCopy />}
+                    onClick={(e) => {
+                      clipboard.copy(`https://optitalk.net/character/${props.id}`);
+                      notifications.show({
+                        title: "URL Copied",
+                        message: <Anchor href={`/character/${props.id}`}>{props.name}</Anchor>,
+                        color: "blue",
+                      });
+                    }}
+                  >
+                    Copy URL
+                  </Menu.Item>
+
+                  {isOwner && (
+                    <>
+                      <Menu.Divider />
+                      <Menu.Label>Actions</Menu.Label>
+                      <Menu.Item icon={<AiFillEdit />} component="a" href={`/create-character?characterId=${props.id}`}>
+                        Edit
+                      </Menu.Item>
+                      <Menu.Item
+                        icon={<AiFillDelete />}
+                        color="red"
+                        onClick={() => {
+                          modals.openConfirmModal({
+                            title: "Are you sure you want to delete this character?",
+                            centered: true,
+                            children: (
+                              <Text size="sm">
+                                You cannot undo this action. Once the character is deleted, all messages and sessions
+                                related to it will be gone{" "}
+                                <Text span fw="bold">
+                                  PERMANENTLY
+                                </Text>
+                              </Text>
+                            ),
+                            labels: { confirm: "Delete", cancel: "Cancel" },
+                            confirmProps: { color: "red" },
+                            onConfirm: () =>
+                              deleteCharacter(props.id).then((s) => {
+                                if (s) setDeleted(true);
+                              }),
+                          });
+                        }}
+                      >
+                        Delete
+                      </Menu.Item>
+                    </>
+                  )}
+                </Menu.Dropdown>
+              </Menu>
+            </Group>
+          </Group>
+        </Card.Section>
+        <Flex
+          direction="column"
+          mt="xs"
+          gap="xs"
+          sx={{
+            flexGrow: 1,
+          }}
+        >
+          <Flex direction="column" gap={2}>
+            <Text fz="sm" lineClamp={3}>
+              {props.description}
+            </Text>
+          </Flex>
+        </Flex>
+        <Card.Section withBorder inheritPadding py="xs" mt="xs">
+          <Anchor fz="sm" underline href={`/character/${props.id}`}>
+            See More
+          </Anchor>
+        </Card.Section>
+      </Card>
+    </MediaQuery>
   );
 };
 

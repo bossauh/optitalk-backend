@@ -1,3 +1,4 @@
+import { notifications } from "@mantine/notifications";
 import { useEffect, useRef, useState } from "react";
 
 import {
@@ -197,3 +198,121 @@ export function useRenderTrigger() {
 
   return [renderCount, triggerRender];
 }
+
+export function getAvatar(url?: string | null) {
+  if (!url) {
+    return "/images/character-icon.png";
+  }
+  return url;
+}
+
+export function getBanner(url?: string | null) {
+  if (!url) {
+    return "/images/character-icon.png";
+  }
+  return url;
+}
+
+export function formatNumber(num: number) {
+  if (isNaN(num)) {
+    return "Input is not a number";
+  }
+
+  let sign = num >= 0 ? "" : "-"; // check if the number is negative
+  num = Math.abs(num);
+
+  if (num >= 1000000000) {
+    return sign + (num / 1000000000).toFixed(1) + "B"; // convert billions to "B"
+  } else if (num >= 1000000) {
+    return sign + (num / 1000000).toFixed(1) + "M"; // convert millions to "M"
+  } else if (num >= 1000) {
+    return sign + (num / 1000).toFixed(1) + "k"; // convert thousands to "k"
+  } else {
+    return sign + num; // if less than 1000, default to normal formatting
+  }
+}
+
+export const toggleFavorite = (
+  id: string,
+  name: string,
+  value: boolean,
+  setter: React.Dispatch<React.SetStateAction<boolean>>
+) => {
+  const onError = () => {
+    notifications.show({
+      title: "A error has occurred while trying to favorite a character.",
+      message: "Please try again. If the error persists, contact us.",
+      color: "red",
+    });
+  };
+
+  let url = "/api/characters/add-to-favorites";
+  let method = "POST";
+  if (value) {
+    url = "/api/characters/remove-from-favorites";
+    method = "DELETE";
+  }
+
+  fetch(url + "?id=" + id, { method: method })
+    .then((r) => r.json())
+    .then((d) => {
+      if (d.status_code !== 200) {
+        onError();
+      } else {
+        if (value) {
+          notifications.show({
+            title: "Removed from favorites.",
+            message: `Character "${name}" has been removed from your favorites.`,
+            color: "teal",
+          });
+        } else {
+          notifications.show({
+            title: "Added to favorites.",
+            message: `Character "${name}" has been added to your favorites.`,
+            color: "teal",
+          });
+        }
+        setter(!value);
+      }
+    })
+    .catch((e) => {
+      console.error(e);
+      onError();
+    });
+};
+
+export const deleteCharacter = (id: string) => {
+  let url = "/api/characters?character_id=" + id;
+
+  const onUnknownError = () => {
+    notifications.show({
+      title: "A unknown error has occurred",
+      message:
+        "A unknown error has occurred while trying to delete the character. Please try again. If the problem persists, contact us.",
+      color: "red",
+    });
+  };
+
+  return fetch(url, { method: "DELETE" })
+    .then((r) => r.json())
+    .then((d) => {
+      if (d.status_code === 404) {
+        notifications.show({
+          title: "Character not found",
+          message: "The character you're trying to delete either does not exist or you don't own it.",
+          color: "red",
+        });
+        return false;
+      } else if (d.status_code === 200) {
+        return true;
+      } else {
+        onUnknownError();
+        return false;
+      }
+    })
+    .catch((e) => {
+      onUnknownError();
+      console.error(e);
+      return false;
+    });
+};

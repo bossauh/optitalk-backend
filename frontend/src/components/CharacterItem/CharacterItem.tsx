@@ -6,7 +6,7 @@ import { useCookies } from "react-cookie";
 import { AiFillDelete, AiFillEdit, AiFillHeart, AiOutlineHeart } from "react-icons/ai";
 import { useNavigate } from "react-router-dom";
 import { CharacterItemProps } from "../../common/types";
-import { truncateText } from "../../common/utils";
+import { truncateText, useMediaQuery } from "../../common/utils";
 import StoreContext from "../../contexts/store";
 
 // Components
@@ -19,6 +19,7 @@ const CharacterItem: FC<CharacterItemProps> = (props) => {
   const [descriptionLength, setDescriptionLength] = useState(110);
   const [isOwner, setIsOwner] = useState(false);
   const [favorite, setFavorite] = useState(props.favorite);
+  const isMobile = useMediaQuery("(max-width: 960px)");
 
   const [, setCookie, removeCookie] = useCookies(["activeCharacterId"]);
 
@@ -32,8 +33,8 @@ const CharacterItem: FC<CharacterItemProps> = (props) => {
     if (props.favoriteWords.length === 0) {
       newState += 40;
     }
-    setDescriptionLength(newState);
-  }, []);
+    setDescriptionLength(isMobile ? 110 : newState);
+  }, [isMobile]);
 
   useEffect(() => {
     if (store?.userId) {
@@ -47,7 +48,7 @@ const CharacterItem: FC<CharacterItemProps> = (props) => {
 
   const openCharacter = (newTab: boolean) => {
     if (newTab) {
-      let popup = window.open("/character/" + props.id, "_blank");
+      window.open("/character/" + props.id, "_blank");
     } else {
       navigate("/character/" + props.id);
     }
@@ -58,8 +59,11 @@ const CharacterItem: FC<CharacterItemProps> = (props) => {
       css={{
         w: "300px",
         h: "400px",
+        transition: "height 0.15s, max-height 0.15s",
         "@smMax": {
           w: "280px",
+          h: "auto",
+          maxH: "300px",
         },
       }}
       isHoverable
@@ -91,14 +95,22 @@ const CharacterItem: FC<CharacterItemProps> = (props) => {
           <img
             src={props.image || "/images/character-icon.png"}
             alt="Character"
-            width={40}
-            height={40}
+            width={35}
+            height={35}
             style={{
               borderRadius: "100px",
               objectFit: "cover",
             }}
           />
-          <Text size={18} b>
+          <Text
+            size={18}
+            b
+            css={{
+              "@smMax": {
+                fontSize: "16px",
+              },
+            }}
+          >
             {props.name}
           </Text>
         </Box>
@@ -113,6 +125,7 @@ const CharacterItem: FC<CharacterItemProps> = (props) => {
               }}
               // light
               disabled={!store?.authenticated}
+              bordered={!favorite}
               onPress={() => {
                 if (favorite) {
                   fetch("/api/characters/remove-from-favorites?id=" + props.id, { method: "DELETE" })
@@ -167,12 +180,35 @@ const CharacterItem: FC<CharacterItemProps> = (props) => {
           <Text
             css={{
               color: "$accents8",
+              fontSize: "16px",
+              "@smMax": {
+                fontSize: "15px",
+              },
             }}
           >
             {truncateText(props.description, descriptionLength)}
           </Text>
         </Box>
-        <Box>
+        <Text
+          css={{
+            display: "none",
+            color: "$accents8",
+            textDecoration: "underline",
+            "@smMax": {
+              display: "block",
+            },
+          }}
+          size="small"
+        >
+          See More
+        </Text>
+        <Box
+          css={{
+            "@smMax": {
+              display: "none",
+            },
+          }}
+        >
           {props.favoriteWords.length > 0 && (
             <Box
               css={{
@@ -225,6 +261,7 @@ const CharacterItem: FC<CharacterItemProps> = (props) => {
           css={{
             display: "flex",
             justifyContent: isOwner ? "space-between" : "center",
+            alignItems: "center",
             gap: "10px",
           }}
         >
@@ -243,6 +280,12 @@ const CharacterItem: FC<CharacterItemProps> = (props) => {
             shadow={store?.activeCharacter?.id === props.id}
             auto
             color={store?.activeCharacter?.id === props.id ? "error" : "primary"}
+            size="sm"
+            css={{
+              "@smMax": {
+                size: "25px",
+              },
+            }}
           >
             {store?.activeCharacter?.id === props.id ? "Unselect" : "Use Character"}
           </Button>
@@ -261,7 +304,12 @@ const CharacterItem: FC<CharacterItemProps> = (props) => {
                   css={{
                     maxW: "40px",
                     minWidth: "40px",
+                    "@smMax": {
+                      size: "25px",
+                    },
                   }}
+                  size="sm"
+                  bordered
                 />
               </Tooltip>
               <Button
@@ -270,10 +318,15 @@ const CharacterItem: FC<CharacterItemProps> = (props) => {
                 css={{
                   maxW: "40px",
                   minWidth: "40px",
+                  "@smMax": {
+                    size: "25px",
+                  },
                 }}
                 onPress={() => {
                   navigate("/create-character?characterId=" + props.id);
                 }}
+                size="sm"
+                bordered
               />
             </Box>
           )}

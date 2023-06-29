@@ -14,7 +14,6 @@ import {
 import { useMediaQuery } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
 import { FC, useEffect, useState } from "react";
-import { AiFillRobot } from "react-icons/ai";
 import { FaUserAlt } from "react-icons/fa";
 import { MdFavorite, MdFeaturedPlayList, MdPublic } from "react-icons/md";
 import { useSearchParams } from "react-router-dom";

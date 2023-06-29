@@ -105,7 +105,6 @@ def get_total_tokens_from_messages(
     except KeyError:
         print("Warning: model not found. Using cl100k_base encoding.")
         encoding = tiktoken.get_encoding("cl100k_base")
-
     if model == "gpt-3.5-turbo":
         print(
             "Warning: gpt-3.5-turbo may change over time. Returning num tokens assuming gpt-3.5-turbo-0301."
@@ -116,9 +115,10 @@ def get_total_tokens_from_messages(
             "Warning: gpt-4 may change over time. Returning num tokens assuming gpt-4-0314."
         )
         return get_total_tokens_from_messages(messages, model="gpt-4-0314")
-
-    if model == "gpt-3.5-turbo-0301":
-        tokens_per_message = 4  # every message follows {role/name}\n{content}\n
+    elif model == "gpt-3.5-turbo-0301":
+        tokens_per_message = (
+            4  # every message follows <|start|>{role/name}\n{content}<|end|>\n
+        )
         tokens_per_name = -1  # if there's a name, the role is omitted
     elif model == "gpt-4-0314":
         tokens_per_message = 3
@@ -127,18 +127,14 @@ def get_total_tokens_from_messages(
         raise NotImplementedError(
             f"""num_tokens_from_messages() is not implemented for model {model}. See https://github.com/openai/openai-python/blob/main/chatml.md for information on how messages are converted to tokens."""
         )
-
-    num_tokens = (
-        tokens_per_message * len(messages) + len(messages) * 3
-    )  # every reply is primed with assistant
-    num_names = sum([1 for message in messages if "name" in message])
-    num_tokens += num_names * tokens_per_name
-
+    num_tokens = 0
     for message in messages:
+        num_tokens += tokens_per_message
         for key, value in message.items():
-            if key != "name":
-                num_tokens += len(encoding.encode(value))
-
+            num_tokens += len(encoding.encode(value))
+            if key == "name":
+                num_tokens += tokens_per_name
+    num_tokens += 3  # every reply is primed with <|start|>assistant<|message|>
     return num_tokens
 
 
@@ -154,11 +150,7 @@ def limit_chat_completion_tokens(
     if model == "gpt-4":
         token_cap = 8100
 
-    st = time.perf_counter()
     messages_tokens = get_total_tokens_from_messages(messages=messages)
-    et = time.perf_counter() - st
-    logger.debug(f"{messages_tokens} Tokens. Took {et} seconds to calculate.")
-
     total_tokens = messages_tokens + max_tokens
     if (total_tokens) <= token_cap:
         return messages, max_tokens

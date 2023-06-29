@@ -1,23 +1,19 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { Container } from "@nextui-org/react";
+import { ActionIcon, Flex, Textarea } from "@mantine/core";
 import { FC, useContext, useEffect, useRef, useState } from "react";
+import { BsFillSendFill } from "react-icons/bs";
 import { useParams } from "react-router-dom";
 import { v4 as uuidv4 } from "uuid";
 import { ChatErrorType, MessageType, SessionType } from "../common/types";
 import { deserializeMessageData, deserializeSessionData } from "../common/utils";
-import LayoutContext from "../contexts/layout";
-import StoreContext from "../contexts/store";
-
-// Components
 import Box from "../components/Box";
-import ChatBox from "../components/ChatBox";
 import Footer from "../components/Footer";
 import MessagesView from "../components/MessagesView";
 import NoCharacterSelected from "../components/NoCharacterSelected";
+import StoreContext from "../contexts/store";
 
 const Chat: FC = () => {
   const storeCtx = useContext(StoreContext);
-  const layoutCtx = useContext(LayoutContext);
 
   const { sessionId } = useParams();
 
@@ -32,6 +28,8 @@ const Chat: FC = () => {
     }
   };
   const messagesRef = useRef<HTMLDivElement | null>(null);
+
+  const chatboxRef = useRef<HTMLTextAreaElement | null>(null);
 
   const getMessagePayload = (message: MessageType, session: SessionType) => {
     let payload = {
@@ -110,6 +108,10 @@ const Chat: FC = () => {
     scrollToBottom();
     setError(undefined);
 
+    if (text.trim().length === 0) {
+      return;
+    }
+
     if (storeCtx?.activeCharacter === undefined || storeCtx.userId === undefined) {
       return;
     }
@@ -159,38 +161,24 @@ const Chat: FC = () => {
   }, [sessionId, storeCtx?.activeCharacter]);
 
   return (
-    <Container
-      css={{
-        mt: "30px",
-        position: "relative",
-        height: `calc(100vh - ${(layoutCtx?.topBarHeight === undefined ? 0 : layoutCtx.topBarHeight) + 30}px)`,
-        display: "flex",
-        flexDirection: "column",
-        // pb: "30px",
-        flexWrap: "nowrap",
-        gap: "10px",
-        padding: 0,
-      }}
-      fluid
-      responsive={false}
-    >
+    <Flex direction="column" gap="sm" h="100%">
       {storeCtx?.activeCharacter === undefined ? (
-        <>
+        <Flex
+          direction="column"
+          gap="xs"
+          align="center"
+          sx={{
+            flex: 1,
+            marginTop: "200px",
+          }}
+        >
           <NoCharacterSelected />
-          <Box css={{ flex: 1 }}></Box>
-        </>
+        </Flex>
       ) : (
         <Box
           css={{
-            flex: 1,
             overflowY: "auto",
-            mx: "100px",
-            "@mdMax": {
-              mx: "70px",
-            },
-            "@smMax": {
-              mx: "10px",
-            },
+            flex: 1,
           }}
           ref={messagesRef}
           onScroll={() => {
@@ -213,35 +201,51 @@ const Chat: FC = () => {
           />
         </Box>
       )}
-      <Box
-        css={{
-          display: "flex",
-          flexDirection: "column",
-          gap: "10px",
-          mx: "100px",
-          "@mdMax": {
-            mx: "70px",
-          },
-          "@smMax": {
-            mx: "10px",
-          },
-        }}
-      >
-        <ChatBox
+      <Flex direction="column" gap="xs">
+        {/* <ChatBox
           onSubmit={onSubmit}
           placeholder="Enter Chat"
+          disabled={storeCtx?.activeCharacter === undefined || showTyping}
+        /> */}
+        <Textarea
+          placeholder="Enter Chat"
+          autosize
+          maxRows={6}
+          minRows={1}
+          ref={chatboxRef}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              onSubmit(e.currentTarget.value);
+              e.currentTarget.value = "";
+            }
+          }}
+          rightSection={
+            <ActionIcon
+              variant="filled"
+              color="primary"
+              mr="sm"
+              onClick={() => {
+                if (chatboxRef.current) {
+                  onSubmit(chatboxRef.current.value);
+                  chatboxRef.current.value = "";
+                }
+              }}
+            >
+              <BsFillSendFill />
+            </ActionIcon>
+          }
           disabled={storeCtx?.activeCharacter === undefined || showTyping}
         />
         <Box
           css={{
-            pb: "10px",
             alignSelf: "center",
           }}
         >
           <Footer />
         </Box>
-      </Box>
-    </Container>
+      </Flex>
+    </Flex>
   );
 };
 

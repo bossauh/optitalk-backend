@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { notifications } from "@mantine/notifications";
 import { useContext, useEffect, useRef, useState } from "react";
 
@@ -340,4 +341,55 @@ export const useActiveCharacter = (): [CharacterType | undefined, (character?: C
   };
 
   return [store?.activeCharacter, setter];
+};
+
+export const useSessions = (): [SessionType[], React.Dispatch<React.SetStateAction<SessionType[]>>, boolean] => {
+  const [sessions, setSessions] = useState<SessionType[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const store = useContext(StoreContext);
+
+  const onUnknownError = () => {
+    notifications.show({
+      title: `Error fetching sessions for character ${store?.activeCharacter?.name}`,
+      message:
+        "A unknown error has occurred. Please try again by reloading the page. If the error persists, contact us.",
+      color: "red",
+    });
+  };
+
+  useEffect(() => {
+    if (store?.activeSession?.new) {
+      setSessions((prev) => [store.activeSession as SessionType, ...prev]);
+    }
+  }, [store?.activeSession]);
+
+  useEffect(() => {
+    setLoading(true);
+
+    if (store?.activeCharacter) {
+      fetch("/api/chat/sessions?page=1&page_size=2000&character_id=" + store.activeCharacter.id)
+        .then((r) => r.json())
+        .then((d) => {
+          if (d.status_code !== 200) {
+            onUnknownError();
+            setLoading(false);
+          } else {
+            const deserialized = d.payload.data.map((i: any) => deserializeSessionData(i));
+            setSessions(deserialized);
+            setLoading(false);
+          }
+        })
+        .catch((e) => {
+          console.error(e);
+          onUnknownError();
+          setLoading(false);
+        });
+    } else {
+      setLoading(false);
+      setSessions([]);
+    }
+  }, [store?.activeCharacter]);
+
+  return [sessions, setSessions, loading];
 };

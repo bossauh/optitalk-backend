@@ -11,14 +11,10 @@ const Introduction: FC = () => {
   return (
     <Box
       css={{
-        position: "absolute",
-        top: "30%",
-        left: "50%",
-        transform: "translate(-50%, -50%)",
-        width: "90%",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
+        mt: "200px",
       }}
     >
       <Box>

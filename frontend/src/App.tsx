@@ -20,7 +20,7 @@ import CharacterConversationEditor from "./components/CharacterConversationEdito
 import CharacterKnowledgeEditor from "./components/CharacterKnowledgeEditor";
 import CharacterViewConversation from "./components/CharacterViewConversation";
 import CharacterViewKnowledge from "./components/CharacterViewKnowledge/CharacterViewKnowledge";
-import CharactersView from "./components/CharactersView";
+
 import GlobalModalPopup from "./components/GlobalModalPopup";
 import HighTrafficWarning from "./components/HighTrafficWarning";
 
@@ -74,20 +74,6 @@ const router = createBrowserRouter([
       {
         path: "",
         element: <Characters />,
-        // children: [
-        //   {
-        //     path: "/my-characters",
-        //     element: <CharactersView key={"my-characters"} params={{ my_characters: "true" }} />,
-        //   },
-        //   {
-        //     path: "/public",
-        //     element: <CharactersView />,
-        //   },
-        //   {
-        //     path: "/my-favorites",
-        //     element: <CharactersView key="my-favorites" params={{ favorites: "true" }} />,
-        //   },
-        // ],
       },
       {
         path: "/chat",
@@ -312,35 +298,28 @@ const App: FC = () => {
           fetchUserData: fetchUserData,
         }}
       >
-        <div
-          style={{
-            zIndex: 1,
-            position: "relative",
+        <MantineProvider
+          theme={{
+            colorScheme: "dark",
+            primaryColor: "teal",
           }}
         >
-          <MantineProvider
-            theme={{
-              colorScheme: "dark",
-              primaryColor: "teal",
-            }}
-          >
-            <ModalsProvider>
-              <Notifications />
-              {/* <HighTrafficWarning /> */}
-              <GlobalModalPopup
-                content={globalModal.content}
-                showCounter={globalModal.showCounter}
-                variant={globalModal.variant}
-                hideIn={globalModal.hideIn}
-                title={globalModal.title}
-              />
+          <ModalsProvider>
+            <Notifications />
+            {/* <HighTrafficWarning /> */}
+            <GlobalModalPopup
+              content={globalModal.content}
+              showCounter={globalModal.showCounter}
+              variant={globalModal.variant}
+              hideIn={globalModal.hideIn}
+              title={globalModal.title}
+            />
 
-              <PayPalScriptProvider options={paypalOptions}>
-                <RouterProvider router={router} />
-              </PayPalScriptProvider>
-            </ModalsProvider>
-          </MantineProvider>
-        </div>
+            <PayPalScriptProvider options={paypalOptions}>
+              <RouterProvider router={router} />
+            </PayPalScriptProvider>
+          </ModalsProvider>
+        </MantineProvider>
       </StoreContext.Provider>
     </NextUIProvider>
   );

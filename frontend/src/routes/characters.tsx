@@ -64,10 +64,10 @@ const Characters: FC = () => {
 
   const constructQueryUrl = () => {
     let params: { [key: string]: string } = {
-      page: searchParams.get("page") as string,
+      page: searchParams.get("page") || "1",
       page_size: "21",
-      sort: searchParams.get("sort") as string,
-      ...deconstructTab(searchParams.get("tab") as string),
+      sort: searchParams.get("sort") || "uses",
+      ...deconstructTab(searchParams.get("tab") || "featured"),
     };
 
     if (searchParams.get("q")) {
@@ -137,7 +137,7 @@ const Characters: FC = () => {
       >
         <Flex direction="column" gap="md" mt="lg">
           <Tabs
-            value={searchParams.get("tab")}
+            value={searchParams.get("tab") || "featured"}
             orientation={isSm ? "horizontal" : "vertical"}
             onTabChange={onTabsChange}
           >
@@ -160,7 +160,6 @@ const Characters: FC = () => {
             fluid
             sx={{
               flex: 1,
-              width: "100%",
             }}
           >
             <Flex direction="column" gap="sm">
@@ -191,6 +190,7 @@ const Characters: FC = () => {
                   styles={{
                     flexDirection: "row",
                     flexWrap: "wrap",
+                    // justifyContent: "space-evenly",
                   }}
                 >
                   <Flex direction="column" gap="sm">

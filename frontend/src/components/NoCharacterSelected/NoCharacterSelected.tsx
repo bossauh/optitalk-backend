@@ -6,7 +6,7 @@ import Box from "../Box";
 
 const NoCharacterSelected: FC = () => {
   return (
-    <Box css={{ position: "absolute", top: "30%", left: "50%", width: "90%", transform: "translate(-50%, -50%)" }}>
+    <Box>
       <Text
         h2
         css={{

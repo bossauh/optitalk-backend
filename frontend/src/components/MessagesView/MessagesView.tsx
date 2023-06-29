@@ -69,50 +69,46 @@ const MessagesView: FC<MessageViewProps> = (props) => {
     }
   }, [storeCtx?.activeSession, page]);
 
-  return (
-    <Box>
-      {active ? (
-        <Box
-          css={{
-            display: "flex",
-            flexDirection: "column",
-            gap: "10px",
-            py: "30px",
-            pr: "15px",
-          }}
-        >
-          {isLoading && <Loading size="lg" />}
-          {props.messages.map((i, idx) => {
-            let joined = false;
+  return active ? (
+    <Box
+      css={{
+        display: "flex",
+        flexDirection: "column",
+        gap: "10px",
+        py: "30px",
+        pr: "15px",
+      }}
+    >
+      {isLoading && <Loading size="lg" />}
+      {props.messages.map((i, idx) => {
+        let joined = false;
 
-            if (idx > 0) {
-              const before = props.messages[idx - 1];
-              if (before.role === i.role) {
-                joined = true;
-              }
-            }
+        if (idx > 0) {
+          const before = props.messages[idx - 1];
+          if (before.role === i.role) {
+            joined = true;
+          }
+        }
 
-            return <Message key={i.id} joined={joined} {...i} />;
-          })}
+        return <Message key={i.id} joined={joined} {...i} />;
+      })}
 
-          {props.showTyping && <Message typing characterId="" content="" createdAt="" id="" role="assistant" />}
+      {props.showTyping && <Message typing characterId="" content="" createdAt="" id="" role="assistant" />}
 
-          {props.error !== undefined && (
-            <Message
-              retry={props.retry}
-              error
-              characterId=""
-              content={props.error.message}
-              createdAt=""
-              id=""
-              role="assistant"
-            />
-          )}
-        </Box>
-      ) : (
-        <Introduction />
+      {props.error !== undefined && (
+        <Message
+          retry={props.retry}
+          error
+          characterId=""
+          content={props.error.message}
+          createdAt=""
+          id=""
+          role="assistant"
+        />
       )}
     </Box>
+  ) : (
+    <Introduction />
   );
 };
 

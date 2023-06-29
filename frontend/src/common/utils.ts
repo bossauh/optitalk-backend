@@ -1,6 +1,8 @@
 import { notifications } from "@mantine/notifications";
-import { useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 
+import { useCookies } from "react-cookie";
+import StoreContext from "../contexts/store";
 import {
   CharacterEditorFields,
   CharacterType,
@@ -315,4 +317,27 @@ export const deleteCharacter = (id: string) => {
       console.error(e);
       return false;
     });
+};
+
+export const useActiveCharacter = (): [CharacterType | undefined, (character?: CharacterType) => void] => {
+  const [, setCookie, removeCookie] = useCookies(["activeCharacterId"]);
+  const store = useContext(StoreContext);
+
+  const setter = (character?: CharacterType) => {
+    if (!character) {
+      store?.setActiveCharacter(undefined);
+      removeCookie("activeCharacterId", { path: "/" });
+    } else {
+      store?.setActiveCharacter(character);
+      setCookie("activeCharacterId", character.id, { path: "/" });
+      notifications.show({
+        title: "Character selectd",
+        message: "You can now chat with the character by going to the Chat page and sending a message.",
+        color: "blue",
+      });
+    }
+    store?.setActiveSession(undefined);
+  };
+
+  return [store?.activeCharacter, setter];
 };

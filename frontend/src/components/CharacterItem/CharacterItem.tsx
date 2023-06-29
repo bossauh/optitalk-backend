@@ -3,6 +3,7 @@ import {
   ActionIcon,
   Anchor,
   Avatar,
+  Button,
   Card,
   Flex,
   Group,
@@ -23,12 +24,13 @@ import { HiEllipsisVertical } from "react-icons/hi2";
 import { IoCopy } from "react-icons/io5";
 import { MdFavorite, MdOutlineFavoriteBorder } from "react-icons/md";
 import { CharacterType } from "../../common/types";
-import { deleteCharacter, formatNumber, toggleFavorite } from "../../common/utils";
+import { deleteCharacter, formatNumber, toggleFavorite, useActiveCharacter } from "../../common/utils";
 import StoreContext from "../../contexts/store";
 
 const CharacterItem: FC<CharacterType> = (props) => {
   const clipboard = useClipboard();
   const store = useContext(StoreContext);
+  const [activeCharacter, setActiveCharacter] = useActiveCharacter();
 
   const [favorite, setFavorite] = useState(props.favorite);
   const [isOwner, setIsOwner] = useState(false);
@@ -64,6 +66,7 @@ const CharacterItem: FC<CharacterType> = (props) => {
           display: "flex",
           flexDirection: "column",
         }}
+        withBorder={store?.activeCharacter?.id === props.id}
       >
         {deleted && (
           <Title
@@ -202,9 +205,25 @@ const CharacterItem: FC<CharacterType> = (props) => {
           </Flex>
         </Flex>
         <Card.Section withBorder inheritPadding py="xs" mt="xs">
-          <Anchor fz="sm" underline href={`/character/${props.id}`}>
-            See More
-          </Anchor>
+          <Group position="apart">
+            <Anchor fz="sm" underline href={`/character/${props.id}`}>
+              See More
+            </Anchor>
+            <Button
+              size="xs"
+              variant="light"
+              color={activeCharacter?.id === props.id ? "red" : "teal"}
+              onClick={() => {
+                if (activeCharacter?.id === props.id) {
+                  setActiveCharacter();
+                } else {
+                  setActiveCharacter(props);
+                }
+              }}
+            >
+              {activeCharacter?.id === props.id ? "Deselect Character" : "Use Character"}
+            </Button>
+          </Group>
         </Card.Section>
       </Card>
     </MediaQuery>

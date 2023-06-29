@@ -131,6 +131,7 @@ def setup(server: "App") -> Blueprint:
                 x.character_id
                 for x in FavoriteCharacter.find_classes({"user_id": user_id})
             ]
+            query = {}
             query["id"] = {"$in": favorite_ids}
 
         if my_characters:

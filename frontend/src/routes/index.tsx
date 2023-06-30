@@ -19,6 +19,7 @@ import {
   Title,
   Tooltip,
 } from "@mantine/core";
+import { modals } from "@mantine/modals";
 import { notifications } from "@mantine/notifications";
 import { FC, forwardRef, useContext, useEffect, useState } from "react";
 import { AiFillCaretRight, AiFillRobot, AiFillSetting, AiOutlinePlus } from "react-icons/ai";
@@ -30,6 +31,7 @@ import { MdAccountCircle, MdContactSupport } from "react-icons/md";
 import { Outlet, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import socket from "../common/socket";
 import { useSessions } from "../common/utils";
+import SettingsModal from "../components/SettingsModal";
 import StoreContext from "../contexts/store";
 
 const HeaderComponent: FC<{ setOpen: React.Dispatch<React.SetStateAction<boolean>>; open: boolean }> = (props) => {
@@ -329,7 +331,12 @@ const NavbarComponent: FC<{ opened: boolean }> = (props) => {
                 </Menu.Item>
                 <Menu.Item
                   onClick={() => {
-                    navigate("/settings");
+                    modals.open({
+                      title: "Settings",
+                      children: <SettingsModal />,
+                      centered: true,
+                      size: "lg",
+                    });
                   }}
                   icon={<AiFillSetting />}
                 >

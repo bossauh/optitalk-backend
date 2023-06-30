@@ -1,10 +1,13 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import {
   ActionIcon,
+  Anchor,
   AppShell,
   Avatar,
   Box,
   Divider,
+  Flex,
+  Footer,
   Group,
   Header,
   Loader,
@@ -384,6 +387,31 @@ const NavbarComponent: FC<{ opened: boolean }> = (props) => {
   );
 };
 
+const FooterItem: FC = () => {
+  return (
+    <Footer
+      height={40}
+      p="xs"
+      sx={(theme) => ({
+        background: theme.colors.dark[8],
+      })}
+    >
+      <Flex align="center" justify="end" gap="xl">
+        <Anchor
+          fz="xs"
+          target="_blank"
+          href="https://docs.google.com/forms/d/e/1FAIpQLSciRo_XWFTlm6MN4Ex__e2Da9UlHDG4osgJKGB5qVWsh5j96w/viewform"
+        >
+          Contact Us
+        </Anchor>
+        <Text fz="xs" color="gray.5">
+          MothLabs © 2023
+        </Text>
+      </Flex>
+    </Footer>
+  );
+};
+
 const Index: FC = () => {
   const [navbarOpen, setNavbarOpen] = useState(false);
 
@@ -392,6 +420,7 @@ const Index: FC = () => {
       padding="md"
       header={<HeaderComponent setOpen={setNavbarOpen} open={navbarOpen} />}
       navbar={<NavbarComponent opened={navbarOpen} />}
+      footer={<FooterItem />}
       styles={(theme) => ({
         main: { backgroundColor: theme.colors.dark[7], height: "100vh" },
       })}

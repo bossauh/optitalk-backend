@@ -28,6 +28,21 @@ def setup(server: "App") -> Blueprint:
 
         return responses.create_response()
 
+    @app.patch("/display-name")
+    @route_security.request_json_schema(schema=schemas.PATCH_DISPLAY_NAME)
+    def change_display_name():
+        user_id = utils.get_user_id_from_request()
+        user: Optional[User] = User.find_class({"id": user_id})
+        if user is None:
+            return responses.create_response(status_code=responses.CODE_400)
+
+        data = request.get_json()
+        user.display_name = data["name"]
+        user.display_name_changed = True
+        user.save()
+
+        return responses.create_response()
+
     @app.post("/login")
     @route_security.request_json_schema(schema=schemas.POST_USERS_LOGIN)
     @route_security.exclude

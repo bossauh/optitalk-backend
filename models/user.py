@@ -98,6 +98,9 @@ class User:
     plan: Plan = dataclasses.field(default_factory=lambda: Plan())
     id: str = dataclasses.field(default_factory=lambda: str(uuid.uuid4()))
 
+    # New Fields
+    display_name_changed: bool = False
+
     def __post_init__(self) -> None:
         if isinstance(self.password, str):
             self.password = bcrypt.hashpw(self.password.encode(), bcrypt.gensalt())

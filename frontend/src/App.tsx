@@ -18,8 +18,6 @@ import { Notifications, notifications } from "@mantine/notifications";
 import CharacterBasicInformationEditor from "./components/CharacterBasicInformationEditor";
 import CharacterConversationEditor from "./components/CharacterConversationEditor";
 import CharacterKnowledgeEditor from "./components/CharacterKnowledgeEditor";
-import CharacterViewConversation from "./components/CharacterViewConversation";
-import CharacterViewKnowledge from "./components/CharacterViewKnowledge/CharacterViewKnowledge";
 
 import GlobalModalPopup from "./components/GlobalModalPopup";
 import HighTrafficWarning from "./components/HighTrafficWarning";
@@ -88,16 +86,6 @@ const router = createBrowserRouter([
       {
         path: "/character/:characterId",
         element: <CharacterView />,
-        children: [
-          {
-            path: "example-conversation",
-            element: <CharacterViewConversation />,
-          },
-          {
-            path: "knowledge-base",
-            element: <CharacterViewKnowledge />,
-          },
-        ],
       },
     ],
   },

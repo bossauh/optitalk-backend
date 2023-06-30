@@ -1,72 +1,34 @@
-import { Text } from "@nextui-org/react";
+import { Box, Flex, Text, Title } from "@mantine/core";
 import { FC } from "react";
-import { useOutletContext } from "react-router-dom";
-import { CharacterViewOutletContextType } from "../../common/types";
+import { CharacterType } from "../../common/types";
 
-// Components
-import Box from "../Box";
-
-const CharacterViewConversation: FC = () => {
-  const context: CharacterViewOutletContextType = useOutletContext();
-
+const CharacterViewConversation: FC<{ character?: CharacterType; loading?: boolean }> = (props) => {
+  if ((props.character?.exampleExchanges.length || 0) > 0) {
+    return (
+      <Flex mt="xl" direction="column" gap="lg">
+        {props.character?.exampleExchanges.map((i) => {
+          return (
+            <Box
+              sx={(theme) => ({
+                backgroundColor: i.role === "assistant" ? theme.colors.dark[5] : theme.colors.teal,
+                padding: theme.spacing.sm,
+                borderRadius: theme.radius.md,
+                alignSelf: i.role === "assistant" ? "start" : "end",
+                maxWidth: "500px",
+              })}
+            >
+              {i.content}
+            </Box>
+          );
+        })}
+      </Flex>
+    );
+  }
   return (
-    <Box
-      css={{
-        mt: "20px",
-      }}
-    >
-      {(context.details?.exampleExchanges.length || 0) > 0 ? (
-        <Box>
-          <Text h3>Example Conversation</Text>
-          <Text color="$accents8">
-            Below is an example of what a conversation with this character should look like.
-          </Text>
-          <Box
-            css={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "25px",
-              maxWidth: "700px",
-              mt: "30px",
-            }}
-          >
-            {context.details.exampleExchanges.map((i) => {
-              return (
-                <Box
-                  css={{
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: i.role === "assistant" ? "start" : "end",
-                    gap: "5px",
-                  }}
-                >
-                  <Text size={14} color="$accents8">
-                    {i.role === "assistant" ? context.details.name : "User"}
-                  </Text>
-                  <Box
-                    key={`${i.content}+${i}+${i.role}`}
-                    css={{
-                      bg: i.role === "assistant" ? "$accents1" : "$primary",
-                      p: "10px",
-                      borderRadius: "$sm",
-                      maxWidth: "500px",
-                      alignSelf: i.role === "assistant" ? "start" : "end",
-                    }}
-                  >
-                    <Text>{i.content}</Text>
-                  </Box>
-                </Box>
-              );
-            })}
-          </Box>
-        </Box>
-      ) : (
-        <Box>
-          <Text h3>No Data</Text>
-          <Text color="$accents8">The author of this character did not provide a example conversation.</Text>
-        </Box>
-      )}
-    </Box>
+    <Flex mt="xl" direction="column">
+      <Title order={2}>No Data</Title>
+      <Text>The author of this character did not provide a example conversation.</Text>
+    </Flex>
   );
 };
 

@@ -191,7 +191,7 @@ const SessionSelection: FC = () => {
           flex: 1,
           width: "100%",
         }}
-        value={store?.activeSession?.id}
+        value={store?.activeSession?.id || null}
         onChange={(v) => {
           if (v) {
             let session = sessions.find((i) => i.id === v);

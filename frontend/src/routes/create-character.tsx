@@ -8,6 +8,7 @@ import StoreContext from "../contexts/store";
 
 // Components
 import { Anchor, Flex } from "@mantine/core";
+import { notifications } from "@mantine/notifications";
 import { deserializeCharacterFields, serializeCharacterFields } from "../common/utils";
 import Box from "../components/Box";
 import CharacterCreationNavBar from "../components/CharacterCreationNavBar/CharacterCreationNavBar";
@@ -73,33 +74,19 @@ const CreateCharacter: FC = () => {
       setLoadingOpen(false);
 
       if (httpMethod === "POST") {
-        navigate("/my-characters");
+        navigate("/?tab=my-characters&sort=latest");
       } else {
         navigate(`/character/${characterId}`);
       }
-      storeCtx?.openModal(
-        <Box
-          css={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            gap: "5px",
-          }}
-        >
-          <Text
-            css={{
-              textAlign: "center",
-            }}
-          >
-            {httpMethod === "POST"
-              ? "Your Character has been created. Check the My Characters tab for your character."
-              : "Changes to the character has been saved."}
-          </Text>
-        </Box>,
-        "success",
-        httpMethod === "POST" ? "Character Created" : "Character Saved",
-        2_000
-      );
+      notifications.show({
+        title: "Character saved",
+        message:
+          httpMethod === "POST"
+            ? "Your character has been created! Check the My Characters tab to find your character."
+            : "Changes to your character has been saved successfully.",
+        color: "teal",
+        autoClose: 5000,
+      });
     };
 
     const updateKnowledge = () => {

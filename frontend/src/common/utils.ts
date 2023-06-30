@@ -393,3 +393,110 @@ export const useSessions = (): [SessionType[], React.Dispatch<React.SetStateActi
 
   return [sessions, setSessions, loading];
 };
+
+export const useCharacter = (id?: string, forceLoadingState?: boolean): [boolean, boolean, CharacterType?] => {
+  const [character, setCharacter] = useState<CharacterType>();
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
+
+  const onUnknownError = () => {
+    notifications.show({
+      title: "A unknown error has occurred while trying to load the character.",
+      message: "Please retry by refreshing the page, if the problem persists, contact us.",
+      color: "red",
+    });
+  };
+
+  useEffect(() => {
+    if (!id) {
+      setCharacter(undefined);
+      setNotFound(true);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    fetch("/api/characters/details?character_id=" + id)
+      .then((r) => r.json())
+      .then((d) => {
+        setLoading(false);
+        if (d.status_code === 200) {
+          const deserialized = deserializeCharacterData(d.payload);
+          setNotFound(false);
+          setCharacter(deserialized);
+        } else if (d.status_code === 404) {
+          setNotFound(true);
+          setCharacter(undefined);
+        } else {
+          onUnknownError();
+          setNotFound(false);
+          setCharacter(undefined);
+        }
+      })
+      .catch((e) => {
+        console.error(e);
+        setLoading(false);
+        setNotFound(false);
+        setCharacter(undefined);
+        onUnknownError();
+      });
+  }, [id]);
+
+  return [notFound, forceLoadingState || loading, character];
+};
+
+export const useKnowledge = (
+  characterId?: string,
+  pageSize?: number
+): [
+  boolean,
+  number,
+  number,
+  React.Dispatch<React.SetStateAction<number>>,
+  KnowledgeType[],
+  React.Dispatch<React.SetStateAction<KnowledgeType[]>>
+] => {
+  const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
+  const [data, setData] = useState<KnowledgeType[]>([]);
+
+  const onUnknownError = () => {
+    notifications.show({
+      title: "Error trying to fetch knowledge base.",
+      message:
+        "A unknown error has occurred while trying to fetch this character's knowledge base. Please try again, if the problem persists, contact us.",
+    });
+  };
+
+  useEffect(() => {
+    if (!characterId) {
+      return;
+    }
+
+    setLoading(true);
+    fetch(`/api/characters/knowledge?character_id=${characterId}&page_size=${pageSize || 5}&page=${page}`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.status_code === 200) {
+          setTotalPages(d.payload.pages);
+          const deserialized = d.payload.data.map((i: any) => deserializeKnowledge(i));
+          if (page === 1 && deserialized.length === 0) {
+            setData([]);
+          } else {
+            setData(deserialized);
+          }
+        } else {
+          onUnknownError();
+        }
+        setLoading(false);
+      })
+      .catch((e) => {
+        console.error(e);
+        setLoading(false);
+        onUnknownError();
+      });
+  }, [page]);
+
+  return [loading, totalPages, page, setPage, data, setData];
+};

@@ -323,7 +323,10 @@ const NavbarComponent: FC<{ opened: boolean }> = (props) => {
                 <Menu.Label>{store.displayName}</Menu.Label>
                 <Menu.Item
                   onClick={() => {
-                    navigate("/contact-us");
+                    window.open(
+                      "https://docs.google.com/forms/d/e/1FAIpQLSciRo_XWFTlm6MN4Ex__e2Da9UlHDG4osgJKGB5qVWsh5j96w/viewform?usp=sf_link",
+                      "_blank"
+                    );
                   }}
                   icon={<MdContactSupport />}
                 >

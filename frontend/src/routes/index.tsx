@@ -25,8 +25,8 @@ import {
 import { modals } from "@mantine/modals";
 import { notifications } from "@mantine/notifications";
 import { FC, forwardRef, useContext, useEffect, useState } from "react";
-import { AiFillCaretRight, AiFillRobot, AiFillSetting, AiOutlinePlus } from "react-icons/ai";
-import { BsFillChatFill } from "react-icons/bs";
+import { AiFillCaretRight, AiFillRedditCircle, AiFillRobot, AiFillSetting, AiOutlinePlus } from "react-icons/ai";
+import { BsDiscord, BsFillChatFill } from "react-icons/bs";
 import { FiLogOut } from "react-icons/fi";
 import { GiHamburgerMenu, GiUpgrade } from "react-icons/gi";
 import { HiOutlineLogin } from "react-icons/hi";
@@ -396,17 +396,43 @@ const FooterItem: FC = () => {
         background: theme.colors.dark[8],
       })}
     >
-      <Flex align="center" justify="end" gap="xl">
-        <Anchor
-          fz="xs"
-          target="_blank"
-          href="https://docs.google.com/forms/d/e/1FAIpQLSciRo_XWFTlm6MN4Ex__e2Da9UlHDG4osgJKGB5qVWsh5j96w/viewform"
-        >
-          Contact Us
-        </Anchor>
-        <Text fz="xs" color="gray.5">
-          MothLabs © 2023
-        </Text>
+      <Flex align="center" justify="space-between">
+        <Flex align="center" gap="lg">
+          <Group
+            onClick={() => {
+              window.open("https://discord.gg/Cuue5V7X8J", "_blank");
+            }}
+            spacing={2}
+            sx={{
+              cursor: "pointer",
+            }}
+          >
+            <ThemeIcon
+              size="sm"
+              sx={{
+                color: "#5865F2",
+                background: "none",
+              }}
+            >
+              <BsDiscord />
+            </ThemeIcon>
+            <Text fz="xs" color="gray.5">
+              Discord Server
+            </Text>
+          </Group>
+        </Flex>
+        <Flex align="center" gap="lg">
+          <Anchor
+            fz="xs"
+            target="_blank"
+            href="https://docs.google.com/forms/d/e/1FAIpQLSciRo_XWFTlm6MN4Ex__e2Da9UlHDG4osgJKGB5qVWsh5j96w/viewform"
+          >
+            Contact Us
+          </Anchor>
+          <Text fz="xs" color="gray.5">
+            MothLabs © 2023
+          </Text>
+        </Flex>
       </Flex>
     </Footer>
   );

@@ -24,7 +24,7 @@ const Introduction: FC = () => {
             textAlign: "center",
           }}
         >
-          Send a message to begin
+          Send a message to begin on a new session
         </Text>
         <Text
           css={{

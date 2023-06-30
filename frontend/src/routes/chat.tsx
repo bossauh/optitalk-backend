@@ -202,11 +202,6 @@ const Chat: FC = () => {
         </Box>
       )}
       <Flex direction="column" gap="xs">
-        {/* <ChatBox
-          onSubmit={onSubmit}
-          placeholder="Enter Chat"
-          disabled={storeCtx?.activeCharacter === undefined || showTyping}
-        /> */}
         <Textarea
           placeholder="Enter Chat"
           autosize

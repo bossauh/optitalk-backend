@@ -496,7 +496,7 @@ export const useKnowledge = (
         setLoading(false);
         onUnknownError();
       });
-  }, [page]);
+  }, [page, characterId]);
 
   return [loading, totalPages, page, setPage, data, setData];
 };

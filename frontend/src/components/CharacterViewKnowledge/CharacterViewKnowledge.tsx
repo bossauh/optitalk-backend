@@ -35,7 +35,7 @@ const CharacterViewKnowledge: FC<{ character?: CharacterType; loading?: boolean 
       <Flex direction="column" gap="xs">
         {knowledge.map((item) => {
           return (
-            <Card>
+            <Card key={item.id}>
               <Text fz="sm">{item.content}</Text>
             </Card>
           );

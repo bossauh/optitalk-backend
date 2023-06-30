@@ -128,7 +128,7 @@ const Characters: FC = () => {
   }, [searchParams]);
 
   return (
-    <Container fluid mt="lg" mx="xs" mb="xl">
+    <Container fluid mt="lg" mx="xs" pb="90px">
       <ActiveCharacterItem />
       <CharactersSearchBox />
       <MediaQuery

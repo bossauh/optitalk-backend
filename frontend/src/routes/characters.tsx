@@ -19,6 +19,7 @@ import { MdFavorite, MdFeaturedPlayList, MdPublic } from "react-icons/md";
 import { useSearchParams } from "react-router-dom";
 import { CharacterType } from "../common/types";
 import { deserializeCharacterData } from "../common/utils";
+import ActiveCharacterItem from "../components/ActiveCharacterItem";
 import CharacterItem from "../components/CharacterItem";
 import CharactersSearchBox from "../components/CharactersSearchBox";
 
@@ -128,6 +129,7 @@ const Characters: FC = () => {
 
   return (
     <Container fluid mt="lg" mx="xs" mb="xl">
+      <ActiveCharacterItem />
       <CharactersSearchBox />
       <MediaQuery
         largerThan="sm"

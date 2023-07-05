@@ -67,7 +67,7 @@ const OptiTalkPlus: FC = () => {
                 }}
               >
                 <Flex direction="column" gap={4}>
-                  <Title order={1} size={65} color="black">
+                  <Title size={55} color="black">
                     Introducing{" "}
                     <Text
                       span
@@ -101,22 +101,17 @@ const OptiTalkPlus: FC = () => {
                     Why?
                   </Title>
                   <Text color="rgba(0,0,0,0.9)" fz="md" fw={500}>
-                    OptiTalk is a small team of passionate developers struggling to keep up with demand. In the last few
-                    weeks, we have seen a{" "}
-                    <Text span fw="bold">
-                      25,000%
-                    </Text>{" "}
-                    increase in new users. This surge has caused major issues within our servers as they try to handle
-                    the traffic. To address this, we have upgraded to a better infrastructure and made optimizations
-                    within our codebase. However, to sustain our infrastructure and deliver new features consistently
-                    with high quality, we need additional funding. Hence,{" "}
+                    OptiTalk is a small team of passionate developers struggling to keep up with demand. To address
+                    this, we have upgraded to a better infrastructure and made optimizations within our codebase.
+                    However, to sustain our infrastructure and deliver new features consistently with high quality, we
+                    need additional funding. Hence,{" "}
                     <Text span fw="bold">
                       OptiTalk+
                     </Text>{" "}
                     was born. <br /> <br />
                     We understand that users want a free platform, and OptiTalk will continue to be free, albeit with
                     certain limitations to ensure server stability. By showing your support to us, you will receive
-                    extra benefits such as unlimited messages, characters, and more
+                    extra benefits such as unlimited messages, characters, and more.
                   </Text>
                 </Flex>
                 <Flex direction="column" gap={4}>

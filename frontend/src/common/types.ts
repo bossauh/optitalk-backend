@@ -92,6 +92,8 @@ export interface SessionType {
   createdBy: string;
   id: string;
   name: string;
+  messagesCount?: number;
+  lastUsed?: string;
   new?: boolean;
 }
 
@@ -101,22 +103,48 @@ export interface MessageType {
   createdAt: string;
   role: string;
   id: string;
+  createdBy: string;
+  generated?: boolean;
+  regenerated?: boolean;
+  name?: string | null;
   comments?: string | null;
   contradictions?: string | null;
   knowledgeHint?: string | null;
   processingTime?: number | null;
+
+  // Frontend states
+  new?: boolean;
+}
+
+export interface MessageProps {
+  name: string;
+  content: string;
+  role: string;
+  id: string;
+  createdAt: string;
+  contextMenuButton?: boolean;
+  errorContents?: React.ReactNode;
+  error?: boolean;
+  retryButton?: boolean;
+  retryFunction?: () => void;
+  regenerateButton?: boolean;
+  regenerateFunction?: () => void;
+  deleteFunction?: (id: string) => void;
+  comments?: string;
+  knowledgeHint?: string;
+  authorId?: string;
+  typing?: boolean;
+  avatar?: string;
+  followup?: boolean;
+  processingTime?: number | null;
+
+  // Frontend states
+  new?: boolean;
 }
 
 export interface MessageDetailsProps {
   message: MessageProps;
   hovered: boolean;
-}
-
-export interface MessageProps extends MessageType {
-  joined?: boolean;
-  typing?: boolean;
-  error?: boolean;
-  retry?: () => void;
 }
 
 export interface ChatBoxProps {
@@ -227,4 +255,33 @@ export interface GlobalModalPopupProps {
   variant: "error" | "success" | "warning" | "info";
   title?: string;
   showCounter: number;
+}
+
+export interface UserDetailsLimit {
+  limit: number;
+  current: number;
+}
+
+export interface UserDetailsLimits {
+  messages: UserDetailsLimit;
+  characters: UserDetailsLimit;
+}
+
+export interface UserDetailsStatistics {
+  messages: number;
+}
+
+export interface UserDetailsBasic {
+  email: string;
+  display_name: string;
+  admin: boolean;
+  plan: string;
+  plan_name: string;
+  created_at: string;
+}
+
+export interface UserDetails {
+  basic: UserDetailsBasic;
+  limits: UserDetailsLimits;
+  statistics: UserDetailsStatistics;
 }

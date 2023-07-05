@@ -23,12 +23,14 @@ import GlobalModalPopup from "./components/GlobalModalPopup";
 import HighTrafficWarning from "./components/HighTrafficWarning";
 
 // Routes
+import { NavigationProgress } from "@mantine/nprogress";
 import Index from "./routes";
 import CharacterView from "./routes/character-view";
 import Characters from "./routes/characters";
 import Chat from "./routes/chat";
 import CreateCharacter from "./routes/create-character";
 import GoogleOAuth from "./routes/google-oauth";
+import Logout from "./routes/logout";
 import MyAccount from "./routes/my-account";
 import OptitalkPlus from "./routes/optitalk-plus";
 
@@ -51,6 +53,7 @@ const theme = createTheme({
       primaryContainerBackground: "#141517",
 
       background: "#1A1B1E",
+      inputColor: "red",
 
       primary: "#01826C",
       primaryShadow: "#016856",
@@ -61,6 +64,8 @@ const theme = createTheme({
       secondary: "#175873",
       error: "#c63536",
       gradient: "linear-gradient(90deg, rgba(1,130,108,1) 0%, rgba(82,160,229,1) 100%)",
+
+      accents0: "#222427",
     },
   },
 });
@@ -87,6 +92,10 @@ const router = createBrowserRouter([
         path: "/character/:characterId",
         element: <CharacterView />,
       },
+      {
+        path: "/my-account",
+        element: <MyAccount />,
+      },
     ],
   },
   {
@@ -96,10 +105,6 @@ const router = createBrowserRouter([
   {
     path: "/oauth/google-oauth",
     element: <GoogleOAuth />,
-  },
-  {
-    path: "/my-account",
-    element: <MyAccount />,
   },
   {
     path: "/create-character",
@@ -118,6 +123,10 @@ const router = createBrowserRouter([
         element: <CharacterConversationEditor />,
       },
     ],
+  },
+  {
+    path: "/logout",
+    element: <Logout />,
   },
   {
     path: "/optitalk-plus",
@@ -259,7 +268,7 @@ const App: FC = () => {
   }, []);
 
   return (
-    <NextUIProvider theme={theme}>
+    <NextUIProvider theme={theme} disableBaseline>
       <StoreContext.Provider
         value={{
           authenticated: authenticated,
@@ -290,10 +299,14 @@ const App: FC = () => {
           theme={{
             colorScheme: "dark",
             primaryColor: "teal",
+            defaultGradient: { deg: 45, from: "teal", to: "blue.5" },
           }}
+          withNormalizeCSS
+          withGlobalStyles
         >
           <ModalsProvider>
-            <Notifications />
+            <NavigationProgress />
+            <Notifications zIndex={500} />
             {/* <HighTrafficWarning /> */}
             <GlobalModalPopup
               content={globalModal.content}

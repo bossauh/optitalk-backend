@@ -1,6 +1,5 @@
 import logging
 import re
-import time
 from typing import TYPE_CHECKING, Optional
 
 import tiktoken
@@ -146,7 +145,7 @@ def limit_chat_completion_tokens(
     models.
     """
 
-    token_cap = 4090
+    token_cap = 4070
     if model == "gpt-4":
         token_cap = 8100
 
@@ -191,7 +190,7 @@ def create_chat_completion_context(
         to act, or a list of messages that teaches the model how to talk.
     """
 
-    system = system_message_handler.get_system_message("default")
+    system = system_message_handler.get_system_message("v2")
     messages = []
     context_message = {
         "role": "user",
@@ -332,3 +331,13 @@ def paginate_mongoclass_cursor(
     skips = page_size * (page - 1)
     cursor = cursor.skip(skips).limit(page_size)
     return cursor
+
+
+def clean_user_name(input_string):
+    # Remove characters other than a-z, A-Z, 0-9, and underscores
+    cleaned_string = re.sub(r"[^a-zA-Z0-9_]", "", input_string)
+
+    # Ensure the length does not exceed 64 characters
+    cleaned_string = cleaned_string[:64]
+
+    return cleaned_string

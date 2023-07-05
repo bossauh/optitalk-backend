@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { Container, Loading, Text } from "@nextui-org/react";
+import { Container, Loading, NextUIProvider, Text, createTheme } from "@nextui-org/react";
 import { FC, useContext, useEffect, useState } from "react";
 import { Outlet, useNavigate, useSearchParams } from "react-router-dom";
 import { CharacterEditorFields, KnowledgePatchType } from "../common/types";
@@ -14,6 +14,28 @@ import Box from "../components/Box";
 import CharacterCreationNavBar from "../components/CharacterCreationNavBar/CharacterCreationNavBar";
 import CharacterEditorLoading from "../components/CharacterEditorLoading";
 import TopBarSecondary from "../components/TopBarSecondary";
+
+const theme = createTheme({
+  type: "dark",
+  theme: {
+    colors: {
+      primaryTextGradient: "90deg, rgba(1,130,108,1) 0%, rgba(82,160,229,1) 100%",
+      primaryContainerBackground: "#141517",
+
+      background: "#1A1B1E",
+
+      primary: "#01826C",
+      primaryShadow: "#016856",
+      primaryLight: "#016856",
+      primaryLightHover: "#016856",
+      primaryLightActive: "#014e41",
+
+      secondary: "#175873",
+      error: "#c63536",
+      gradient: "linear-gradient(90deg, rgba(1,130,108,1) 0%, rgba(82,160,229,1) 100%)",
+    },
+  },
+});
 
 const CreateCharacter: FC = () => {
   const [searchParams] = useSearchParams();
@@ -173,6 +195,12 @@ const CreateCharacter: FC = () => {
 
   useEffect(() => {
     storeCtx?.fetchUserData();
+
+    document.body.classList.add("legacy-bg");
+
+    return () => {
+      document.body.classList.remove("legacy-bg");
+    };
   }, []);
 
   useEffect(() => {
@@ -185,9 +213,14 @@ const CreateCharacter: FC = () => {
 
   return (
     <Container
+      fluid
+      responsive={false}
       css={{
-        mt: "30px",
-        pb: "60px",
+        pt: "30px",
+        // pb: "60px",
+        // background: "rgb(15, 15, 15)",
+        // h: "100vh",
+        // w: "100wh",
       }}
     >
       <TopBarSecondary title={characterId ? "Edit Character" : "Create a Character"} />

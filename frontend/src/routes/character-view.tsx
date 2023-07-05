@@ -26,7 +26,14 @@ const CharacterView: FC = () => {
   }, [character]);
 
   return (
-    <Flex direction="column" gap="sm" justify={notFound ? "center" : "start"} h={notFound ? "90%" : undefined} pb="xl">
+    <Flex
+      direction="column"
+      gap="sm"
+      justify={notFound ? "center" : "start"}
+      h={notFound ? "90%" : undefined}
+      pb="100px"
+      m="lg"
+    >
       {notFound && character ? (
         <Flex direction="column" gap="sm" align="center">
           <Title order={2}>Character not found</Title>

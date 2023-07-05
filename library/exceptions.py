@@ -28,3 +28,13 @@ class ModelRequestsLimitExceeded(OptitalkException):
         self.model = model
         self.limit = limit
         super().__init__(*args, **kwargs)
+
+
+class MessageIDAlreadyExists(OptitalkException):
+    """
+    Raised whenever a message is being created with a provided ID but the ID already
+    exists.
+    """
+
+    def __init__(self, id: str, *args, **kwargs) -> None:
+        self.id = id

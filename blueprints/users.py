@@ -6,6 +6,9 @@ from flask import Blueprint, request, session
 from library import responses, schemas, users, utils
 from library.exceptions import *
 from library.security import route_security
+from models.character import Character
+from models.message import Message
+from models.state import UserPlanState
 from models.user import Application, User
 
 if TYPE_CHECKING:
@@ -29,6 +32,7 @@ def setup(server: "App") -> Blueprint:
         return responses.create_response()
 
     @app.patch("/display-name")
+    @server.limiter.limit("1/second")
     @route_security.request_json_schema(schema=schemas.PATCH_DISPLAY_NAME)
     def change_display_name():
         user_id = utils.get_user_id_from_request()
@@ -118,5 +122,47 @@ def setup(server: "App") -> Blueprint:
         """
 
         return responses.create_response(payload=route_security.get_client_ip())
+
+    @app.get("/details")
+    def get_details():
+        """
+        Returns details about a user's account.
+        """
+
+        user_id = utils.get_user_id_from_request()
+        user: User = User.find_class({"id": user_id})
+        user.save()
+
+        plan = user.plan
+        plan_state: UserPlanState = UserPlanState.find_class({"id": user_id})
+
+        data = {
+            "email": user.email,
+            "display_name": user.display_name,
+            "admin": user.admin,
+            "plan": plan.id,
+            "plan_name": plan.name,
+            "created_at": user.created_at,
+        }
+        limits = {
+            "messages": {
+                "limit": plan.max_basic_model_requests_per_hour,
+                "current": plan_state.basic_model_requests,
+            },
+            "characters": {
+                "limit": plan.max_characters,
+                "current": Character.count_documents({"created_by": user_id}),
+            },
+        }
+
+        if plan.id == "basic":
+            limits["characters"]["limit"] = -1
+            limits["messages"]["limit"] = -1
+
+        statistics = {"messages": Message.count_documents({"created_by": user_id})}
+
+        return responses.create_response(
+            {"basic": data, "limits": limits, "statistics": statistics}
+        )
 
     return app

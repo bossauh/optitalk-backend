@@ -1,4 +1,4 @@
-from voluptuous import All, Any, Email, Length, Optional, Required, Schema, Url
+from voluptuous import All, Any, Email, Length, Optional, Range, Required, Schema, Url
 
 _CHARACTER_EXCHANGE = {
     Required("role"): Any("user", "assistant"),
@@ -100,6 +100,7 @@ POST_CHAT = Schema(
         Optional("user_name"): Any(str, Length(min=1, max=100)),
         Optional("role"): Any("user", "assistant"),
         Optional("session_id"): str,
+        Optional("id"): str,
     }
 )
 GET_CHAT_SESSIONS = Schema({Required("character_id"): str, **_PAGING_SCHEMA})
@@ -139,3 +140,17 @@ POST_SUBSCRIPTION_CANCEL = Schema({Required("reason"): str})
 POST_CHARACTERS_ADD_TO_FAVORITES = Schema({Required("id"): str})
 DELETE_CHARACTERS_ADD_TO_FAVORITES = Schema({Required("id"): str})
 PATCH_DISPLAY_NAME = Schema({Required("name"): All(str, Length(min=1, max=45))})
+GET_RENDER_CHARACTER_AVATAR = Schema({Required("character_id"): str})
+POST_CHAT_REGENERATE = Schema(
+    {Required("session_id"): str, Required("character_id"): str}
+)
+POST_INLINE_FEEDBACK = Schema(
+    {
+        Required("rating"): All(int, Range(min=1, max=5)),
+        Required("source"): Any("chat", "characters"),
+        Optional("content"): All(str, Length(min=0, max=2048)),
+        Optional("session_id"): Any(str, None),
+        Optional("character_id"): Any(str, None),
+        Optional("message_id"): Any(str, None),
+    }
+)

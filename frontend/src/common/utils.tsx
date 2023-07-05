@@ -1,8 +1,9 @@
 /* eslint-disable react-hooks/exhaustive-deps */
+import { Anchor, Text } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { useContext, useEffect, useRef, useState } from "react";
-
 import { useCookies } from "react-cookie";
+import { v4 as uuidv4 } from "uuid";
 import StoreContext from "../contexts/store";
 import {
   CharacterEditorFields,
@@ -10,6 +11,7 @@ import {
   KnowledgeType,
   MessageType,
   SessionType,
+  UserDetails,
   UserPlanDetails,
 } from "./types";
 
@@ -38,6 +40,8 @@ export function deserializeSessionData(data: any): SessionType {
     createdBy: data.created_by,
     id: data.id,
     name: data.name,
+    messagesCount: data.messages_count,
+    lastUsed: data.last_used,
   };
 }
 
@@ -52,6 +56,10 @@ export function deserializeMessageData(data: any): MessageType {
     contradictions: data.contradictions,
     knowledgeHint: data.knowledge_hint,
     processingTime: data.processing_time,
+    createdBy: data.created_by,
+    name: data.name,
+    generated: data.generated,
+    regenerated: data.regenerated,
   };
 }
 
@@ -360,7 +368,9 @@ export const useSessions = (): [SessionType[], React.Dispatch<React.SetStateActi
 
   useEffect(() => {
     if (store?.activeSession?.new) {
-      setSessions((prev) => [store.activeSession as SessionType, ...prev]);
+      let copy = { ...store.activeSession };
+      copy.new = false;
+      setSessions((prev) => [copy as SessionType, ...prev]);
     }
   }, [store?.activeSession]);
 
@@ -499,4 +509,405 @@ export const useKnowledge = (
   }, [page, characterId]);
 
   return [loading, totalPages, page, setPage, data, setData];
+};
+
+export const useMessages = (characterId?: string, sessionId?: string, sessionNew?: boolean) => {
+  const [messages, setMessages] = useState<MessageType[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+
+  // Page related states
+  const [maxMessages, setMaxMessages] = useState(40);
+  const [page, setPage] = useState(1);
+  const [endPage, setEndPage] = useState(false);
+
+  // When called, more messages are loaded
+  const loadMore = () => {
+    if (!endPage && !loading && !loadingMore) {
+      setLoadingMore(true);
+      setPage((p) => p + 1);
+    }
+  };
+
+  // Reset all values to their default state
+  const resetValues = () => {
+    setMessages([]);
+    setLoading(false);
+    setPage(1);
+    setEndPage(false);
+  };
+
+  // Reset whenever the session or character changes
+  useEffect(() => {
+    if (!sessionNew) {
+      resetValues();
+    }
+  }, [sessionId]);
+
+  useEffect(() => {
+    if (!characterId || !sessionId) {
+      resetValues();
+      return;
+    }
+
+    if (sessionNew) {
+      setLoadingMore(false);
+      return;
+    }
+
+    if (!loadingMore) {
+      setLoading(true);
+    }
+
+    fetch(`/api/chat?character_id=${characterId}&session_id=${sessionId}&sort=-1&page_size=${maxMessages}&page=${page}`)
+      .then((r) => r.json())
+      .then((d) => {
+        setLoading(false);
+        setLoadingMore(false);
+        if (d.status_code !== 200) {
+          notifications.show({
+            title: "A unknown server error has occurred while trying to fetch the messages.",
+            message: "Please try again. If the problem persists, contact us.",
+            color: "red",
+          });
+          return;
+        }
+
+        // Deserialize the messages into a TypeScript interface
+        let deserialized: MessageType[] = d.payload.data.map((item: any) => {
+          return deserializeMessageData(item);
+        });
+        deserialized.reverse();
+
+        setMessages((prev) => {
+          return prev ? [...deserialized, ...prev] : deserialized;
+        });
+
+        if (deserialized.length === 0 || deserialized.length < maxMessages) {
+          setEndPage(true);
+        }
+      })
+      .catch((e) => {
+        setLoading(false);
+        console.error(e);
+        notifications.show({
+          title: "A unknown error has occurred while trying to fetch the messages.",
+          message: "The website might be down. Try and refresh the page.",
+          color: "red",
+        });
+      });
+  }, [page, characterId, sessionId]);
+
+  return {
+    messages,
+    setMessages,
+    loading,
+    loadingMore,
+    setMaxMessages,
+    page,
+    loadMore,
+  };
+};
+
+export const useSendMessage = (
+  onChatError: (children: React.ReactNode) => void,
+  characterId?: string,
+  sessionId?: string
+) => {
+  const [sending, setSending] = useState(false);
+  const store = useContext(StoreContext);
+
+  const limitUnauthenticatedReachedError = (
+    <Text>
+      Oops! It seems like you've hit the limit of 5 messages per hour on non-registered accounts. Please{" "}
+      <Anchor href="/oauth/google-oauth">sign up</Anchor> to continue.{" "}
+    </Text>
+  );
+
+  const limitAuthenticatedReachedError = (
+    <Text>
+      You have reached the{" "}
+      <Text span fw="bold">
+        15 Messages/3 hours
+      </Text>{" "}
+      limit on a free account. You can subscribe to <Anchor href="/optitalk-plus">OptiTalk+</Anchor> to get unlimited
+      access for just 4.99$.
+    </Text>
+  );
+
+  const tooMuchTrafficError = (
+    <Text>
+      Too much traffic. Please try again. We are actively working on our system to handle the huge amount of users.
+    </Text>
+  );
+
+  const rateLimitError = (
+    <Text>Rate limit error. You are sending too much requests. Please try again in a few minutes.</Text>
+  );
+
+  const regenerate = (): Promise<{ status: boolean; message: MessageType | null }> => {
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        setSending(true);
+      }, 15);
+      fetch(`/api/chat/regenerate`, {
+        method: "POST",
+        body: JSON.stringify({
+          character_id: characterId,
+          session_id: sessionId,
+        }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+        .then((r) => r.json())
+        .then((d) => {
+          setTimeout(() => {
+            setSending(false);
+          }, 50);
+          if (d.status_code === 200) {
+            const message = deserializeMessageData(d.payload);
+            return resolve({ status: true, message: message });
+          }
+
+          if (d.status_code === 403) {
+            if (!store?.authenticated) {
+              onChatError(limitUnauthenticatedReachedError);
+            } else {
+              onChatError(limitAuthenticatedReachedError);
+            }
+          } else if (d.status_code === 500) {
+            onChatError(tooMuchTrafficError);
+          } else if (d.status_code === 429) {
+            onChatError(rateLimitError);
+          } else {
+            onChatError(
+              <Text>
+                A unknown error has occurred while trying to regenerate the response. Please check as the session, user,
+                or character might have been deleted.
+              </Text>
+            );
+          }
+          resolve({ status: false, message: null });
+        })
+        .catch((e) => {
+          setSending(false);
+          console.error(e);
+          onChatError(
+            <Text>A unknown error has occurred. The website might be down. Please try and refresh the page.</Text>
+          );
+          reject(e);
+        });
+    });
+  };
+
+  const sendMessage = (
+    content: string,
+    userName: string | undefined | null,
+    role: string = "user",
+    id?: string
+  ): Promise<{ status: boolean; message: MessageType | null }> => {
+    return new Promise((resolve, reject) => {
+      if (!characterId) {
+        return resolve({ status: false, message: null });
+      }
+
+      userName = userName === undefined ? store?.displayName : userName === null ? undefined : userName;
+
+      // Create a brand new session if no session was provided.
+      // This will also set the active session to the newly created session.
+      if (!sessionId) {
+        let session = {
+          id: uuidv4(),
+          characterId: characterId,
+          createdBy: store?.userId as string,
+          name: "New Session",
+          new: true,
+        };
+        sessionId = session.id;
+        store?.setActiveSession(session);
+      }
+
+      setTimeout(() => {
+        setSending(true);
+      }, 15);
+
+      fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          character_id: characterId,
+          content: content,
+          user_name: userName,
+          role: role,
+          session_id: sessionId,
+          id: id,
+        }),
+      })
+        .then((r) => r.json())
+        .then((d) => {
+          setTimeout(() => {
+            setSending(false);
+          }, 50);
+
+          if (d.status_code === 200) {
+            const message = deserializeMessageData(d.payload);
+            return resolve({ status: true, message: message });
+          }
+
+          if (d.status_code === 403) {
+            if (!store?.authenticated) {
+              onChatError(limitUnauthenticatedReachedError);
+            } else {
+              onChatError(limitAuthenticatedReachedError);
+            }
+          } else if (d.status_code === 500) {
+            onChatError(tooMuchTrafficError);
+          } else if (d.status_code === 429) {
+            onChatError(rateLimitError);
+          } else {
+            onChatError(
+              <Text>A unknown error has occurred while trying to generate a response. Please try again.</Text>
+            );
+          }
+          resolve({ status: false, message: null });
+        })
+        .catch((e) => {
+          setSending(false);
+          onChatError(
+            <Text>
+              A unknown error has occurred while trying to generate a response. This shouldn't happen unless the server
+              is down. Please try and refresh the page.
+            </Text>
+          );
+          reject(e);
+          console.error(e);
+        });
+    });
+  };
+
+  return { sendMessage, sending, setSending, regenerate };
+};
+
+export const useUserDetails = () => {
+  const [details, setDetails] = useState<UserDetails>();
+  const [loading, setLoading] = useState(true);
+  const store = useContext(StoreContext);
+
+  useEffect(() => {
+    if (!store?.authenticated) {
+      return;
+    }
+
+    setLoading(true);
+    fetch("/api/users/details")
+      .then((r) => r.json())
+      .then((d) => {
+        setLoading(false);
+
+        if (d.status_code === 200) {
+          setDetails(d.payload);
+        } else if (d.status_code === 429) {
+          notifications.show({
+            title: "Rate limit error",
+            message:
+              "You have hit a rate limit. This shouldn't happen unless you're sending too many requests at once. Please wait for a minute and refresh the page. If the problem persists, contact us.",
+            color: "red",
+          });
+        } else {
+          notifications.show({
+            title: "Unknown server error",
+            message:
+              "A unknown error has occurred while trying to fetch the user's details. Please try again. If the problem persists, please contact us.",
+            color: "red",
+          });
+        }
+      })
+      .catch((e) => {
+        setLoading(false);
+        console.error(e);
+        notifications.show({
+          title: "Network error",
+          message:
+            "A unknown network error has occurred while trying to fetch the user's details. Please refresh the page to try again.",
+          color: "red",
+        });
+      });
+  }, [store?.authenticated]);
+
+  return { details, setDetails, loading, authenticated: store?.authenticated };
+};
+
+export const formateDate = (date: Date) => {
+  const months = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
+
+  const month = months[date.getMonth()];
+  const day = date.getDate();
+  const year = date.getFullYear();
+  let hour = date.getHours();
+  let period = "AM";
+
+  if (hour === 0) {
+    hour = 12;
+  } else if (hour === 12) {
+    period = "PM";
+  } else if (hour > 12) {
+    hour -= 12;
+    period = "PM";
+  }
+
+  const minute = String(date.getMinutes()).padStart(2, "0");
+
+  return `${month} ${day}, ${year} at ${hour}:${minute} ${period}`;
+};
+
+export function normalizeValue(value: number, min: number, max: number): number {
+  if (min === max) {
+    throw new Error("Minimum and maximum values cannot be the same.");
+  }
+
+  const normalized = ((value - min) / (max - min)) * 100;
+  return Math.max(0, Math.min(100, normalized));
+}
+
+export const useSubscription = (forceStatus?: "pending" | "activated" | null) => {
+  const [status, setStatus] = useState<"pending" | "activated" | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const store = useContext(StoreContext);
+
+  useEffect(() => {
+    setLoading(true);
+
+    if (!store?.authenticated || store.isAuthenticating) {
+      return;
+    }
+
+    if (forceStatus !== undefined) {
+      setStatus(forceStatus);
+    } else if (store.userPlanDetails?.id === "basic") {
+      setStatus("activated");
+    } else if (store.userPlanDetails?.subscriptionStatus === "pending") {
+      setStatus("pending");
+    } else {
+      setStatus(null);
+    }
+
+    setLoading(false);
+  }, [store]);
+
+  return { status, loading };
 };

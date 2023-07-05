@@ -7,6 +7,7 @@ from flask import Blueprint, request
 from library import responses, schemas, tasks, utils
 from library.exceptions import *
 from library.security import route_security
+from library.socketio import socketio
 from models.character import Character
 from models.message import Message
 from models.session import ChatSession
@@ -24,6 +25,7 @@ def setup(server: "App") -> Blueprint:
     route_security.patch(app, authentication_methods=["session", "api", "rapid-api"])
 
     @app.post("/")
+    @server.limiter.limit("1/second;25/minute")
     @route_security.request_json_schema(schema=schemas.POST_CHAT)
     @route_security.exclude
     def post_chat():
@@ -51,10 +53,15 @@ def setup(server: "App") -> Blueprint:
                         content=data["content"],
                         user_name=data.get("user_name"),
                         session_id=data.get("session_id", "0"),
+                        id=data.get("id"),
                     )
                 except ModelRequestsLimitExceeded as e:
                     return responses.create_response(
                         exception=e, status_code=responses.CODE_403
+                    )
+                except MessageIDAlreadyExists as e:
+                    return responses.create_response(
+                        exception=e, status_code=responses.CODE_409
                     )
                 except openai.APIError:
                     logger.exception("A OpenAI error has occurred.")
@@ -160,15 +167,16 @@ def setup(server: "App") -> Blueprint:
         page = int(request.args.get("page", 1))
         page_size = int(request.args.get("page_size", 25))
 
-        sessions = list(
-            utils.paginate_mongoclass_cursor(
+        sessions = [
+            x.to_json()
+            for x in utils.paginate_mongoclass_cursor(
                 ChatSession.find_classes(
                     {"created_by": user_id, "character_id": character_id}
-                ).sort("_id", -1),
+                ).sort([("last_used", -1), ("_id", -1)]),
                 page=page,
                 page_size=page_size,
             )
-        )
+        ]
 
         return responses.create_paginated_response(
             objects=sessions, page=page, page_size=page_size
@@ -203,6 +211,72 @@ def setup(server: "App") -> Blueprint:
             )
 
         return responses.create_response(payload=dataclasses.asdict(session))
+
+    @app.post("/regenerate")
+    @route_security.request_json_schema(schema=schemas.POST_CHAT_REGENERATE)
+    @route_security.exclude
+    def regenerate_chat():
+        """
+        Regenerate a chat.
+        """
+
+        user_id = utils.get_user_id_from_request(anonymous=True)
+        if user_id is None:
+            return responses.create_response(status_code=responses.CODE_400)
+
+        data = request.get_json()
+        character_id = data["character_id"]
+        session_id = data["session_id"]
+
+        session: Optional[ChatSession] = ChatSession.find_class(
+            {"character_id": character_id, "created_by": user_id, "id": session_id}
+        )
+        if session is None:
+            return responses.create_response(status_code=responses.CODE_404)
+
+        message_query = {
+            "character_id": character_id,
+            "created_by": user_id,
+            "session_id": session_id,
+        }
+        try:
+            last_message = next(
+                Message.find_classes({**message_query}).sort("_id", -1).limit(1)
+            )
+        except IndexError:
+            last_message = None
+
+        if last_message is None or not last_message.generated:
+            return responses.create_response(status_code=responses.CODE_404)
+
+        character: Optional[Character] = Character.find_class({"id": character_id})
+        if character is None:
+            return responses.create_response(status_code=responses.CODE_404)
+
+        last_user_message: Message = next(
+            Message.find_classes(message_query).sort("_id", -1).limit(1).skip(1)
+        )
+        last_message.delete()
+        last_user_message.delete()
+
+        try:
+            response = character.chat(
+                user_id=last_user_message.created_by,
+                role="user",
+                content=last_user_message.content,
+                user_name=last_user_message.name,
+                session_id=last_user_message.session_id,
+                id=last_user_message.id,
+            )
+        except ModelRequestsLimitExceeded as e:
+            return responses.create_response(
+                exception=e, status_code=responses.CODE_403
+            )
+        except openai.APIError:
+            logger.exception("A OpenAI error has occurred while trying to regenerate.")
+            return responses.create_response(status_code=responses.CODE_500)
+
+        return responses.create_response(payload=response.to_json())
 
     @app.get("/sessions/count")
     @route_security.request_args_schema(schema=schemas.GET_CHAT_SESSIONS_COUNT)
@@ -251,12 +325,21 @@ def setup(server: "App") -> Blueprint:
                 },
             )
 
+        old_name = session.name
         for k, v in request.json.items():
             if k == "name":
                 setattr(session, "name_changed", True)
             setattr(session, k, v)
 
         session.save()
+
+        if old_name != session.name:
+            socketio.emit(
+                "session-renamed",
+                {"name": session.name, "id": session_id},
+                room=user_id,
+            )
+
         return responses.create_response()
 
     @app.delete("/sessions")
@@ -289,6 +372,7 @@ def setup(server: "App") -> Blueprint:
             )
 
         tasks.delete_chat_session.delay(query)
+        socketio.emit("session-deleted", {"id": session_id}, room=user_id)
 
         return responses.create_response(
             payload={

@@ -10,8 +10,8 @@ import os
 import eventlet
 import flask_monitoringdashboard as flask_monitor
 from dotenv import load_dotenv
-
-from library.socketio import socketio
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 if not os.getenv("PRODUCTION"):
     load_dotenv()
@@ -21,9 +21,10 @@ import coloredlogs
 from flask import Flask, send_from_directory
 from flask_cors import CORS
 from flask_session import Session
-from flask_socketio import emit
 
 from database import mongoclass
+from library import responses
+from library.socketio import socketio
 
 coloredlogs.install(level="DEBUG")
 logger = logging.getLogger(__name__)
@@ -32,6 +33,12 @@ logger = logging.getLogger(__name__)
 class App:
     def __init__(self) -> None:
         self.app = Flask(__name__, static_folder="./build")
+        self.limiter = Limiter(
+            get_remote_address,
+            app=self.app,
+            default_limits=["10 per second"],
+            storage_uri=os.getenv("MONGODB_URI"),
+        )
         flask_monitor.config.init_from(
             file=os.path.join(os.getcwd(), "flask_monitor.cfg")
         )
@@ -88,6 +95,15 @@ class App:
             else:
                 return send_from_directory(self.app.static_folder, "index.html")
 
+    def register_error_handlers(self) -> None:
+        """
+        Register the error handler routes.
+        """
+
+        @self.app.errorhandler(429)
+        def too_many_requests(e):
+            return responses.create_response(status_code=responses.CODE_429)
+
     def prelaunch(self) -> None:
         """
         This function's purpose is to perform feature related operations before the
@@ -97,6 +113,7 @@ class App:
     def start(self) -> None:
         logger.info("Starting OptiTalk...")
         self.register_index_route()
+        self.register_error_handlers()
         self.register_blueprints()
 
         self.prelaunch()

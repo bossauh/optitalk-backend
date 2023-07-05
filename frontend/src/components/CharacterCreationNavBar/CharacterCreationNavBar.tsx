@@ -24,7 +24,7 @@ const Item: FC<{ name: string; path: string }> = (props) => {
       css={{
         cursor: "pointer",
         px: "10px",
-        py: "15px",
+        py: "0px",
         border: "0px solid",
         borderColor: active ? "$primary" : "rgba(0,0,0,0)",
         bg: active ? "$accents1" : "none",
@@ -67,7 +67,7 @@ const CharacterCreationNavBar: FC = () => {
     <Box
       css={{
         display: "flex",
-        boxShadow: "$lg",
+        boxShadow: "$sm",
         flexDirection: "column",
         bg: "$accents0",
         "@smMax": {

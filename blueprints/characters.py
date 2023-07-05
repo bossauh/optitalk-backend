@@ -3,7 +3,7 @@ import re
 import time
 from typing import TYPE_CHECKING, Optional
 
-from flask import Blueprint, request
+from flask import Blueprint, redirect, request
 from library import responses, schemas, tasks, utils
 from library.configlib import config
 from library.security import route_security
@@ -23,6 +23,22 @@ def setup(server: "App") -> Blueprint:
     app = Blueprint("characters", __name__, url_prefix="/api/characters")
 
     route_security.patch(app, authentication_methods=["session", "api", "rapid-api"])
+
+    @app.get("/render-character-avatar")
+    @route_security.request_args_schema(schema=schemas.GET_RENDER_CHARACTER_AVATAR)
+    @route_security.exclude
+    def render_character_avatar():
+        character_id = request.args["character_id"]
+        character: Optional[Character] = Character.find_class({"id": character_id})
+        if character is None:
+            return responses.create_response(status_code=responses.CODE_404)
+
+        # TODO: In the future, we will have character avatars in our server, so account
+        # for that.
+        if character.image:
+            return redirect(character.image)
+
+        return responses.create_response(status_code=responses.CODE_404)
 
     @app.get("/details")
     @route_security.request_args_schema(schema=schemas.GET_CHARACTER_DETAILS)

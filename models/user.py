@@ -1,4 +1,5 @@
 import dataclasses
+import datetime as dt
 import uuid
 from typing import Generator, Optional, Union
 
@@ -95,6 +96,9 @@ class User:
     password: Union[str, bytes] = dataclasses.field(repr=False)
     admin: bool = False
     account_type: types.AccountType = "default"
+    created_at: Optional[dt.datetime] = dataclasses.field(
+        default_factory=dt.datetime.now
+    )
     plan: Plan = dataclasses.field(default_factory=lambda: Plan())
     id: str = dataclasses.field(default_factory=lambda: str(uuid.uuid4()))
 

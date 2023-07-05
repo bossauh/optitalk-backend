@@ -14,6 +14,7 @@ from library.configlib import config
 from library.exceptions import *
 from library.gpt import gpt
 from library.security import route_security
+from library.socketio import socketio
 from library.tasks import (
     increase_model_requests_state,
     insert_message,
@@ -181,6 +182,8 @@ class Character:
         role: Literal["user", "assistant"] = "user",
         user_name: Optional[str] = None,
         session_id: Optional[str] = "0",
+        regenerated: Optional[bool] = False,
+        id: Optional[str] = None,
     ) -> Message:
         """
         Chat with the Character. Either chat as the "user" role itself or as the "assistant"
@@ -203,6 +206,12 @@ class Character:
             The ID of the chat session to use. Defaults to `"0"` which is the default chat
             session when no chat session is provided. If the provided `session_id` does
             not exist, it will be created automatically.
+        `regenerated` : Optional[bool]
+            Makes it so that the message this generates (if it generates any) is marked as
+            regenerated.
+        `id` : Optional[str]
+            The ID to give this message. Defaults to None which is to create one
+            from scratch.
 
         Raises
         ------
@@ -222,7 +231,12 @@ class Character:
 
         # Clean user_name
         if user_name:
-            user_name = re.sub(r"[^\w-]{1,64}", "", user_name)
+            user_name = utils.clean_user_name(user_name)
+
+        if id:
+            if Message.count_documents({"id": id}):
+                raise MessageIDAlreadyExists(id)
+            logger.info(f"Using pre-provided ID: {id}")
 
         new_message = Message(
             content=content,
@@ -231,21 +245,28 @@ class Character:
             character_id=self.id,
             created_by=user_id,
             name=user_name,
+            raw_input=content,
+            id=id or str(uuid.uuid4()),
         )
 
         # Create session if it does not exist
-        if not ChatSession.count_documents(
+        session = ChatSession.find_class(
             {"id": session_id, "character_id": self.id, "created_by": user_id}
-        ):
-            ChatSession(
+        )
+        if not session:
+            session = ChatSession(
                 id=session_id,
-                name="Generated Session",
+                name="New Session",
                 character_id=self.id,
                 created_by=user_id,
-            ).save()
+            )
             logger.info(
                 f"Automatically created session '{session_id}' because it does not exist."
             )
+
+        session.last_used = datetime.datetime.now()
+        session.save()
+        socketio.emit("session-used", {"id": session_id}, room=user_id)
 
         if role == "assistant":
             insert_message.delay(**dataclasses.asdict(new_message))
@@ -332,7 +353,7 @@ class Character:
                 else:
                     content = f"Response: {message.content}"
                     if message.knowledge_hint:
-                        content += f"\nKnowledge Hint (The user does not know about this hint): {message.knowledge_hint}"
+                        content += f"\n\nMessage Context (A piece of text related to the user's message that you can use to generate a response. The user shouldn't know anything about this and if this context is unrelated, ignore it): {message.knowledge_hint}"
 
                 message_data = {
                     "role": message.role,
@@ -417,9 +438,12 @@ class Character:
             intent=message_intent,
             knowledge_hint=knowledge_hint,
             processing_time=processing_time,
+            generated=True,
+            regenerated=regenerated,
         )
 
         insert_message.delay(**dataclasses.asdict(new_message))
+        time.sleep(1)
         insert_message.delay(**dataclasses.asdict(response_message))
         increase_model_requests_state.delay(
             id=user_id, model=self.parameters.model, value=1

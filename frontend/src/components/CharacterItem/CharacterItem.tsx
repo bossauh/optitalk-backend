@@ -7,6 +7,7 @@ import {
   Card,
   Flex,
   Group,
+  Indicator,
   MediaQuery,
   Menu,
   Text,
@@ -23,6 +24,7 @@ import { BsFillChatDotsFill, BsRobot } from "react-icons/bs";
 import { HiEllipsisVertical } from "react-icons/hi2";
 import { IoCopy } from "react-icons/io5";
 import { MdFavorite, MdOutlineFavoriteBorder } from "react-icons/md";
+import { useNavigate } from "react-router-dom";
 import { CharacterType } from "../../common/types";
 import { deleteCharacter, formatNumber, toggleFavorite, useActiveCharacter } from "../../common/utils";
 import StoreContext from "../../contexts/store";
@@ -35,6 +37,8 @@ const CharacterItem: FC<CharacterType> = (props) => {
   const [favorite, setFavorite] = useState(props.favorite);
   const [isOwner, setIsOwner] = useState(false);
   const [deleted, setDeleted] = useState(false);
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (store?.authenticated && !store.isAuthenticating) {
@@ -88,9 +92,18 @@ const CharacterItem: FC<CharacterType> = (props) => {
         <Card.Section withBorder inheritPadding py="xs">
           <Group spacing="sm" position="apart" noWrap>
             <Group spacing="xs" noWrap>
-              <Avatar src={props.image} color="default">
-                <BsRobot size="25px" />
-              </Avatar>
+              <Indicator
+                zIndex={10}
+                label="Private"
+                size={14}
+                position="bottom-center"
+                color="yellow"
+                disabled={!props.private}
+              >
+                <Avatar src={props.image} color="default">
+                  <BsRobot size="25px" />
+                </Avatar>
+              </Indicator>
               <Flex direction="column" gap={2}>
                 <MediaQuery
                   largerThan="sm"
@@ -206,7 +219,17 @@ const CharacterItem: FC<CharacterType> = (props) => {
         </Flex>
         <Card.Section withBorder inheritPadding py="xs" mt="xs">
           <Group position="apart">
-            <Anchor fz="sm" underline href={`/character/${props.id}`}>
+            <Anchor
+              fz="sm"
+              underline
+              onMouseDown={(e) => {
+                if (e.button === 1) {
+                  window.open(`/character/${props.id}`, "_blank");
+                } else {
+                  navigate(`/character/${props.id}`);
+                }
+              }}
+            >
               See More
             </Anchor>
             <Button

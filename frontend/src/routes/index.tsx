@@ -5,14 +5,13 @@ import {
   AppShell,
   Avatar,
   Box,
+  Button,
   Divider,
   Flex,
-  Footer,
   Group,
   Header,
   Loader,
   MediaQuery,
-  Menu,
   NavLink,
   Navbar,
   Overlay,
@@ -20,24 +19,26 @@ import {
   Text,
   ThemeIcon,
   Title,
-  Tooltip,
+  useMantineTheme,
 } from "@mantine/core";
-import { modals } from "@mantine/modals";
-import { notifications } from "@mantine/notifications";
+import { useMediaQuery } from "@mantine/hooks";
 import { FC, forwardRef, useContext, useEffect, useState } from "react";
-import { AiFillCaretRight, AiFillRedditCircle, AiFillRobot, AiFillSetting, AiOutlinePlus } from "react-icons/ai";
-import { BsDiscord, BsFillChatFill } from "react-icons/bs";
-import { FiLogOut } from "react-icons/fi";
-import { GiHamburgerMenu, GiUpgrade } from "react-icons/gi";
-import { HiOutlineLogin } from "react-icons/hi";
-import { MdAccountCircle, MdContactSupport } from "react-icons/md";
+import { AiFillRobot, AiFillSetting, AiOutlinePlus } from "react-icons/ai";
+import { BsFillChatFill } from "react-icons/bs";
+import { FaDiscord, FaPaypal, FaRedditAlien } from "react-icons/fa";
+import { GiHamburgerMenu } from "react-icons/gi";
+import { MdAccountCircle } from "react-icons/md";
 import { Outlet, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import socket from "../common/socket";
 import { useSessions } from "../common/utils";
-import SettingsModal from "../components/SettingsModal";
 import StoreContext from "../contexts/store";
 
 const HeaderComponent: FC<{ setOpen: React.Dispatch<React.SetStateAction<boolean>>; open: boolean }> = (props) => {
+  const navigate = useNavigate();
+  const store = useContext(StoreContext);
+  const theme = useMantineTheme();
+  const largerThanSm = useMediaQuery(`(min-width: ${theme.breakpoints.sm})`);
+
   return (
     <Header
       height={70}
@@ -49,32 +50,82 @@ const HeaderComponent: FC<{ setOpen: React.Dispatch<React.SetStateAction<boolean
         background: theme.colors.dark[8],
       })}
     >
-      <Group align="center">
+      <Group
+        align="center"
+        onClick={() => {
+          navigate("/chat");
+        }}
+        sx={{
+          cursor: "pointer",
+        }}
+      >
         <Avatar src="/images/mothlabs-icon.png" />
         <Title order={2}>OptiTalk</Title>
       </Group>
-      <MediaQuery
-        largerThan="sm"
-        styles={{
-          display: "none",
-        }}
-      >
-        <ActionIcon
-          size="lg"
-          onClick={() => {
-            props.setOpen(!props.open);
+      <Group align="center" spacing="xs">
+        {!store?.authenticated && (
+          <Button
+            size={largerThanSm ? "sm" : "xs"}
+            onClick={() => {
+              navigate("/oauth/google-oauth");
+            }}
+          >
+            Sign Up
+          </Button>
+        )}
+        {store?.userPlanDetails?.subscriptionStatus == null && store?.authenticated && (
+          <Button
+            size={largerThanSm ? "sm" : "xs"}
+            onClick={() => {
+              navigate("/optitalk-plus");
+            }}
+            variant="gradient"
+          >
+            Optitalk+
+          </Button>
+        )}
+        {["activated", "pending"].includes(store?.userPlanDetails?.subscriptionStatus as string) && (
+          <MediaQuery
+            largerThan="sm"
+            styles={{
+              display: "none",
+            }}
+          >
+            <Button
+              size="xs"
+              onClick={() => {
+                navigate("/my-account");
+              }}
+            >
+              My Account
+            </Button>
+          </MediaQuery>
+        )}
+
+        <MediaQuery
+          largerThan="sm"
+          styles={{
+            display: "none",
           }}
         >
-          <GiHamburgerMenu size={20} />
-        </ActionIcon>
-      </MediaQuery>
+          <ActionIcon
+            size="lg"
+            onClick={() => {
+              props.setOpen(!props.open);
+            }}
+          >
+            <GiHamburgerMenu size={20} />
+          </ActionIcon>
+        </MediaQuery>
+      </Group>
     </Header>
   );
 };
 
 const NavbarItem: FC<{
-  path: string;
+  path?: string;
   label: string;
+  href?: string;
   noRightSection?: boolean;
   defaultOpened?: boolean;
   opened?: boolean;
@@ -100,14 +151,16 @@ const NavbarItem: FC<{
       return;
     }
 
-    if (location.pathname.startsWith(props.path)) {
-      if (props.path === "/" && location.pathname !== "/") {
-        setActive(false);
+    if (props.path != null) {
+      if (location.pathname.startsWith(props.path)) {
+        if (props.path === "/" && location.pathname !== "/") {
+          setActive(false);
+        } else {
+          setActive(true);
+        }
       } else {
-        setActive(true);
+        setActive(false);
       }
-    } else {
-      setActive(false);
     }
   }, [location.pathname, searchParams]);
 
@@ -121,7 +174,13 @@ const NavbarItem: FC<{
       opened={props.opened}
       defaultOpened={props.defaultOpened}
       onClick={() => {
-        navigate(props.path);
+        if (props.path) {
+          navigate(props.path);
+        }
+
+        if (props.href) {
+          window.open(props.href, "_blank");
+        }
 
         if (props.matchParamKey && props.matchParamValue) {
           let newParams = new URLSearchParams(searchParams);
@@ -149,21 +208,29 @@ const NavbarItem: FC<{
 
 interface SessionItemProps extends React.ComponentPropsWithoutRef<"div"> {
   label: string;
+  messages: number;
 }
 
-const SessionItem = forwardRef<HTMLDivElement, SessionItemProps>(({ label, ...others }: SessionItemProps, ref) => (
-  <div ref={ref} {...others}>
-    <Text truncate maw="180px">
-      {label}
-    </Text>
-  </div>
-));
+const SessionItem = forwardRef<HTMLDivElement, SessionItemProps>(
+  ({ label, messages, ...others }: SessionItemProps, ref) => (
+    <Flex direction="column" ref={ref} {...others}>
+      <Text truncate maw="180px">
+        {label}
+      </Text>
+      <Text fz="xs" truncate maw="180px">
+        {messages} Messages
+      </Text>
+    </Flex>
+  )
+);
 
 const SessionSelection: FC = () => {
   const [sessions, setSessions, loading] = useSessions();
 
   const navigate = useNavigate();
   const store = useContext(StoreContext);
+
+  const [searchParams] = useSearchParams();
 
   useEffect(() => {
     const onAutoLabeled = (data: any) => {
@@ -175,6 +242,14 @@ const SessionSelection: FC = () => {
         });
         return newSessions;
       });
+
+      // @ts-expect-error
+      store?.setActiveSession((prev: any) => {
+        let copy = { ...prev };
+        copy.new = false;
+        copy.name = data.new_name;
+        return copy;
+      });
     };
     socket.on("session-auto-labeled", onAutoLabeled);
 
@@ -183,12 +258,70 @@ const SessionSelection: FC = () => {
     };
   }, []);
 
+  useEffect(() => {
+    const onSessionDeleted = (data: any) => {
+      setSessions((prev) => prev.filter((i) => i.id !== data.id));
+    };
+
+    const onSessionRenamed = (data: any) => {
+      setSessions((prev) => {
+        let newSessions = prev.map((s) => {
+          let d = s;
+          d.name = data.id === d.id ? data.name : d.name;
+          return d;
+        });
+
+        return newSessions;
+      });
+
+      // @ts-expect-error
+      store?.setActiveSession((prev: any) => {
+        let copy = { ...prev };
+        copy.name = data.name;
+        return copy;
+      });
+    };
+
+    const onSessionUsed = (data: any) => {
+      setSessions((prev) => {
+        let newSessions = [...prev];
+        let idx = newSessions.findIndex((i) => i.id === data.id);
+        if (idx !== -1) {
+          let session = newSessions.splice(idx, 1);
+          newSessions = [...session, ...newSessions];
+        }
+        return newSessions;
+      });
+    };
+
+    socket.on("session-deleted", onSessionDeleted);
+    socket.on("session-renamed", onSessionRenamed);
+    socket.on("session-used", onSessionUsed);
+
+    return () => {
+      socket.off("session-deleted", onSessionDeleted);
+      socket.off("session-renamed", onSessionRenamed);
+      socket.off("session-used", onSessionUsed);
+    };
+  }, []);
+
+  useEffect(() => {
+    let id = searchParams.get("session");
+    if (id) {
+      let session = sessions.find((i) => i.id === id);
+      if (session) {
+        store?.setActiveSession(session);
+        return;
+      }
+    }
+  }, [searchParams, sessions]);
+
   return (
     <Group noWrap align="end" spacing="xs" position="apart">
       <Select
-        label="Session"
-        placeholder="Pick a session"
-        data={sessions.map((i) => ({ label: i.name, value: i.id }))}
+        label="Chats"
+        placeholder="Pick a chat"
+        data={sessions.map((i) => ({ label: i.name, value: i.id, messages: i.messagesCount }))}
         searchable
         clearable
         size="xs"
@@ -202,6 +335,7 @@ const SessionSelection: FC = () => {
             let session = sessions.find((i) => i.id === v);
             if (session) {
               store?.setActiveSession(session);
+              navigate(`/chat?session=${v}`);
               return;
             }
           }
@@ -227,7 +361,6 @@ const SessionSelection: FC = () => {
 
 const NavbarComponent: FC<{ opened: boolean }> = (props) => {
   const store = useContext(StoreContext);
-  const navigate = useNavigate();
 
   return (
     <Navbar
@@ -242,6 +375,42 @@ const NavbarComponent: FC<{ opened: boolean }> = (props) => {
         <SessionSelection />
       </Navbar.Section>
       <Navbar.Section grow pt="lg">
+        {store?.authenticated && (
+          <NavbarItem
+            icon={
+              <ThemeIcon color="lime" variant="light">
+                <MdAccountCircle />
+              </ThemeIcon>
+            }
+            path="/my-account"
+            label="My Account"
+          >
+            {store.userPlanDetails?.subscriptionStatus != null && (
+              <NavbarItem
+                path="/my-account"
+                label="My Subscription"
+                matchParamKey="tab"
+                matchParamValue="subscription"
+                icon={
+                  <ThemeIcon color="blue" variant="light">
+                    <FaPaypal />
+                  </ThemeIcon>
+                }
+              />
+            )}
+            <NavbarItem
+              path="/my-account"
+              label="Settings"
+              matchParamKey="tab"
+              matchParamValue="settings"
+              icon={
+                <ThemeIcon color="orange" variant="light">
+                  <AiFillSetting />
+                </ThemeIcon>
+              }
+            />
+          </NavbarItem>
+        )}
         <NavbarItem
           path="/"
           label="Characters"
@@ -276,165 +445,42 @@ const NavbarComponent: FC<{ opened: boolean }> = (props) => {
             </ThemeIcon>
           }
         />
+        <NavbarItem
+          href="https://discord.gg/Cuue5V7X8J"
+          label="Discord"
+          icon={
+            <ThemeIcon color="#5865F2" variant="filled">
+              <FaDiscord />
+            </ThemeIcon>
+          }
+        />
+        <NavbarItem
+          href="https://www.reddit.com/r/optitalk/"
+          label="Subreddit"
+          icon={
+            <ThemeIcon color="#FF4500" variant="filled">
+              <FaRedditAlien />
+            </ThemeIcon>
+          }
+        />
       </Navbar.Section>
       <Divider />
-      {store !== null && (
-        <Navbar.Section p="sm">
-          {store.userPlanDetails?.subscriptionStatus !== "activated" && store.authenticated && (
-            <Tooltip
-              label={
-                store.userPlanDetails?.subscriptionStatus === "pending" ? "Subscription being activated..." : undefined
-              }
-              sx={{
-                zIndex: 1000,
-              }}
-              opened={
-                [null, undefined, "activated"].includes(store.userPlanDetails?.subscriptionStatus) ? false : undefined
-              }
-            >
-              <NavLink
-                label={store.userPlanDetails?.subscriptionStatus === "pending" ? "Activating OptiTalk+" : "OptiTalk+"}
-                icon={
-                  store.userPlanDetails?.subscriptionStatus === "pending" ? (
-                    <Loader size="xs" color="teal" />
-                  ) : (
-                    <GiUpgrade />
-                  )
-                }
-                variant="subtle"
-                active
-                color="teal"
-                onClick={() => {
-                  navigate("/optitalk-plus");
-                }}
-                disabled={store.userPlanDetails?.subscriptionStatus === "pending"}
-              />
-            </Tooltip>
-          )}
-
-          {store.authenticated ? (
-            <Menu>
-              <Menu.Target>
-                <NavLink
-                  description={store.userPlanDetails?.subscriptionStatus === "activated" ? "OptiTalk+ User" : undefined}
-                  label="My Account"
-                  icon={<MdAccountCircle />}
-                  rightSection={<AiFillCaretRight />}
-                />
-              </Menu.Target>
-              <Menu.Dropdown>
-                <Menu.Label>{store.displayName}</Menu.Label>
-                <Menu.Item
-                  onClick={() => {
-                    window.open(
-                      "https://docs.google.com/forms/d/e/1FAIpQLSciRo_XWFTlm6MN4Ex__e2Da9UlHDG4osgJKGB5qVWsh5j96w/viewform?usp=sf_link",
-                      "_blank"
-                    );
-                  }}
-                  icon={<MdContactSupport />}
-                >
-                  Contact Us
-                </Menu.Item>
-                <Menu.Item
-                  onClick={() => {
-                    modals.open({
-                      title: "Settings",
-                      children: <SettingsModal />,
-                      centered: true,
-                      size: "lg",
-                    });
-                  }}
-                  icon={<AiFillSetting />}
-                >
-                  Settings
-                </Menu.Item>
-                <Menu.Divider />
-                <Menu.Item
-                  onClick={() => {
-                    fetch("/api/users/logout")
-                      .then((r) => r.json())
-                      .then((d) => {
-                        if (d.status_code !== 200) {
-                          notifications.show({
-                            title: "Error trying to logout",
-                            message: "Please try again. If the problem persists, contact us.",
-                            color: "red",
-                          });
-                        } else {
-                          window.open("/");
-                        }
-                      });
-                  }}
-                  icon={<FiLogOut />}
-                  color="red"
-                >
-                  Logout
-                </Menu.Item>
-              </Menu.Dropdown>
-            </Menu>
-          ) : (
-            <NavLink
-              label="Sign Up"
-              icon={<HiOutlineLogin />}
-              onClick={() => {
-                navigate("/oauth/google-oauth");
-              }}
-            />
-          )}
-        </Navbar.Section>
-      )}
-    </Navbar>
-  );
-};
-
-const FooterItem: FC = () => {
-  return (
-    <Footer
-      height={40}
-      p="xs"
-      sx={(theme) => ({
-        background: theme.colors.dark[8],
-      })}
-    >
-      <Flex align="center" justify="space-between">
-        <Flex align="center" gap="lg">
-          <Group
-            onClick={() => {
-              window.open("https://discord.gg/Cuue5V7X8J", "_blank");
-            }}
-            spacing={2}
-            sx={{
-              cursor: "pointer",
-            }}
-          >
-            <ThemeIcon
-              size="sm"
-              sx={{
-                color: "#5865F2",
-                background: "none",
-              }}
-            >
-              <BsDiscord />
-            </ThemeIcon>
+      <Navbar.Section px="xs" py="sm">
+        <Flex w="100%" direction="column" align="center">
+          <Group>
             <Text fz="xs" color="gray.5">
-              Discord Server
+              MothLabs © 2023
             </Text>
+            <Anchor
+              href="https://docs.google.com/forms/d/e/1FAIpQLSciRo_XWFTlm6MN4Ex__e2Da9UlHDG4osgJKGB5qVWsh5j96w/viewform"
+              fz="xs"
+            >
+              Contact Form
+            </Anchor>
           </Group>
         </Flex>
-        <Flex align="center" gap="lg">
-          <Anchor
-            fz="xs"
-            target="_blank"
-            href="https://docs.google.com/forms/d/e/1FAIpQLSciRo_XWFTlm6MN4Ex__e2Da9UlHDG4osgJKGB5qVWsh5j96w/viewform"
-          >
-            Contact Us
-          </Anchor>
-          <Text fz="xs" color="gray.5">
-            MothLabs © 2023
-          </Text>
-        </Flex>
-      </Flex>
-    </Footer>
+      </Navbar.Section>
+    </Navbar>
   );
 };
 
@@ -443,14 +489,13 @@ const Index: FC = () => {
 
   return (
     <AppShell
-      padding="md"
       header={<HeaderComponent setOpen={setNavbarOpen} open={navbarOpen} />}
       navbar={<NavbarComponent opened={navbarOpen} />}
-      footer={<FooterItem />}
       styles={(theme) => ({
         main: { backgroundColor: theme.colors.dark[7], height: "100vh" },
       })}
       navbarOffsetBreakpoint="sm"
+      padding={0}
     >
       {navbarOpen && (
         <MediaQuery
@@ -466,6 +511,7 @@ const Index: FC = () => {
             onClick={() => {
               setNavbarOpen(false);
             }}
+            pos="fixed"
           />
         </MediaQuery>
       )}

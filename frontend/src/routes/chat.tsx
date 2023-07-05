@@ -1,245 +1,422 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { ActionIcon, Flex, Textarea } from "@mantine/core";
+import {
+  ActionIcon,
+  Anchor,
+  Box,
+  Flex,
+  Loader,
+  ScrollArea,
+  Text,
+  Textarea,
+  Title,
+  useMantineTheme,
+} from "@mantine/core";
+import { useDisclosure, useMediaQuery } from "@mantine/hooks";
+import { notifications } from "@mantine/notifications";
+import { nprogress } from "@mantine/nprogress";
 import { FC, useContext, useEffect, useRef, useState } from "react";
 import { BsFillSendFill } from "react-icons/bs";
-import { useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { v4 as uuidv4 } from "uuid";
-import { ChatErrorType, MessageType, SessionType } from "../common/types";
-import { deserializeMessageData, deserializeSessionData } from "../common/utils";
-import Box from "../components/Box";
-import Footer from "../components/Footer";
-import MessagesView from "../components/MessagesView";
-import NoCharacterSelected from "../components/NoCharacterSelected";
+import { MessageType } from "../common/types";
+import { useActiveCharacter, useMessages, useSendMessage } from "../common/utils";
+import Message from "../components/Message";
+import MessagesAside from "../components/MessagesAside";
+import MessagesHeader from "../components/MessagesHeader/MessagesHeader";
+import MessagesRenderer from "../components/MessagesRenderer";
 import StoreContext from "../contexts/store";
 
 const Chat: FC = () => {
-  const storeCtx = useContext(StoreContext);
+  const theme = useMantineTheme();
+  const [character] = useActiveCharacter();
+  const navigate = useNavigate();
+  const store = useContext(StoreContext);
 
-  const { sessionId } = useParams();
+  const [role, setRole] = useState("user");
 
-  const [messages, setMessages] = useState<MessageType[]>([]);
-  const [loadMore, setLoadMore] = useState(false);
-  const [showTyping, setShowTyping] = useState(false);
-  const [error, setError] = useState<ChatErrorType>();
+  const isMd = useMediaQuery(`(max-width: ${theme.breakpoints.md})`);
+  const isSm = useMediaQuery(`(max-width: ${theme.breakpoints.sm})`);
+  const [asideOpened, setAsideOpened] = useState(false);
 
-  const scrollToBottom = () => {
-    if (messagesRef.current) {
-      messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
+  const [messageError, setMessageError] = useState<React.ReactNode | null>(null);
+
+  useEffect(() => {
+    if (isMd != null) {
+      setAsideOpened(!isMd);
     }
-  };
+  }, [isMd]);
+
+  // Refs
+  const chatboxRef = useRef<HTMLTextAreaElement | null>(null);
   const messagesRef = useRef<HTMLDivElement | null>(null);
 
-  const chatboxRef = useRef<HTMLTextAreaElement | null>(null);
+  // Hook for managing messages
+  const { messages, setMessages, loading, loadingMore, loadMore } = useMessages(
+    character?.id,
+    store?.activeSession?.id,
+    store?.activeSession?.new
+  );
 
-  const getMessagePayload = (message: MessageType, session: SessionType) => {
-    let payload = {
-      character_id: message.characterId,
-      content: message.content,
-      session_id: session.id,
-    };
-
-    if (storeCtx?.authenticated && storeCtx.displayName) {
-      if (storeCtx.displayName.length < 100 && storeCtx.displayName.length > 0) {
-        // @ts-expect-error
-        payload.user_name = storeCtx.displayName;
-      }
+  // Function whenever the messages area scroll position changes
+  const onMessagesScrollChange = (position: { x: number; y: number }) => {
+    if (position.y < 1) {
+      loadMore();
     }
-
-    return payload;
   };
 
-  const postMessage = (message: MessageType, session: SessionType) => {
-    setShowTyping(true);
-    fetch("/api/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(getMessagePayload(message, session)),
+  // Function that gets called whenever there's an error sending a message
+  const onChatError = (children: React.ReactNode) => {
+    setMessageError(children);
+  };
+
+  // Hook for sending messages
+  const { sendMessage, sending, regenerate, setSending } = useSendMessage(
+    onChatError,
+    character?.id,
+    store?.activeSession?.id
+  );
+
+  // Scroll to the bottom
+  const scrollToBottom = () => {
+    if (messagesRef.current) {
+      messagesRef.current.scrollTo({ top: messagesRef.current.scrollHeight });
+    }
+  };
+
+  const deleteMessage = (id: string) => {
+    fetch("/api/chat?id=" + id, {
+      method: "DELETE",
     })
       .then((r) => r.json())
       .then((d) => {
-        setShowTyping(false);
+        console.debug(d);
 
         if (d.status_code === 200) {
-          const message = deserializeMessageData(d.payload);
           setMessages((prev) => {
-            return [...prev, message];
+            let filtered = prev.filter((i) => i.id !== id);
+            return filtered;
           });
-        }
-
-        if (d.status_code === 403) {
-          let message: string;
-          if (!storeCtx?.authenticated) {
-            message =
-              "Oops! It seems like you've hit the limit of 5 messages per hour on non-registered accounts. Please register your account by clicking the Sign Up button at the sidebar to continue.";
-          } else {
-            message = `Oh no! It seems you've reached the 15 messages per 3 hours limit. You can either wait for 3 hours or [upgrade to OptiTalk+](/optitalk-plus) to enjoy unlimited messages, characters, and many more benefits for just 4.99$.`;
-          }
-
-          setError({ message: message });
-        }
-
-        if (d.status_code === 500) {
-          setError({
-            message: "A unknown server error has occurred while trying to generate a response. Please try again.",
+        } else if (d.status_code === 404) {
+          notifications.show({
+            title: "Message not found",
+            message: "Cannot delete a message that does not exist",
+            color: "red",
+          });
+        } else {
+          notifications.show({
+            title: "Server error while trying to delete a message",
+            message: "Please try again. If the problem persists, contact us.",
+            color: "red",
           });
         }
       })
-      .catch((error) => {
-        setShowTyping(false);
-        setError({
+      .catch((e) => {
+        console.error(e);
+        notifications.show({
+          title: "Network Error",
           message:
-            "Too much traffic. Please retry. This is a temporary problem that we are working on solving as soon as possible.",
+            "Failed to reach out to OptiTalk's server for a message deletion attempt. Please try again. If the problem persists, contact us.",
+          color: "red",
         });
-        console.error(error);
       });
   };
 
   const retry = () => {
-    const message = messages[messages.length - 1];
-    const session = storeCtx?.activeSession;
-
-    if (session !== undefined) {
-      setError(undefined);
-      postMessage(message, session);
-    }
+    let previousMessage = messages[messages.length - 1];
+    setMessages((prev) => prev.slice(0, -1));
+    onSubmit(previousMessage.content);
   };
 
-  const onSubmit = (text: string) => {
-    scrollToBottom();
-    setError(undefined);
-
-    if (text.trim().length === 0) {
+  const regenerateResponse = () => {
+    if (sending) {
       return;
     }
 
-    if (storeCtx?.activeCharacter === undefined || storeCtx.userId === undefined) {
-      return;
-    }
-
-    let session: SessionType;
-    if (storeCtx.activeSession === undefined) {
-      session = {
-        id: uuidv4(),
-        characterId: storeCtx.activeCharacter.id,
-        createdBy: storeCtx.userId,
-        name: "Generated Session",
-        new: true,
-      };
-      storeCtx.setActiveSession(session);
-    } else {
-      session = storeCtx.activeSession;
-    }
-
-    const message: MessageType = {
-      characterId: storeCtx.activeCharacter.id,
-      content: text,
-      createdAt: new Date().toISOString(),
-      id: uuidv4(),
-      role: "user",
-    };
-
-    setMessages((prev) => {
-      return [...prev, message];
+    setMessages((prev) => prev.slice(0, -1));
+    regenerate().then((data) => {
+      if (data.message) {
+        let message = data.message;
+        message.new = true;
+        setMessages((prev) => [...prev, message]);
+      }
     });
-
-    postMessage(message, session);
   };
+
+  // Submit message handler
+  const onSubmit = (value: string) => {
+    if (!value.trim()) {
+      return;
+    }
+
+    setMessageError(null);
+
+    let userName: string | undefined | null = store?.displayName;
+    if (role === "assistant") {
+      userName = null;
+    }
+
+    // Append the message if the user is the sender
+    let id: string | undefined = undefined;
+    if (role === "user") {
+      let temporaryMessageObject: MessageType = {
+        characterId: character?.id as string,
+        content: value,
+        createdAt: new Date().toUTCString(),
+        id: uuidv4(),
+        role: "user",
+        createdBy: store?.userId || "unknown",
+      };
+      id = temporaryMessageObject.id;
+      setMessages((prev) => [...prev, temporaryMessageObject]);
+    }
+
+    sendMessage(value, userName, role, id).then((data) => {
+      if (data.message) {
+        let message = data.message;
+        message.new = true;
+        setMessages((prev) => [...prev, message]);
+      }
+    });
+  };
+
+  // useEffect for showing the navigation loading at the top
+  useEffect(() => {
+    if (loading) {
+      nprogress.start();
+    } else {
+      nprogress.complete();
+      setTimeout(() => {
+        scrollToBottom();
+      }, 10);
+      setTimeout(() => {
+        nprogress.reset();
+      }, 800);
+    }
+  }, [loading]);
 
   useEffect(() => {
-    if (sessionId !== undefined && storeCtx?.activeCharacter) {
-      fetch(`/api/chat/session?character_id=${storeCtx.activeCharacter.id}&session_id=${sessionId}`)
-        .then((r) => r.json())
-        .then((d) => {
-          if (d.status_code === 200) {
-            if (storeCtx.activeSession && storeCtx.activeSession.id === d.payload.id) {
-              return;
-            }
-            storeCtx.setActiveSession(deserializeSessionData(d.payload));
-          }
-        });
+    if (sending) {
+      scrollToBottom();
     }
-  }, [sessionId, storeCtx?.activeCharacter]);
+  }, [sending]);
+
+  if (!character) {
+    return (
+      <Flex direction="column" h="100%" align="center" justify="center" p="lg">
+        <Flex direction="column" gap="xs" align="center">
+          <Title align="center" order={2}>
+            No Character Selected
+          </Title>
+          <Text align="center" fz="sm">
+            Select a character by going to the Characters page or{" "}
+            <Anchor
+              onClick={() => {
+                navigate("/");
+              }}
+            >
+              clicking here
+            </Anchor>
+          </Text>
+        </Flex>
+      </Flex>
+    );
+  }
 
   return (
-    <Flex direction="column" gap="sm" h="100%">
-      {storeCtx?.activeCharacter === undefined ? (
+    <Flex h="100%">
+      <Flex
+        direction="column"
+        gap={0}
+        sx={{
+          flex: 1,
+        }}
+      >
+        <MessagesHeader
+          role={role}
+          setRole={setRole}
+          asideOpened={asideOpened}
+          setAsideOpened={setAsideOpened}
+          sending={sending}
+        />
+        {messages.length > 0 ? (
+          <ScrollArea
+            sx={{
+              flex: 1,
+              overflowY: "auto",
+              marginTop: isSm ? "80px" : undefined,
+            }}
+            viewportRef={messagesRef}
+            onScrollPositionChange={onMessagesScrollChange}
+            px="lg"
+          >
+            <Flex direction="column">
+              {loadingMore && (
+                <Box
+                  sx={{
+                    alignSelf: "center",
+                  }}
+                >
+                  <Loader size="sm" />
+                </Box>
+              )}
+
+              <MessagesRenderer
+                sending={sending}
+                delete={deleteMessage}
+                messages={messages}
+                regenerate={regenerateResponse}
+                newMessageSent={() => {
+                  setSending(false);
+                  scrollToBottom();
+                  if (!isMd) {
+                    chatboxRef.current?.focus();
+                  }
+                }}
+              />
+
+              {messageError && (
+                <Message
+                  authorId={character.id}
+                  content=""
+                  createdAt={new Date().toUTCString()}
+                  id={uuidv4()}
+                  role="assistant"
+                  avatar={`/api/characters/render-character-avatar?character_id=${character.id}`}
+                  name={character.name}
+                  error
+                  errorContents={messageError}
+                  retryButton
+                  retryFunction={retry}
+                />
+              )}
+
+              {sending && role === "user" && (
+                <Message
+                  authorId={character.id}
+                  content=""
+                  createdAt={new Date().toUTCString()}
+                  id={uuidv4()}
+                  role="assistant"
+                  avatar={`/api/characters/render-character-avatar?character_id=${character.id}`}
+                  name={character.name}
+                  typing
+                />
+              )}
+              <Box h="30px"></Box>
+            </Flex>
+          </ScrollArea>
+        ) : loading ? (
+          // Shown when loading
+          <Flex
+            sx={{
+              flex: 1,
+            }}
+            direction="column"
+            align="center"
+            justify="center"
+            gap="md"
+            p="lg"
+          >
+            <Title order={2}>Loading Messages...</Title>
+            <Loader />
+          </Flex>
+        ) : (
+          // Shown when a character is selected but there's no messages
+          <Flex
+            direction="column"
+            align="center"
+            justify="center"
+            sx={{
+              flex: 1,
+            }}
+            p="lg"
+          >
+            <Title align="center" order={2}>
+              You are chatting with {character.name}
+            </Title>
+            <Text fz="sm" align="center">
+              Send a message to begin your conversation with{" "}
+              <Anchor href={`/character/${character.id}`}>{character.name}</Anchor>.
+            </Text>
+          </Flex>
+        )}
         <Flex
           direction="column"
           gap="xs"
-          align="center"
+          px="lg"
+          pb={!store?.authenticated || store.userPlanDetails?.subscriptionStatus === "activated" ? "lg" : undefined}
           sx={{
-            flex: 1,
-            marginTop: "200px",
+            boxShadow: "0px -31px 41px 8px rgba(26,27,30,1);",
+            zIndex: 1,
           }}
         >
-          <NoCharacterSelected />
-        </Flex>
-      ) : (
-        <Box
-          css={{
-            overflowY: "auto",
-            flex: 1,
-          }}
-          ref={messagesRef}
-          onScroll={() => {
-            if (messagesRef.current) {
-              if (messagesRef.current.scrollTop < 50) {
-                return setLoadMore(true);
+          <Textarea
+            placeholder="Enter Chat"
+            autosize
+            maxRows={6}
+            minRows={1}
+            ref={chatboxRef}
+            onKeyDown={(e) => {
+              if ((e.key === "Enter" || e.keyCode === 13 || e.which === 13) && !e.shiftKey) {
+                e.preventDefault();
+                onSubmit(e.currentTarget.value);
+                e.currentTarget.value = "";
               }
+            }}
+            onFocus={() => {
+              if (isMd) {
+                setTimeout(() => {
+                  scrollToBottom();
+                }, 100);
+              }
+            }}
+            rightSection={
+              sending ? (
+                <Loader size="xs" />
+              ) : (
+                <ActionIcon
+                  variant="filled"
+                  color="primary"
+                  mr="sm"
+                  onClick={() => {
+                    if (chatboxRef.current) {
+                      onSubmit(chatboxRef.current.value);
+                      chatboxRef.current.value = "";
+                    }
+                  }}
+                >
+                  <BsFillSendFill />
+                </ActionIcon>
+              )
             }
-            setLoadMore(false);
-          }}
-        >
-          <MessagesView
-            scrollToBottom={scrollToBottom}
-            loadMore={loadMore}
-            messages={messages}
-            setMessages={setMessages}
-            showTyping={showTyping}
-            error={error}
-            retry={retry}
+            disabled={character === undefined || sending || messageError !== null}
           />
-        </Box>
-      )}
-      <Flex direction="column" gap="xs">
-        <Textarea
-          placeholder="Enter Chat"
-          autosize
-          maxRows={6}
-          minRows={1}
-          ref={chatboxRef}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              onSubmit(e.currentTarget.value);
-              e.currentTarget.value = "";
-            }
-          }}
-          rightSection={
-            <ActionIcon
-              variant="filled"
-              color="primary"
-              mr="sm"
-              onClick={() => {
-                if (chatboxRef.current) {
-                  onSubmit(chatboxRef.current.value);
-                  chatboxRef.current.value = "";
-                }
-              }}
-            >
-              <BsFillSendFill />
-            </ActionIcon>
-          }
-          disabled={storeCtx?.activeCharacter === undefined || showTyping}
-        />
-        <Box
-          css={{
-            alignSelf: "center",
-          }}
-        >
-          <Footer />
-        </Box>
+        </Flex>
+
+        {store?.authenticated && store?.userPlanDetails?.subscriptionStatus !== "activated" && (
+          <Flex direction="column" px="lg" align="center" py="sm">
+            <Text fz="xs" align="center">
+              {store?.userPlanDetails?.subscriptionStatus === "pending" ? (
+                <>Your subscription is currently being activated. This should take just a few seconds.</>
+              ) : (
+                <>
+                  You are currently limited to 15 messages per 3 hours.{" "}
+                  <Anchor
+                    onClick={() => {
+                      navigate("/optitalk-plus");
+                    }}
+                  >
+                    Upgrade to OptiTalk+
+                  </Anchor>{" "}
+                  to enjoy unlimited messages and more benefits.{" "}
+                </>
+              )}
+            </Text>
+          </Flex>
+        )}
       </Flex>
+
+      <MessagesAside opened={asideOpened} setOpened={setAsideOpened} />
     </Flex>
   );
 };

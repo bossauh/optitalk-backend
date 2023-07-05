@@ -135,6 +135,9 @@ def setup(server: "App") -> Blueprint:
 
         plan = user.plan
         plan_state: UserPlanState = UserPlanState.find_class({"id": user_id})
+        if plan_state is None:
+            plan_state = UserPlanState(id=user_id)
+            plan_state.save()
 
         data = {
             "email": user.email,

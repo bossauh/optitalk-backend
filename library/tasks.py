@@ -237,6 +237,16 @@ def log_time_took_metric(**params):
 
 
 @app.task
+def send_email(to: str, html_template: str, variables: dict[str, str]):
+    ...
+
+
+@app.task
+def error_alert(title: str, description: str, metadata: dict[str, str]):
+    ...
+
+
+@app.task
 def reset_users_state_hourly_cap():
     states: Generator[UserPlanState, None, None] = UserPlanState.find_classes({})
     for state in states:

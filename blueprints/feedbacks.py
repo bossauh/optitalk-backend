@@ -1,9 +1,7 @@
-import dataclasses
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
-import bcrypt
 from flask import Blueprint, request, session
-from library import responses, schemas, users, utils
+from library import responses, schemas, utils
 from library.exceptions import *
 from library.security import route_security
 from models.feedback import InlineFeedback

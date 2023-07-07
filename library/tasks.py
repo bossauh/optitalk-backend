@@ -242,7 +242,7 @@ def send_email(to: str, html_template: str, variables: dict[str, str]):
 
 
 @app.task
-def error_alert(title: str, description: str, metadata: dict[str, str]):
+def error_alert(title: str, description: str, trace: str, metadata: dict[str, str]):
     ...
 
 

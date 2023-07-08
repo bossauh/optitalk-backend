@@ -39,6 +39,7 @@ POST_CHARACTERS = Schema(
         ),
         Optional("private"): bool,
         Optional("image"): Url(),
+        Optional("avatar_id"): Any(str, None),
     }
 )
 PATCH_CHARACTERS = Schema(
@@ -46,9 +47,7 @@ PATCH_CHARACTERS = Schema(
         Optional("name"): All(str, Length(min=1, max=64)),
         Optional("description"): All(str, Length(min=1, max=2048)),
         Optional("model"): Any("basic", "advanced"),
-        # Optional("knowledge"): All(
-        #     [Schema(All(str, min=1, max=250))], Length(min=0, max=10)
-        # ),
+        Optional("avatar_id"): Any(str, None),
         Optional("personalities"): All(
             [Schema(All(str, min=1, max=100))], Length(min=0, max=10)
         ),

@@ -33,9 +33,9 @@ def setup(server: "App") -> Blueprint:
         if character is None:
             return responses.create_response(status_code=responses.CODE_404)
 
-        # TODO: In the future, we will have character avatars in our server, so account
-        # for that.
-        if character.image:
+        if character.avatar_id:
+            return redirect(f"/api/files/render-avatar?id=${character.avatar_id}")
+        elif character.image:
             return redirect(character.image)
 
         return responses.create_response(status_code=responses.CODE_404)

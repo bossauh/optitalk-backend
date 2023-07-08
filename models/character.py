@@ -80,6 +80,7 @@ class Character:
     )
     uses: int = 0
     featured: bool = False
+    avatar_id: Optional[str] = None
     image: Optional[str] = None
     personalities: Optional[list[str]] = None
     favorite_words: Optional[list[str]] = None

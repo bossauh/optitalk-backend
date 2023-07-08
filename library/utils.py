@@ -1,3 +1,4 @@
+import io
 import logging
 import re
 from typing import TYPE_CHECKING, Optional
@@ -6,6 +7,7 @@ import tiktoken
 from flask import request, session
 from models.user import Application, User
 from mongoclass.cursor import Cursor
+from PIL import Image
 
 from library import users
 from library.configlib import config
@@ -16,6 +18,39 @@ if TYPE_CHECKING:
 
 
 logger = logging.getLogger(__name__)
+
+
+def compress_image(image_stream, max_file_size):
+    with Image.open(image_stream) as image:
+        compressed_image_stream = io.BytesIO()
+
+        # Compress the image
+        image.save(compressed_image_stream, format="JPEG", optimize=True)
+        compressed_size = compressed_image_stream.tell()
+
+        # Check if the image meets the maximum file size
+        if compressed_size > max_file_size:
+            logger.info("Compressing image further...")
+
+            compression_ratio = (max_file_size / compressed_size) ** 0.5
+            further_compressed_image_stream = io.BytesIO()
+
+            new_width = int(image.width * compression_ratio)
+            new_height = int(image.height * compression_ratio)
+            resized_image = image.resize((new_width, new_height), Image.ANTIALIAS)
+
+            resized_image.save(
+                further_compressed_image_stream, format="JPEG", optimize=True
+            )
+
+            further_compressed_size = further_compressed_image_stream.tell()
+
+            if further_compressed_size <= max_file_size:
+                further_compressed_image_stream.seek(0)
+                return further_compressed_image_stream.read()
+
+        compressed_image_stream.seek(0)
+        return compressed_image_stream.read()
 
 
 def parse_character_response(

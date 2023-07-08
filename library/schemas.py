@@ -154,3 +154,5 @@ POST_INLINE_FEEDBACK = Schema(
         Optional("message_id"): Any(str, None),
     }
 )
+GET_RENDER_AVATAR = Schema({Required("id"): str})
+DELETE_FILE = Schema({Required("id"): str})

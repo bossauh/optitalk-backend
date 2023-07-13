@@ -34,7 +34,7 @@ def setup(server: "App") -> Blueprint:
             return responses.create_response(status_code=responses.CODE_404)
 
         if character.avatar_id:
-            return redirect(f"/api/files/render-avatar?id=${character.avatar_id}")
+            return redirect(f"/api/files/render-avatar?id={character.avatar_id}")
         elif character.image:
             return redirect(character.image)
 
@@ -224,6 +224,9 @@ def setup(server: "App") -> Blueprint:
             private=data.get("private", False),
             image=data.get("image"),
             response_styles=data.get("response_styles", []),
+            avatar_id=data.get("avatar_id"),
+            public_description=data.get("public_description"),
+            definition_visibility=data.get("definition_visibility", True),
         )
         character.save()
         logger.info(f"Created new character named '{character.name} ({character.id}).'")

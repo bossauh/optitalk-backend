@@ -371,7 +371,7 @@ def setup(server: "App") -> Blueprint:
             setattr(character, k, v)
 
         character.save()
-        return responses.create_response(status_code=responses.CODE_200)
+        return responses.create_response(payload=data.to_json(), status_code=responses.CODE_200)
 
     @app.delete("/")
     def delete_characters():

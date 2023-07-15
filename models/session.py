@@ -14,6 +14,8 @@ class ChatSession:
     created_by: str
     name: str
     character_id: str
+    story_mode: bool = False
+    story: Optional[str] = None
     name_changed: bool = False
     last_used: Optional[dt.datetime] = None
     created_at: dt.datetime = dataclasses.field(default_factory=dt.datetime.now)

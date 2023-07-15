@@ -19,6 +19,7 @@ export function deserializeCharacterData(data: any): CharacterType {
   return {
     createdAt: data.created_at,
     createdBy: data.created_by,
+    publicDescription: data.public_description,
     description: data.description,
     exampleExchanges: data.example_exchanges,
     favoriteWords: data.favorite_words,
@@ -31,6 +32,9 @@ export function deserializeCharacterData(data: any): CharacterType {
     uses: data.uses,
     responseStyles: data.response_styles,
     favorite: data.favorite,
+    avatarId: data.avatar_id,
+    definitionVisibility: data.definition_visibility,
+    nsfw: data.nsfw,
   };
 }
 
@@ -42,6 +46,8 @@ export function deserializeSessionData(data: any): SessionType {
     name: data.name,
     messagesCount: data.messages_count,
     lastUsed: data.last_used,
+    storyMode: data.story_mode,
+    story: data.story,
   };
 }
 
@@ -716,6 +722,8 @@ export const useSendMessage = (
 
       // Create a brand new session if no session was provided.
       // This will also set the active session to the newly created session.
+      let storyMode = false;
+      let story = null;
       if (!sessionId) {
         let session = {
           id: uuidv4(),
@@ -723,8 +731,14 @@ export const useSendMessage = (
           createdBy: store?.userId as string,
           name: "New Session",
           new: true,
+          storyMode: store?.storyMode || false,
+          story: store?.storyModeContent || null,
         };
         sessionId = session.id;
+        storyMode = session.storyMode;
+        story = session.story;
+        store?.setStoryMode(false);
+        store?.setStoryModeContent(null);
         store?.setActiveSession(session);
       }
 
@@ -741,6 +755,8 @@ export const useSendMessage = (
           user_name: userName,
           role: role,
           session_id: sessionId,
+          story_mode: storyMode,
+          story: story,
           id: id,
         }),
       })
@@ -910,4 +926,68 @@ export const useSubscription = (forceStatus?: "pending" | "activated" | null) =>
   }, [store]);
 
   return { status, loading };
+};
+
+export const useUploadAvatar = (
+  file: File | null,
+  defaultId?: string | null,
+  previewOnly?: boolean
+): [string | null, boolean] => {
+  const [id, setId] = useState<string | null>(defaultId || null);
+  const [uploading, setUploading] = useState(false);
+
+  const uploadFile = () => {
+    if (!file) {
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", file, file.name);
+
+    fetch("/api/files/upload-avatar", { method: "POST", body: formData })
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.status_code === 400) {
+          notifications.show({
+            title: "Malformed file",
+            message:
+              "The avatar you uploaded might be malformed or not a valid image file. Please choose a different file.",
+            color: "red",
+          });
+        } else if (d.status_code === 500) {
+          notifications.show({
+            title: "Uploading failed",
+            message: "Uploading your avatar failed. Please try again. If the problem persists, contact us.",
+            color: "red",
+          });
+        } else if (d.status_code === 200) {
+          setId(d.payload.id);
+        } else {
+          notifications.show({
+            title: "Unknown error",
+            message:
+              "A unknown error has occurred while trying to upload your avatar. Please try again. If the problem persists, contact us.",
+            color: "red",
+          });
+        }
+      })
+      .catch((e) => {
+        console.error(e);
+        notifications.show({
+          title: "Unknown error uploading avatar",
+          message: "Please try again. If the problem persists, contact us.",
+          color: "red",
+        });
+      });
+  };
+
+  useEffect(() => {
+    setUploading(false);
+
+    if (file) {
+      uploadFile();
+    }
+  }, [file]);
+
+  return [id, uploading];
 };

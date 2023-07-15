@@ -56,7 +56,9 @@ def setup(server: "App") -> Blueprint:
         return upload_file("avatar")
 
     @app.get("/render-avatar")
+    @server.limiter.exempt
     @route_security.request_args_schema(schemas.GET_RENDER_AVATAR)
+    @route_security.exclude
     def render_avatar():
         id = request.args["id"]
 

@@ -1,29 +1,19 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { MantineProvider } from "@mantine/core";
-import { ModalsProvider } from "@mantine/modals";
-import { NextUIProvider, createTheme } from "@nextui-org/react";
+import { Notifications, notifications } from "@mantine/notifications";
+import { NavigationProgress } from "@mantine/nprogress";
 import { PayPalScriptProvider } from "@paypal/react-paypal-js";
-import { FC, useEffect, useState } from "react";
+import { FC, useCallback, useEffect, useState } from "react";
 import { useCookies } from "react-cookie";
 import { AiFillCheckCircle, AiFillWarning } from "react-icons/ai";
 import { RouterProvider, createBrowserRouter } from "react-router-dom";
 import socket from "./common/socket";
-import { CharacterType, GlobalModalPopupProps, SessionType, UserPlanDetails } from "./common/types";
+import { CharacterType, SessionType, UserPlanDetails } from "./common/types";
 import { deserializeCharacterData, deserializeUserPlanDetails } from "./common/utils";
-import StoreContext from "./contexts/store";
-import "./index.css";
-
-// Components
-import { Notifications, notifications } from "@mantine/notifications";
-import CharacterBasicInformationEditor from "./components/CharacterBasicInformationEditor";
-import CharacterConversationEditor from "./components/CharacterConversationEditor";
-import CharacterKnowledgeEditor from "./components/CharacterKnowledgeEditor";
-
 import GlobalModalPopup from "./components/GlobalModalPopup";
 import HighTrafficWarning from "./components/HighTrafficWarning";
-
-// Routes
-import { NavigationProgress } from "@mantine/nprogress";
+import StoreContext from "./contexts/store";
+import "./index.css";
 import Index from "./routes";
 import CharacterView from "./routes/character-view";
 import Characters from "./routes/characters";
@@ -45,30 +35,6 @@ const paypalOptions = {
   components: "buttons",
 };
 
-const theme = createTheme({
-  type: "dark",
-  theme: {
-    colors: {
-      primaryTextGradient: "90deg, rgba(1,130,108,1) 0%, rgba(82,160,229,1) 100%",
-      primaryContainerBackground: "#141517",
-
-      background: "#1A1B1E",
-      inputColor: "red",
-
-      primary: "#01826C",
-      primaryShadow: "#016856",
-      primaryLight: "#016856",
-      primaryLightHover: "#016856",
-      primaryLightActive: "#014e41",
-
-      secondary: "#175873",
-      error: "#c63536",
-      gradient: "linear-gradient(90deg, rgba(1,130,108,1) 0%, rgba(82,160,229,1) 100%)",
-
-      accents0: "#222427",
-    },
-  },
-});
 const router = createBrowserRouter([
   {
     path: "/",
@@ -96,33 +62,15 @@ const router = createBrowserRouter([
         path: "/my-account",
         element: <MyAccount />,
       },
+      {
+        path: "/create-character",
+        element: <CreateCharacter />,
+      },
     ],
-  },
-  {
-    path: "/ec/:characterId",
-    element: <CreateCharacter />,
   },
   {
     path: "/oauth/google-oauth",
     element: <GoogleOAuth />,
-  },
-  {
-    path: "/create-character",
-    element: <CreateCharacter />,
-    children: [
-      {
-        path: "",
-        element: <CharacterBasicInformationEditor />,
-      },
-      {
-        path: "knowledge",
-        element: <CharacterKnowledgeEditor />,
-      },
-      {
-        path: "example-conversation",
-        element: <CharacterConversationEditor />,
-      },
-    ],
   },
   {
     path: "/logout",
@@ -135,6 +83,9 @@ const router = createBrowserRouter([
 ]);
 
 const App: FC = () => {
+  const [colorScheme, setColorScheme] = useState<"dark" | "light">("dark");
+
+  // States related to user's information
   const [authenticated, setAuthenticated] = useState(false);
   const [isAuthenticating, setIsAuthenticating] = useState(true);
   const [userId, setUserId] = useState<string>();
@@ -148,13 +99,11 @@ const App: FC = () => {
 
   const [cookies, , ,] = useCookies(["activeCharacterId"]);
 
-  const [globalModal, setGlobalModal] = useState<GlobalModalPopupProps>({
-    content: "",
-    showCounter: 0,
-    variant: "info",
-  });
+  // Temporary data for story mode
+  const [storyMode, setStoryMode] = useState(false);
+  const [storyModeContent, setStoryModeContent] = useState<string | null>("");
 
-  const fetchUserData = () => {
+  const fetchUserData = useCallback(() => {
     setIsAuthenticating(true);
     fetch("/api/users/is-authenticated")
       .then((r) => r.json())
@@ -184,7 +133,7 @@ const App: FC = () => {
 
         setIsAuthenticating(false);
       });
-  };
+  }, []);
 
   useEffect(() => {
     if (activeCharacter === undefined && cookies.activeCharacterId) {
@@ -268,61 +217,43 @@ const App: FC = () => {
   }, []);
 
   return (
-    <NextUIProvider theme={theme} disableBaseline>
-      <StoreContext.Provider
-        value={{
-          authenticated: authenticated,
-          displayName: displayName,
-          email: email,
-          userId: userId,
-          activeCharacter: activeCharacter,
-          setActiveCharacter: setActiveCharacter,
-          activeSession: activeSession,
-          setActiveSession: setActiveSession,
-          isAuthenticating: isAuthenticating,
-          openModal(content, variant, title, hideIn) {
-            setGlobalModal((prev) => {
-              return {
-                content: content,
-                variant: variant,
-                title: title,
-                hideIn: hideIn,
-                showCounter: prev.showCounter + 1,
-              };
-            });
-          },
-          userPlanDetails: userPlanDetails,
-          fetchUserData: fetchUserData,
+    <StoreContext.Provider
+      value={{
+        authenticated: authenticated,
+        displayName: displayName,
+        email: email,
+        userId: userId,
+        activeCharacter: activeCharacter,
+        setActiveCharacter: setActiveCharacter,
+        activeSession: activeSession,
+        setActiveSession: setActiveSession,
+        isAuthenticating: isAuthenticating,
+        userPlanDetails: userPlanDetails,
+        fetchUserData: fetchUserData,
+        storyMode: storyMode,
+        storyModeContent: storyModeContent,
+        setStoryMode: setStoryMode,
+        setStoryModeContent: setStoryModeContent,
+        setColorScheme: setColorScheme,
+      }}
+    >
+      <MantineProvider
+        theme={{
+          colorScheme: colorScheme,
+          primaryColor: "teal",
+          defaultGradient: { deg: 45, from: "teal", to: "blue.5" },
         }}
+        withNormalizeCSS
+        withGlobalStyles
       >
-        <MantineProvider
-          theme={{
-            colorScheme: "dark",
-            primaryColor: "teal",
-            defaultGradient: { deg: 45, from: "teal", to: "blue.5" },
-          }}
-          withNormalizeCSS
-          withGlobalStyles
-        >
-          <ModalsProvider>
-            <NavigationProgress />
-            <Notifications zIndex={500} />
-            {/* <HighTrafficWarning /> */}
-            <GlobalModalPopup
-              content={globalModal.content}
-              showCounter={globalModal.showCounter}
-              variant={globalModal.variant}
-              hideIn={globalModal.hideIn}
-              title={globalModal.title}
-            />
+        <NavigationProgress />
+        <Notifications zIndex={500} />
 
-            <PayPalScriptProvider options={paypalOptions}>
-              <RouterProvider router={router} />
-            </PayPalScriptProvider>
-          </ModalsProvider>
-        </MantineProvider>
-      </StoreContext.Provider>
-    </NextUIProvider>
+        <PayPalScriptProvider options={paypalOptions}>
+          <RouterProvider router={router} />
+        </PayPalScriptProvider>
+      </MantineProvider>
+    </StoreContext.Provider>
   );
 };
 

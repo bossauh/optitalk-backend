@@ -1,28 +1,36 @@
 import {
   ActionIcon,
+  Anchor,
   Avatar,
   Button,
+  Divider,
   Flex,
   Group,
+  Loader,
   MediaQuery,
   Overlay,
+  ScrollArea,
+  Stack,
+  Switch,
   Text,
   TextInput,
+  Textarea,
   Title,
   useMantineTheme,
 } from "@mantine/core";
-import { useMediaQuery } from "@mantine/hooks";
+import { useDebouncedState, useDidUpdate, useDisclosure, useMediaQuery } from "@mantine/hooks";
 import { modals } from "@mantine/modals";
 import { notifications } from "@mantine/notifications";
 import { nprogress } from "@mantine/nprogress";
 import { FC, useContext, useState } from "react";
 import { AiFillDelete, AiFillEdit } from "react-icons/ai";
 import { BsRobot } from "react-icons/bs";
-import { FaUser } from "react-icons/fa";
+import { FaLock, FaLockOpen, FaUser } from "react-icons/fa";
 import { IoSaveSharp } from "react-icons/io5";
 import { MdReportProblem } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
-import { useActiveCharacter } from "../../common/utils";
+import StoryMode from "../../blogs/StoryMode";
+import { useActiveCharacter, useSubscription } from "../../common/utils";
 import StoreContext from "../../contexts/store";
 
 const RenameSession: FC = () => {
@@ -125,6 +133,99 @@ const MessagesAside: FC<{
 
   const navigate = useNavigate();
 
+  const [storyMode, storyModeHandler] = useDisclosure(store?.activeSession?.storyMode || store?.storyMode);
+  const [storyModeContent, setStoryModeContent] = useDebouncedState(
+    store?.activeSession?.story || store?.storyModeContent || "",
+    500
+  );
+  const [storyModeError, setStoryModeError] = useState("");
+  const [storyModeSaving, storyModeSavingHandler] = useDisclosure(false);
+
+  const { status: subscriptionStatus, loading: subscriptionStatusLoading } = useSubscription();
+
+  useDidUpdate(() => {
+    if (!store?.activeSession || !activeCharacter) {
+      if (store) {
+        store.setStoryMode(storyMode);
+      }
+      return;
+    }
+
+    storyModeSavingHandler.open();
+    fetch(`/api/chat/sessions?session_id=${store.activeSession.id}&character_id=${activeCharacter.id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ story_mode: storyMode }),
+      headers: { "Content-Type": "application/json" },
+    })
+      .then((r) => r.json())
+      .then((d) => {
+        storyModeSavingHandler.close();
+        if (d.status_code !== 200) {
+          notifications.show({
+            title: "Unknown error",
+            message:
+              "A unknown error has occurred while attempting to enable/disable the story mode. Please try again. If the problem persists, contact us.",
+            color: "red",
+          });
+        }
+      })
+      .catch((e) => {
+        storyModeSavingHandler.close();
+        console.error(e);
+        notifications.show({
+          title: "Network error",
+          message:
+            "A network error has occurred while trying to enable/disable the story mode. Please try again by refreshing the page. If the problem persists, contact us.",
+          color: "red",
+        });
+      });
+  }, [storyMode]);
+
+  useDidUpdate(() => {
+    if (storyModeContent.length > 2048) {
+      setStoryModeError("Story must be less than or equal to 2048 characters.");
+      return;
+    } else {
+      setStoryModeError("");
+    }
+
+    if (!store?.activeSession || !activeCharacter) {
+      if (store) {
+        store.setStoryModeContent(storyModeContent);
+      }
+      return;
+    }
+
+    storyModeSavingHandler.open();
+    fetch(`/api/chat/sessions?session_id=${store.activeSession.id}&character_id=${activeCharacter.id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ story: storyModeContent }),
+      headers: { "Content-Type": "application/json" },
+    })
+      .then((r) => r.json())
+      .then((d) => {
+        storyModeSavingHandler.close();
+        if (d.status_code !== 200) {
+          notifications.show({
+            title: "Unknown error",
+            message:
+              "A unknown error has occurred while trying to save your story. Please try again by editing the story field or refreshing the page. If the problem persists, contact us.",
+            color: "red",
+          });
+        }
+      })
+      .catch((e) => {
+        storyModeSavingHandler.close();
+        console.error(e);
+        notifications.show({
+          title: "Network error",
+          message:
+            "A unknown network error has occurred while trying to save your story. Please try again by refreshing the page. If the problem persists, contact us.",
+          color: "red",
+        });
+      });
+  }, [storyModeContent]);
+
   return (
     <>
       <Flex
@@ -142,6 +243,7 @@ const MessagesAside: FC<{
           top: 0,
           bottom: 0,
           display: props.opened ? "block" : "none",
+          overflowY: "auto",
         })}
         align="center"
         px="lg"
@@ -188,108 +290,192 @@ const MessagesAside: FC<{
           </Group>
         </Flex>
 
-        {store?.activeSession && (
-          <Flex direction="column" mt="xl" gap="xs">
-            <Title order={4}>Session Settings</Title>
-            <Group spacing="xs" grow>
-              <Button
-                onClick={() => {
-                  modals.open({
-                    title: "Rename Session",
-                    children: <RenameSession />,
-                  });
-
-                  if (isMd) {
-                    props.setOpened(false);
-                  }
+        <Flex direction="column" mt="xl" gap={0}>
+          <Stack>
+            <Stack spacing={8}>
+              <Group spacing={7} align="center">
+                <Title order={4}>Story Mode</Title>
+                {subscriptionStatus === "pending" ? (
+                  <Loader size="xs" />
+                ) : subscriptionStatus === "activated" ? (
+                  <FaLockOpen size={16} color={theme.colors.yellow[7]} />
+                ) : (
+                  <FaLock size={16} color={theme.colors.yellow[7]} />
+                )}
+              </Group>
+              <Text fz="xs">
+                Steer your conversation to a story you desire.{" "}
+                <Anchor
+                  onClick={() => {
+                    modals.open({ title: "StoryMode.tsx", children: <StoryMode /> });
+                    if (isMd) {
+                      props.setOpened(false);
+                    }
+                  }}
+                >
+                  Learn more
+                </Anchor>
+              </Text>
+              {(!subscriptionStatusLoading || !store?.authenticated) && (
+                <>
+                  {!store?.authenticated ? (
+                    <Text fz="xs">To unlock story mode, you need to be logged in and subscribed to OptiTalk+</Text>
+                  ) : subscriptionStatus === "pending" ? (
+                    <Text fz="xs">
+                      Your OptiTalk+ subscription is being activated. This should take no more than a few seconds.
+                    </Text>
+                  ) : subscriptionStatus === null ? (
+                    <Text fz="xs">
+                      To unlock story mode, you need to subscribe to{" "}
+                      <Anchor
+                        onClick={() => {
+                          navigate("/optitalk-plus");
+                        }}
+                      >
+                        OptiTalk+
+                      </Anchor>
+                    </Text>
+                  ) : (
+                    <></>
+                  )}
+                </>
+              )}
+              <Switch
+                checked={subscriptionStatus !== "activated" ? false : storyMode}
+                disabled={subscriptionStatus !== "activated"}
+                onChange={() => {
+                  storyModeHandler.toggle();
                 }}
-                color="primary"
-                variant="light"
                 size="xs"
-                leftIcon={<AiFillEdit />}
-              >
-                Rename
-              </Button>
-              <Button
-                size="xs"
-                color="red"
-                leftIcon={<AiFillDelete />}
-                onClick={() => {
-                  if (isMd) {
-                    props.setOpened(false);
-                  }
-                  modals.openConfirmModal({
-                    title: "Delete this session?",
-                    children: (
-                      <Text>
-                        Are you sure you want to delete this session? Once this session is deleted all messages from
-                        this session is permanently deleted from our database.
-                      </Text>
-                    ),
-                    labels: { cancel: "Never mind", confirm: "DELETE" },
-                    confirmProps: { color: "red" },
-                    onConfirm: () => {
-                      nprogress.start();
-                      fetch(
-                        `/api/chat/sessions?session_id=${store.activeSession?.id}&character_id=${activeCharacter?.id}`,
-                        {
-                          method: "DELETE",
-                        }
-                      )
-                        .then((r) => r.json())
-                        .then((d) => {
-                          nprogress.complete();
-                          setTimeout(() => {
-                            nprogress.reset();
-                          }, 800);
-                          if (d.status_code === 200) {
-                            notifications.show({
-                              title: "Deleted successfully",
-                              message: "Session and its messages are now scheduled for deletion.",
-                              color: "teal",
-                            });
-                            store.setActiveSession(undefined);
-                            navigate("/chat");
-                          } else if (d.status_code === 404) {
-                            notifications.show({
-                              title: "Session not found",
-                              message:
-                                "The session you're trying to delete probably does not exist. Try reloading the page and if the error persists, contact us.",
-                              color: "red",
-                            });
-                          } else {
-                            notifications.show({
-                              title: "Unknown error",
-                              message:
-                                "A unknown error has occurred while trying to delete this session. Please try again. If the problem persists, contact us.",
-                              color: "red",
-                            });
-                          }
-                        })
-                        .catch((e) => {
-                          nprogress.complete();
-                          setTimeout(() => {
-                            nprogress.reset();
-                          }, 800);
-
-                          console.error(e);
-                          notifications.show({
-                            title: "Network error",
-                            message:
-                              "A network error has occurred. Please try refreshing the page. If the problem persists, contact us.",
-                            color: "red",
-                          });
-                        });
-                    },
-                  });
+              />
+            </Stack>
+            <Stack spacing={12}>
+              <Textarea
+                placeholder="Example: You're first going to start with asking the user X. You're then going to forcefully switch the topic to Y..."
+                disabled={subscriptionStatus !== "activated" || !storyMode}
+                minRows={10}
+                defaultValue={storyModeContent}
+                error={storyModeError}
+                onChange={(e) => {
+                  setStoryModeContent(e.target.value);
                 }}
-                variant="light"
-              >
-                Delete
-              </Button>
-            </Group>
-          </Flex>
-        )}
+              />
+              <Group spacing={4} align="center" opacity={storyModeSaving ? 1 : 0}>
+                <Loader size="xs" />
+                <Text color="gray.5" fz="xs">
+                  Saving...
+                </Text>
+              </Group>
+            </Stack>
+          </Stack>
+
+          {store?.activeSession && (
+            <>
+              <Divider mt="sm" />
+
+              <Flex direction="column" mt="md" gap="xs">
+                <Title order={4}>Session Settings</Title>
+                <Group spacing="xs" grow>
+                  <Button
+                    onClick={() => {
+                      modals.open({
+                        title: "Rename Session",
+                        children: <RenameSession />,
+                      });
+
+                      if (isMd) {
+                        props.setOpened(false);
+                      }
+                    }}
+                    color="primary"
+                    variant="light"
+                    size="xs"
+                    leftIcon={<AiFillEdit />}
+                  >
+                    Rename
+                  </Button>
+                  <Button
+                    size="xs"
+                    color="red"
+                    leftIcon={<AiFillDelete />}
+                    onClick={() => {
+                      if (isMd) {
+                        props.setOpened(false);
+                      }
+                      modals.openConfirmModal({
+                        title: "Delete this session?",
+                        children: (
+                          <Text>
+                            Are you sure you want to delete this session? Once this session is deleted all messages from
+                            this session is permanently deleted from our database.
+                          </Text>
+                        ),
+                        labels: { cancel: "Never mind", confirm: "DELETE" },
+                        confirmProps: { color: "red" },
+                        onConfirm: () => {
+                          nprogress.start();
+                          fetch(
+                            `/api/chat/sessions?session_id=${store.activeSession?.id}&character_id=${activeCharacter?.id}`,
+                            {
+                              method: "DELETE",
+                            }
+                          )
+                            .then((r) => r.json())
+                            .then((d) => {
+                              nprogress.complete();
+                              setTimeout(() => {
+                                nprogress.reset();
+                              }, 800);
+                              if (d.status_code === 200) {
+                                notifications.show({
+                                  title: "Deleted successfully",
+                                  message: "Session and its messages are now scheduled for deletion.",
+                                  color: "teal",
+                                });
+                                store.setActiveSession(undefined);
+                                navigate("/chat");
+                              } else if (d.status_code === 404) {
+                                notifications.show({
+                                  title: "Session not found",
+                                  message:
+                                    "The session you're trying to delete probably does not exist. Try reloading the page and if the error persists, contact us.",
+                                  color: "red",
+                                });
+                              } else {
+                                notifications.show({
+                                  title: "Unknown error",
+                                  message:
+                                    "A unknown error has occurred while trying to delete this session. Please try again. If the problem persists, contact us.",
+                                  color: "red",
+                                });
+                              }
+                            })
+                            .catch((e) => {
+                              nprogress.complete();
+                              setTimeout(() => {
+                                nprogress.reset();
+                              }, 800);
+
+                              console.error(e);
+                              notifications.show({
+                                title: "Network error",
+                                message:
+                                  "A network error has occurred. Please try refreshing the page. If the problem persists, contact us.",
+                                color: "red",
+                              });
+                            });
+                        },
+                      });
+                    }}
+                    variant="light"
+                  >
+                    Delete
+                  </Button>
+                </Group>
+              </Flex>
+            </>
+          )}
+        </Flex>
       </Flex>
       {props.opened && (
         <MediaQuery

@@ -1,12 +1,15 @@
-import { ActionIcon, Box, Container, Flex, MediaQuery, Text, Title } from "@mantine/core";
+/* eslint-disable react-hooks/exhaustive-deps */
+import { Accordion, ActionIcon, Badge, Box, Container, Flex, List, MediaQuery, Text, Title } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { PayPalButtons } from "@paypal/react-paypal-js";
-import { FC } from "react";
+import { FC, useContext, useEffect } from "react";
 import { MdArrowBack } from "react-icons/md";
 import { useNavigate } from "react-router";
+import StoreContext from "../contexts/store";
 
 const OptiTalkPlus: FC = () => {
   const navigate = useNavigate();
+  const store = useContext(StoreContext);
 
   const addingSubscriptionIdFailed = () => {
     notifications.show({
@@ -15,6 +18,14 @@ const OptiTalkPlus: FC = () => {
       message: "Please contact philmattdev@gmail.com for immediate assistance.",
     });
   };
+
+  useEffect(() => {
+    store?.setColorScheme("light");
+
+    return () => {
+      store?.setColorScheme("dark");
+    };
+  }, []);
 
   return (
     <MediaQuery
@@ -25,7 +36,6 @@ const OptiTalkPlus: FC = () => {
     >
       <Box
         sx={(theme) => ({
-          background: "#FAFAFA",
           paddingTop: "40px",
           minHeight: "100vh",
         })}
@@ -57,7 +67,7 @@ const OptiTalkPlus: FC = () => {
               paddingBottom: "100px",
             }}
           >
-            <Flex align="center" wrap="wrap" gap="xl">
+            <Flex wrap="wrap" gap="xl" direction="column">
               <Flex
                 direction="column"
                 gap={45}
@@ -66,7 +76,7 @@ const OptiTalkPlus: FC = () => {
                   // width: "700px",
                 }}
               >
-                <Flex direction="column" gap={4}>
+                <Flex direction="column" gap={4} maw="700px">
                   <Title size={55} color="black">
                     Introducing{" "}
                     <Text
@@ -87,70 +97,54 @@ const OptiTalkPlus: FC = () => {
                     <Text span fw="bold">
                       4.99$/month
                     </Text>
-                    , plus users will gain the ability to send{" "}
-                    <Text span fw="bold">
-                      UNLIMITED
-                    </Text>{" "}
-                    messages per hour and create as many characters as they want as a thank you for supporting us.
-                    Additionally, plus users are entitled to receiving extra benefits such as, but not limited to, early
-                    access to new features, prioritized support, and much more.
+                    , plus users will gain the ability to all the following features:
                   </Text>
-                </Flex>
-                <Flex direction="column" gap={4}>
-                  <Title order={1} color="black">
-                    Why?
-                  </Title>
-                  <Text color="rgba(0,0,0,0.9)" fz="md" fw={500}>
-                    OptiTalk is a small team of passionate developers struggling to keep up with demand. To address
-                    this, we have upgraded to a better infrastructure and made optimizations within our codebase.
-                    However, to sustain our infrastructure and deliver new features consistently with high quality, we
-                    need additional funding. Hence,{" "}
-                    <Text span fw="bold">
-                      OptiTalk+
-                    </Text>{" "}
-                    was born. <br /> <br />
-                    We understand that users want a free platform, and OptiTalk will continue to be free, albeit with
-                    certain limitations to ensure server stability. By showing your support to us, you will receive
-                    extra benefits such as unlimited messages, characters, and more.
-                  </Text>
-                </Flex>
-                <Flex direction="column" gap={4}>
-                  <Title order={1} color="black">
-                    OptiTalk+ Benefits
-                  </Title>
-                  <Flex direction="column" gap={2}>
-                    <Text color="rgba(0,0,0,0.9)" fz="md" fw={500}>
-                      - Unlimited Messages per Hour
-                    </Text>
-                    <Text color="rgba(0,0,0,0.9)" fz="md" fw={500}>
-                      - Unlimited Characters
-                    </Text>
-                    <Text color="rgba(0,0,0,0.9)" fz="md" fw={500}>
-                      - Early access to upcoming features
-                    </Text>
-                    <Text color="rgba(0,0,0,0.9)" fz="md" fw={500}>
-                      - Prioritized Support
-                    </Text>
-                  </Flex>
+
+                  <List
+                    sx={{
+                      ".mantine-List-item": {
+                        fontWeight: 500,
+                      },
+                    }}
+                  >
+                    <List.Item>Unlimited Messages per hour</List.Item>
+                    <List.Item>Unlimited Characters</List.Item>
+                    <List.Item>
+                      Access to the story mode feature{" "}
+                      <Badge color="teal" variant="gradient" size="sm">
+                        New
+                      </Badge>{" "}
+                    </List.Item>
+                    <List.Item>Early access to upcoming features</List.Item>
+                    <List.Item>Prioritized Support</List.Item>
+                  </List>
+                  <Accordion variant="separated" mt="xs">
+                    <Accordion.Item value="what">
+                      <Accordion.Control>Where will my money be spent if I buy OptiTalk+?</Accordion.Control>
+                      <Accordion.Panel>
+                        By purchasing OptiTalk+, you will contribute to the sustainable operation of the OptiTalk.
+                        Currently, we are utilizing our own funds to maintain the platform, but with the support of
+                        OptiTalk+ users, we can ensure its continued functioning. Your purchase will help cover the
+                        costs involved in running the platform and enable us to invest in essential upgrades, innovative
+                        features, and ongoing improvements.
+                      </Accordion.Panel>
+                    </Accordion.Item>
+                  </Accordion>
                 </Flex>
               </Flex>
-              <Flex
-                sx={{
-                  flex: 1,
-                  justifyContent: "center",
-                }}
-              >
+              <Flex>
                 <Box
                   sx={(theme) => ({
                     padding: "40px",
                     paddingBottom: "20px",
-                    background: "white",
                     borderRadius: "7px",
                     display: "flex",
                     flexDirection: "column",
                     gap: "20px",
-                    boxShadow: theme.shadows.xl,
+                    boxShadow: theme.shadows.sm,
                     alignItems: "center",
+                    border: "1px solid",
+                    borderColor: theme.colors.gray[3],
                   })}
                 >
                   <Flex gap="xs" direction="column" align="center">

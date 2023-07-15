@@ -2,6 +2,7 @@ import logging
 import os
 import pprint
 import time
+import traceback
 
 import requests
 from dotenv import load_dotenv
@@ -17,6 +18,7 @@ else:
 
 from typing import Generator, Optional
 
+import openai
 from celery import Celery
 from models.message import Message
 from models.metric import TimeTookMetric
@@ -24,7 +26,9 @@ from models.open_ai import ChatCompletion, Completion
 from models.session import ChatSession
 from models.state import UserPlanState
 from models.user import Application
+from openai.error import RateLimitError
 
+from library.configlib import config
 from library.gpt import gpt
 
 app = Celery(
@@ -33,6 +37,7 @@ app = Celery(
     backend=os.environ["CELERY_BACKEND_URI"],
 )
 logger = logging.getLogger(__name__)
+openai.api_key = config.credentials["openai_api_key"]
 
 BASE_URL = f"http://{HOST}:{PORT}/api/tasks"
 
@@ -257,6 +262,65 @@ def reset_users_state_hourly_cap():
             state.save()
 
             logger.info(f"Reset hourly cap for user '{state.id}'")
+
+
+@app.task
+def auto_moderate_characters():
+    from models.character import Character
+
+    characters: Generator[Character, None, None] = Character.find_classes(
+        {"$or": [{"_moderated": False}, {"_moderated": {"$exists": False}}]}
+    )
+
+    for character in characters:
+        constructed_description = f"Name: {character.name}\nDescription: {character.description}\n\nPersonalities: {str(character.personalities)}\nResponse Styles: {str(character.response_styles)}\nFavorite Words: {str(character.favorite_words)}"
+
+        logger.info(f"Auto moderating character '{character}'.")
+
+        try:
+            response = openai.Moderation.create(input=constructed_description)
+            if response.results:
+                response = response.results[0]
+                categories = response["categories"]
+                character._auto_moderation_results = response
+                character._moderated = True
+
+                if any(
+                    [
+                        categories["sexual"],
+                        categories["sexual/minors"],
+                        categories["violence/graphic"],
+                    ]
+                ):
+                    logger.info(f"Auto marked character '{character}' as NSFW.")
+                    character.nsfw = True
+
+                character.save()
+
+        except RateLimitError:
+            description = (
+                f"Rate limit error while auto moderating character '{character}'."
+            )
+            logger.exception(description)
+            error_alert.delay(
+                "Rate limit error from auto_moderate_characters",
+                description,
+                trace=traceback.format_exc(),
+                metadata={"character_id": character.id},
+            )
+            time.sleep(60)
+        except openai.OpenAIError:
+            description = f"Error occurred while attempting to auto moderate character '{character}'."
+            logger.exception(description)
+            error_alert.delay(
+                "Unknown error from auto_moderate_characters",
+                description,
+                trace=traceback.format_exc(),
+                metadata={"character_id": character.id},
+            )
+            time.sleep(60)
+
+        time.sleep(0.2)
 
 
 @app.on_after_configure.connect

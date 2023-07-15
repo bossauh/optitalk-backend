@@ -11,10 +11,10 @@ import {
   Title,
   useMantineTheme,
 } from "@mantine/core";
-import { useDisclosure, useMediaQuery } from "@mantine/hooks";
+import { useMediaQuery } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
 import { nprogress } from "@mantine/nprogress";
-import { FC, useContext, useEffect, useRef, useState } from "react";
+import { FC, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { BsFillSendFill } from "react-icons/bs";
 import { useNavigate } from "react-router-dom";
 import { v4 as uuidv4 } from "uuid";
@@ -58,16 +58,16 @@ const Chat: FC = () => {
   );
 
   // Function whenever the messages area scroll position changes
-  const onMessagesScrollChange = (position: { x: number; y: number }) => {
+  const onMessagesScrollChange = useCallback((position: { x: number; y: number }) => {
     if (position.y < 1) {
       loadMore();
     }
-  };
+  }, []);
 
   // Function that gets called whenever there's an error sending a message
-  const onChatError = (children: React.ReactNode) => {
+  const onChatError = useCallback((children: React.ReactNode) => {
     setMessageError(children);
-  };
+  }, []);
 
   // Hook for sending messages
   const { sendMessage, sending, regenerate, setSending } = useSendMessage(
@@ -89,8 +89,6 @@ const Chat: FC = () => {
     })
       .then((r) => r.json())
       .then((d) => {
-        console.debug(d);
-
         if (d.status_code === 200) {
           setMessages((prev) => {
             let filtered = prev.filter((i) => i.id !== id);
@@ -358,9 +356,11 @@ const Chat: FC = () => {
             ref={chatboxRef}
             onKeyDown={(e) => {
               if ((e.key === "Enter" || e.keyCode === 13 || e.which === 13) && !e.shiftKey) {
-                e.preventDefault();
-                onSubmit(e.currentTarget.value);
-                e.currentTarget.value = "";
+                if (!isSm) {
+                  e.preventDefault();
+                  onSubmit(e.currentTarget.value);
+                  e.currentTarget.value = "";
+                }
               }
             }}
             onFocus={() => {
@@ -416,7 +416,7 @@ const Chat: FC = () => {
         )}
       </Flex>
 
-      <MessagesAside opened={asideOpened} setOpened={setAsideOpened} />
+      <MessagesAside key={store?.activeSession?.id} opened={asideOpened} setOpened={setAsideOpened} />
     </Flex>
   );
 };

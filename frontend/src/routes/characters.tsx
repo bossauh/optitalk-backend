@@ -24,7 +24,13 @@ import CharacterItem from "../components/CharacterItem";
 import CharactersSearchBox from "../components/CharactersSearchBox";
 
 const Characters: FC = () => {
-  const [searchParams, setSearchParams] = useSearchParams({ tab: "featured", page: "1", sort: "uses", q: "" });
+  const [searchParams, setSearchParams] = useSearchParams({
+    tab: "featured",
+    page: "1",
+    sort: "uses",
+    q: "",
+    nsfw: "disabled",
+  });
 
   const [characters, setCharacters] = useState<CharacterType[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -68,6 +74,7 @@ const Characters: FC = () => {
       page: searchParams.get("page") || "1",
       page_size: "21",
       sort: searchParams.get("sort") || "uses",
+      nsfw: searchParams.get("nsfw") || "hidden",
       ...deconstructTab(searchParams.get("tab") || "featured"),
     };
 

@@ -15,11 +15,8 @@ from library.exceptions import *
 from library.gpt import gpt
 from library.security import route_security
 from library.socketio import socketio
-from library.tasks import (
-    increase_model_requests_state,
-    insert_message,
-    log_time_took_metric,
-)
+from library.tasks import (increase_model_requests_state, insert_message,
+                           log_time_took_metric)
 from openai.embeddings_utils import cosine_similarity, get_embedding
 
 from models.knowledge import Knowledge
@@ -88,9 +85,16 @@ class Character:
     response_styles: list[str] = dataclasses.field(default_factory=list)
     id: str = dataclasses.field(default_factory=lambda: str(uuid.uuid4()))
     private: bool = True
+    public_description: Optional[str] = None
+    definition_visibility: bool = True
+    nsfw: bool = False
     created_at: datetime.datetime = dataclasses.field(
         default_factory=datetime.datetime.now
     )
+
+    # Meta fields
+    _moderated: bool = False
+    _auto_moderation_results: Optional[dict] = None
 
     # Unused old fields
     knowledge: Optional[list[str]] = dataclasses.field(default_factory=list)
@@ -101,6 +105,8 @@ class Character:
     def to_json(self) -> dict:
         data = dataclasses.asdict(self)
         data.pop("parameters", None)
+        data.pop("_moderated", None)
+        data.pop("_auto_moderation_results", None)
 
         try:
             user_id = utils.get_user_id_from_request()
@@ -185,6 +191,8 @@ class Character:
         session_id: Optional[str] = "0",
         regenerated: Optional[bool] = False,
         id: Optional[str] = None,
+        story_mode: bool = False,
+        story: Optional[str] = None,
     ) -> Message:
         """
         Chat with the Character. Either chat as the "user" role itself or as the "assistant"
@@ -260,6 +268,8 @@ class Character:
                 name="New Session",
                 character_id=self.id,
                 created_by=user_id,
+                story_mode=story_mode,
+                story=story
             )
             logger.info(
                 f"Automatically created session '{session_id}' because it does not exist."
@@ -342,7 +352,7 @@ class Character:
 
         if self.parameters.model in ("gpt-3.5-turbo", "gpt-4"):
             system, context_messages = utils.create_chat_completion_context(
-                self, user_name=user_name
+                self, user_name=user_name, user=user, session=session
             )
             prompt = context_messages
 
@@ -354,7 +364,7 @@ class Character:
                 else:
                     content = f"Response: {message.content}"
                     if message.knowledge_hint:
-                        content += f"\n\nMessage Context (A piece of text related to the user's message that you can use to generate a response. The user shouldn't know anything about this and if this context is unrelated, ignore it): {message.knowledge_hint}"
+                        content += f"\nKnowledge Hint (The user should not be able to see this, the user only knows its own Response): {message.knowledge_hint}"
 
                 message_data = {
                     "role": message.role,

@@ -25,15 +25,14 @@ export interface StoreContextType {
   activeSession?: SessionType;
   setActiveSession: (v: SessionType | undefined) => void;
 
-  openModal: (
-    content: React.ReactNode,
-    variant: "error" | "success" | "warning" | "info",
-    title?: string,
-    hideIn?: number
-  ) => void;
-
   userPlanDetails?: UserPlanDetails;
   fetchUserData: () => void;
+
+  storyMode?: boolean;
+  storyModeContent?: string | null;
+  setStoryMode: (value: boolean) => void;
+  setStoryModeContent: (value: string | null) => void;
+  setColorScheme: (value: "dark" | "light") => void;
 }
 
 export interface CharacterViewOutletContextType {
@@ -68,11 +67,13 @@ export interface ExampleExchange {
 export interface CharacterType {
   createdAt: string;
   createdBy: string;
-  description: string;
+  publicDescription: string;
+  description: string | null;
   exampleExchanges: ExampleExchange[];
   favoriteWords: string[];
   id: string;
   image: string | null;
+  avatarId: string | null;
   knowledge: string[];
   name: string;
   personalities: string[];
@@ -80,6 +81,8 @@ export interface CharacterType {
   uses: number;
   responseStyles: string[];
   favorite: boolean;
+  definitionVisibility: boolean;
+  nsfw: boolean;
 }
 
 export interface CharacterItemProps extends CharacterType {
@@ -92,6 +95,8 @@ export interface SessionType {
   createdBy: string;
   id: string;
   name: string;
+  storyMode: boolean;
+  story: string | null;
   messagesCount?: number;
   lastUsed?: string;
   new?: boolean;
@@ -284,4 +289,23 @@ export interface UserDetails {
   basic: UserDetailsBasic;
   limits: UserDetailsLimits;
   statistics: UserDetailsStatistics;
+}
+
+export interface CharacterFormType {
+  name: string;
+  avatar_id: string | null;
+  public_description: string | null;
+  description: string;
+  personalities: string[];
+  response_styles: string[];
+  favorite_words: string[];
+  knowledge: KnowledgePatchType[];
+  example_exchanges: ExampleExchange[];
+  private: boolean;
+  definition_visibility: boolean;
+  nsfw: boolean;
+
+  // Non-submittable
+  previewOnly: boolean;
+  characterId: string | null;
 }

@@ -23,7 +23,7 @@ from flask_cors import CORS
 from flask_session import Session
 
 from database import mongoclass
-from library import responses
+from library import responses, tasks
 from library.socketio import socketio
 
 coloredlogs.install(level="DEBUG")
@@ -109,6 +109,8 @@ class App:
         This function's purpose is to perform feature related operations before the
         launch of a version. Things like transferring user data, etc.
         """
+
+        tasks.auto_moderate_characters.delay()
 
     def start(self) -> None:
         logger.info("Starting OptiTalk...")

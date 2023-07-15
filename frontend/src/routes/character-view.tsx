@@ -1,14 +1,31 @@
-import { ActionIcon, Avatar, Button, Flex, Group, Popover, Skeleton, Tabs, Text, Title, Tooltip } from "@mantine/core";
+import {
+  ActionIcon,
+  Avatar,
+  Button,
+  Flex,
+  Group,
+  Indicator,
+  Popover,
+  Skeleton,
+  Tabs,
+  Text,
+  ThemeIcon,
+  Title,
+  Tooltip,
+  useMantineTheme,
+} from "@mantine/core";
+import { useMediaQuery } from "@mantine/hooks";
+import { modals } from "@mantine/modals";
 import { notifications } from "@mantine/notifications";
 import { FC, useContext, useEffect, useState } from "react";
-import { AiFillDelete, AiFillHeart, AiOutlineHeart } from "react-icons/ai";
+import { AiFillDelete, AiFillEye, AiFillHeart, AiOutlineHeart } from "react-icons/ai";
 import { BsRobot } from "react-icons/bs";
 import { MdModeEditOutline } from "react-icons/md";
+import { TbRating18Plus } from "react-icons/tb";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { deleteCharacter, formatNumber, toggleFavorite, useActiveCharacter, useCharacter } from "../common/utils";
+import CharacterForm from "../components/CharacterForm";
 import CharacterViewBasic from "../components/CharacterViewBasic";
-import CharacterViewConversation from "../components/CharacterViewConversation";
-import CharacterViewKnowledge from "../components/CharacterViewKnowledge";
 import StoreContext from "../contexts/store";
 
 const CharacterView: FC = () => {
@@ -20,6 +37,9 @@ const CharacterView: FC = () => {
   const [notFound, loading, character] = useCharacter(characterId || undefined, false);
   const [favorite, setFavorite] = useState(false);
   const store = useContext(StoreContext);
+
+  const theme = useMantineTheme();
+  const isSm = useMediaQuery(`(max-width: ${theme.breakpoints.sm})`);
 
   useEffect(() => {
     setFavorite(character?.favorite || false);
@@ -47,12 +67,25 @@ const CharacterView: FC = () => {
             {loading ? (
               <Skeleton height={90} width={90} />
             ) : (
-              <Avatar size="xl" src={character?.image}>
+              <Avatar size="xl" src={`/api/characters/render-character-avatar?character_id=${character?.id}`}>
                 <BsRobot size="25px" />
               </Avatar>
             )}
             <Flex direction="column" gap="xs">
-              {loading ? <Skeleton height={20} width={180} /> : <Title order={3}>{character?.name}</Title>}
+              {loading ? (
+                <Skeleton height={20} width={180} />
+              ) : (
+                <Group spacing={4} align="center">
+                  <Title order={3}>{character?.name}</Title>
+                  {character?.nsfw && (
+                    <Tooltip label="NSFW Character">
+                      <ThemeIcon color="red">
+                        <TbRating18Plus size={21} />
+                      </ThemeIcon>
+                    </Tooltip>
+                  )}
+                </Group>
+              )}
               {loading ? (
                 <Skeleton height={15} width={120} />
               ) : (
@@ -67,7 +100,7 @@ const CharacterView: FC = () => {
               )}
             </Flex>
           </Group>
-          <Group spacing="xs">
+          <Group spacing="xs" align="flex-start">
             <Button
               loading={loading}
               color={activeCharacter?.id === character?.id ? "red" : "primary"}
@@ -110,7 +143,13 @@ const CharacterView: FC = () => {
                   color="blue"
                   variant="filled"
                   onClick={() => {
-                    navigate("/create-character?characterId=" + character?.id);
+                    modals.open({
+                      title: "Edit Character",
+                      children: <CharacterForm characterId={character?.id} />,
+                      size: "xl",
+                      closeOnClickOutside: false,
+                      centered: true,
+                    });
                   }}
                 >
                   <MdModeEditOutline />
@@ -142,6 +181,29 @@ const CharacterView: FC = () => {
                 </Popover>
               </>
             )}
+            {character?.definitionVisibility && (
+              <Indicator label="New" size={16} color="teal">
+                <Button
+                  onClick={() => {
+                    if (!character) {
+                      return;
+                    }
+                    modals.open({
+                      title: "Preview Character's Definition",
+                      children: <CharacterForm characterId={character.id} previewMode />,
+                      size: "xl",
+                      centered: true,
+                    });
+                  }}
+                  loading={loading}
+                  size="xs"
+                  variant="light"
+                  leftIcon={<AiFillEye />}
+                >
+                  View Definition
+                </Button>
+              </Indicator>
+            )}
           </Group>
           <Tabs
             value={searchParams.get("tab") || "basic"}
@@ -152,21 +214,15 @@ const CharacterView: FC = () => {
                 setSearchParams(newParams);
               }
             }}
+            variant={isSm ? "pills" : "default"}
           >
             <Tabs.List>
-              <Tabs.Tab value="basic">Basic Information</Tabs.Tab>
-              <Tabs.Tab value="example-conversation">Example Conversation</Tabs.Tab>
-              <Tabs.Tab value="knowledge-base">Knowledge Base</Tabs.Tab>
+              <Tabs.Tab value="basic">Homepage</Tabs.Tab>
+              {/* <Tabs.Tab value="example-conversation">Comments</Tabs.Tab> */}
             </Tabs.List>
 
             <Tabs.Panel value="basic">
               <CharacterViewBasic character={character} loading={loading} />
-            </Tabs.Panel>
-            <Tabs.Panel value="example-conversation">
-              <CharacterViewConversation character={character} loading={loading} />
-            </Tabs.Panel>
-            <Tabs.Panel value="knowledge-base">
-              <CharacterViewKnowledge character={character} loading={loading} />
             </Tabs.Panel>
           </Tabs>
         </>

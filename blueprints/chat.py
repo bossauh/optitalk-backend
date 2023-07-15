@@ -53,6 +53,8 @@ def setup(server: "App") -> Blueprint:
                         content=data["content"],
                         user_name=data.get("user_name"),
                         session_id=data.get("session_id", "0"),
+                        story_mode=data.get("story_mode", False),
+                        story=data.get("story"),
                         id=data.get("id"),
                     )
                 except ModelRequestsLimitExceeded as e:
@@ -301,6 +303,7 @@ def setup(server: "App") -> Blueprint:
         return responses.create_response(payload=count)
 
     @app.patch("/sessions")
+    @server.limiter.exempt
     @route_security.request_args_schema(
         schema=schemas.PATCH_CHAT_SESSIONS_QUERY_PARAMETERS
     )
@@ -324,21 +327,20 @@ def setup(server: "App") -> Blueprint:
                     "message": f"Cannot find a chat session with the id of '{session_id}' and character id of '{character_id}'."
                 },
             )
+        session: ChatSession
 
-        old_name = session.name
         for k, v in request.json.items():
             if k == "name":
                 setattr(session, "name_changed", True)
             setattr(session, k, v)
 
-        session.save()
+        data = session.to_json()
+        data["created_at"] = session.created_at.isoformat()
+        if session.last_used:
+            data["last_used"] = session.last_used.isoformat()
 
-        if old_name != session.name:
-            socketio.emit(
-                "session-renamed",
-                {"name": session.name, "id": session_id},
-                room=user_id,
-            )
+        socketio.emit("session-settings-updated", data, room=user_id)
+        session.save()
 
         return responses.create_response()
 

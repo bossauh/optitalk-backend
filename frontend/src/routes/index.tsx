@@ -4,6 +4,7 @@ import {
   Anchor,
   AppShell,
   Avatar,
+  Badge,
   Box,
   Button,
   Divider,
@@ -22,22 +23,36 @@ import {
   useMantineTheme,
 } from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
-import { FC, forwardRef, useContext, useEffect, useState } from "react";
+import { ModalsProvider, modals } from "@mantine/modals";
+import { FC, forwardRef, memo, useContext, useEffect, useState } from "react";
+import { useCookies } from "react-cookie";
 import { AiFillRobot, AiFillSetting, AiOutlinePlus } from "react-icons/ai";
 import { BsFillChatFill } from "react-icons/bs";
 import { FaDiscord, FaPaypal, FaRedditAlien } from "react-icons/fa";
 import { GiHamburgerMenu } from "react-icons/gi";
 import { MdAccountCircle } from "react-icons/md";
 import { Outlet, useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import Changelog from "../blogs/Changelog";
 import socket from "../common/socket";
-import { useSessions } from "../common/utils";
+import { deserializeSessionData, useSessions } from "../common/utils";
 import StoreContext from "../contexts/store";
 
-const HeaderComponent: FC<{ setOpen: React.Dispatch<React.SetStateAction<boolean>>; open: boolean }> = (props) => {
+const HeaderComponent: FC<{ setOpen: React.Dispatch<React.SetStateAction<boolean>>; open: boolean }> = memo((props) => {
   const navigate = useNavigate();
   const store = useContext(StoreContext);
   const theme = useMantineTheme();
   const largerThanSm = useMediaQuery(`(min-width: ${theme.breakpoints.sm})`);
+
+  const [cookies, setCookies] = useCookies(["changelogShown"]);
+
+  useEffect(() => {
+    console.log("Using version", process.env.REACT_APP_OPTITALK_VERSION);
+
+    if (cookies["changelogShown"] !== process.env.REACT_APP_OPTITALK_VERSION) {
+      setCookies("changelogShown", process.env.REACT_APP_OPTITALK_VERSION);
+      modals.open({ title: `Version ${process.env.REACT_APP_OPTITALK_VERSION}`, children: <Changelog /> });
+    }
+  }, []);
 
   return (
     <Header
@@ -50,17 +65,29 @@ const HeaderComponent: FC<{ setOpen: React.Dispatch<React.SetStateAction<boolean
         background: theme.colors.dark[8],
       })}
     >
-      <Group
-        align="center"
-        onClick={() => {
-          navigate("/chat");
-        }}
-        sx={{
-          cursor: "pointer",
-        }}
-      >
-        <Avatar src="/images/mothlabs-icon.png" />
-        <Title order={2}>OptiTalk</Title>
+      <Group align="flex-start">
+        <Group
+          align="center"
+          onClick={() => {
+            navigate("/chat");
+          }}
+          sx={{
+            cursor: "pointer",
+          }}
+        >
+          <Avatar src="/images/mothlabs-icon.png" />
+          <Title order={2}>OptiTalk</Title>
+        </Group>
+        <Badge
+          onClick={() => {
+            modals.open({ title: "Changelog", children: <Changelog /> });
+          }}
+          sx={{
+            cursor: "pointer",
+          }}
+        >
+          v{process.env.REACT_APP_OPTITALK_VERSION}
+        </Badge>
       </Group>
       <Group align="center" spacing="xs">
         {!store?.authenticated && (
@@ -120,7 +147,7 @@ const HeaderComponent: FC<{ setOpen: React.Dispatch<React.SetStateAction<boolean
       </Group>
     </Header>
   );
-};
+});
 
 const NavbarItem: FC<{
   path?: string;
@@ -133,7 +160,7 @@ const NavbarItem: FC<{
   matchParamValue?: string;
   icon?: React.ReactNode;
   children?: React.ReactNode;
-}> = (props) => {
+}> = memo((props) => {
   const [active, setActive] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -204,7 +231,7 @@ const NavbarItem: FC<{
       {props.children}
     </NavLink>
   );
-};
+});
 
 interface SessionItemProps extends React.ComponentPropsWithoutRef<"div"> {
   label: string;
@@ -224,7 +251,7 @@ const SessionItem = forwardRef<HTMLDivElement, SessionItemProps>(
   )
 );
 
-const SessionSelection: FC = () => {
+const SessionSelection: FC = memo(() => {
   const [sessions, setSessions, loading] = useSessions();
 
   const navigate = useNavigate();
@@ -263,23 +290,25 @@ const SessionSelection: FC = () => {
       setSessions((prev) => prev.filter((i) => i.id !== data.id));
     };
 
-    const onSessionRenamed = (data: any) => {
+    const onSessionSettingsUpdated = (data: any) => {
+      data = deserializeSessionData(data);
+
       setSessions((prev) => {
         let newSessions = prev.map((s) => {
           let d = s;
-          d.name = data.id === d.id ? data.name : d.name;
+          if (d.id === data.id) {
+            console.debug("Changed", d, "to", data);
+            return data;
+          }
           return d;
         });
 
         return newSessions;
       });
 
-      // @ts-expect-error
-      store?.setActiveSession((prev: any) => {
-        let copy = { ...prev };
-        copy.name = data.name;
-        return copy;
-      });
+      if (data.id === store?.activeSession?.id) {
+        store?.setActiveSession(data);
+      }
     };
 
     const onSessionUsed = (data: any) => {
@@ -295,12 +324,12 @@ const SessionSelection: FC = () => {
     };
 
     socket.on("session-deleted", onSessionDeleted);
-    socket.on("session-renamed", onSessionRenamed);
+    socket.on("session-settings-updated", onSessionSettingsUpdated);
     socket.on("session-used", onSessionUsed);
 
     return () => {
       socket.off("session-deleted", onSessionDeleted);
-      socket.off("session-renamed", onSessionRenamed);
+      socket.off("session-settings-updated", onSessionSettingsUpdated);
       socket.off("session-used", onSessionUsed);
     };
   }, []);
@@ -357,9 +386,9 @@ const SessionSelection: FC = () => {
       </ActionIcon>
     </Group>
   );
-};
+});
 
-const NavbarComponent: FC<{ opened: boolean }> = (props) => {
+const NavbarComponent: FC<{ opened: boolean }> = memo((props) => {
   const store = useContext(StoreContext);
 
   return (
@@ -369,6 +398,7 @@ const NavbarComponent: FC<{ opened: boolean }> = (props) => {
       hidden={!props.opened}
       sx={(theme) => ({
         background: theme.colors.dark[8],
+        zIndex: 200,
       })}
     >
       <Navbar.Section p="sm" pt="lg">
@@ -477,46 +507,56 @@ const NavbarComponent: FC<{ opened: boolean }> = (props) => {
             >
               Contact Form
             </Anchor>
+            <Anchor
+              onClick={() => {
+                modals.open({ title: "Changelog", children: <Changelog /> });
+              }}
+              fz="xs"
+            >
+              Changelog
+            </Anchor>
           </Group>
         </Flex>
       </Navbar.Section>
     </Navbar>
   );
-};
+});
 
 const Index: FC = () => {
   const [navbarOpen, setNavbarOpen] = useState(false);
 
   return (
-    <AppShell
-      header={<HeaderComponent setOpen={setNavbarOpen} open={navbarOpen} />}
-      navbar={<NavbarComponent opened={navbarOpen} />}
-      styles={(theme) => ({
-        main: { backgroundColor: theme.colors.dark[7], height: "100vh" },
-      })}
-      navbarOffsetBreakpoint="sm"
-      padding={0}
-    >
-      {navbarOpen && (
-        <MediaQuery
-          largerThan="sm"
-          styles={{
-            display: "none",
-          }}
-        >
-          <Overlay
-            color="#000"
-            opacity={0.7}
-            zIndex={10}
-            onClick={() => {
-              setNavbarOpen(false);
+    <ModalsProvider>
+      <AppShell
+        header={<HeaderComponent setOpen={setNavbarOpen} open={navbarOpen} />}
+        navbar={<NavbarComponent opened={navbarOpen} />}
+        styles={(theme) => ({
+          main: { backgroundColor: theme.colors.dark[7], height: "100vh" },
+        })}
+        navbarOffsetBreakpoint="sm"
+        padding={0}
+      >
+        {navbarOpen && (
+          <MediaQuery
+            largerThan="sm"
+            styles={{
+              display: "none",
             }}
-            pos="fixed"
-          />
-        </MediaQuery>
-      )}
-      <Outlet />
-    </AppShell>
+          >
+            <Overlay
+              color="#000"
+              opacity={0.7}
+              zIndex={10}
+              onClick={() => {
+                setNavbarOpen(false);
+              }}
+              pos="fixed"
+            />
+          </MediaQuery>
+        )}
+        <Outlet />
+      </AppShell>
+    </ModalsProvider>
   );
 };
 

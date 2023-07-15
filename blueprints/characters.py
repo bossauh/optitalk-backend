@@ -25,6 +25,7 @@ def setup(server: "App") -> Blueprint:
     route_security.patch(app, authentication_methods=["session", "api", "rapid-api"])
 
     @app.get("/render-character-avatar")
+    @server.limiter.exempt
     @route_security.request_args_schema(schema=schemas.GET_RENDER_CHARACTER_AVATAR)
     @route_security.exclude
     def render_character_avatar():
@@ -136,6 +137,8 @@ def setup(server: "App") -> Blueprint:
         )
         featured = request.args.get("featured", "False").lower() == "true"
         favorites = request.args.get("favorites", "False").lower() == "true"
+        nsfw = request.args.get("nsfw", "disabled")
+
         sort = request.args.get("sort", "latest")
         q = request.args.get("q")
         user_id = utils.get_user_id_from_request()
@@ -157,10 +160,23 @@ def setup(server: "App") -> Blueprint:
             query["featured"] = True
 
         if q:
-            query["$or"] = [
-                {"name": {"$regex": re.compile(q, re.IGNORECASE)}},
-                {"description": {"$regex": re.compile(q, re.IGNORECASE)}},
+            query["$and"] = [
+                {
+                    "$or": [
+                        {"name": {"$regex": re.compile(q, re.IGNORECASE)}},
+                        {"description": {"$regex": re.compile(q, re.IGNORECASE)}},
+                    ]
+                }
             ]
+
+        if nsfw == "disabled":
+            nsfw_filter = [{"nsfw": False}, {"nsfw": {"$exists": False}}]
+            if "$and" not in query:
+                query["$and"] = [{"$or": nsfw_filter}]
+            else:
+                query["$and"].append({"$or": nsfw_filter})
+        elif nsfw == "only":
+            query["nsfw"] = True
 
         sort_direction = -1
         sort_key = "_id"
@@ -227,6 +243,8 @@ def setup(server: "App") -> Blueprint:
             avatar_id=data.get("avatar_id"),
             public_description=data.get("public_description"),
             definition_visibility=data.get("definition_visibility", True),
+            nsfw=data.get("nsfw", False),
+            _moderated=True,
         )
         character.save()
         logger.info(f"Created new character named '{character.name} ({character.id}).'")
@@ -372,6 +390,8 @@ def setup(server: "App") -> Blueprint:
 
         for k, v in data.items():
             setattr(character, k, v)
+            if k == "nsfw":
+                setattr(character, "_moderated", True)
 
         character.save()
         return responses.create_response(

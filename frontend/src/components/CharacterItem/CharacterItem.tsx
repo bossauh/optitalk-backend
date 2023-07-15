@@ -18,18 +18,20 @@ import {
 import { useClipboard } from "@mantine/hooks";
 import { modals } from "@mantine/modals";
 import { notifications } from "@mantine/notifications";
-import { FC, useContext, useEffect, useState } from "react";
-import { AiFillDelete, AiFillEdit } from "react-icons/ai";
+import { FC, memo, useContext, useEffect, useState } from "react";
+import { AiFillDelete, AiFillEdit, AiFillEye } from "react-icons/ai";
 import { BsFillChatDotsFill, BsRobot } from "react-icons/bs";
 import { HiEllipsisVertical } from "react-icons/hi2";
 import { IoCopy } from "react-icons/io5";
 import { MdFavorite, MdOutlineFavoriteBorder } from "react-icons/md";
+import { TbRating18Plus } from "react-icons/tb";
 import { useNavigate } from "react-router-dom";
 import { CharacterType } from "../../common/types";
 import { deleteCharacter, formatNumber, toggleFavorite, useActiveCharacter } from "../../common/utils";
 import StoreContext from "../../contexts/store";
+import CharacterForm from "../CharacterForm";
 
-const CharacterItem: FC<CharacterType> = (props) => {
+const CharacterItem: FC<CharacterType> = memo((props) => {
   const clipboard = useClipboard();
   const store = useContext(StoreContext);
   const [activeCharacter, setActiveCharacter] = useActiveCharacter();
@@ -100,21 +102,30 @@ const CharacterItem: FC<CharacterType> = (props) => {
                 color="yellow"
                 disabled={!props.private}
               >
-                <Avatar src={props.image} color="default">
+                <Avatar src={`/api/characters/render-character-avatar?character_id=${props.id}`} color="default">
                   <BsRobot size="25px" />
                 </Avatar>
               </Indicator>
               <Flex direction="column" gap={2}>
-                <MediaQuery
-                  largerThan="sm"
-                  styles={{
-                    maxWidth: "150px",
-                  }}
-                >
-                  <Text truncate fz="sm">
-                    {props.name}
-                  </Text>
-                </MediaQuery>
+                <Group align="center" spacing={4}>
+                  <MediaQuery
+                    largerThan="sm"
+                    styles={{
+                      maxWidth: props.nsfw ? "120px" : "150px",
+                    }}
+                  >
+                    <Text truncate fz="sm" maw={props.nsfw ? "110px" : "150px"}>
+                      {props.name}
+                    </Text>
+                  </MediaQuery>
+                  {props.nsfw && (
+                    <Tooltip label="NSFW Character">
+                      <ThemeIcon size="sm" color="red">
+                        <TbRating18Plus size={21} />
+                      </ThemeIcon>
+                    </Tooltip>
+                  )}
+                </Group>
                 <Group spacing={1}>
                   <ThemeIcon variant="light" color="dark.1" size="xs">
                     <BsFillChatDotsFill size={12} />
@@ -162,11 +173,38 @@ const CharacterItem: FC<CharacterType> = (props) => {
                     Copy URL
                   </Menu.Item>
 
+                  {props.definitionVisibility && (
+                    <Menu.Item
+                      icon={<AiFillEye />}
+                      onClick={() => {
+                        modals.open({
+                          title: "Character Definition",
+                          centered: true,
+                          size: "xl",
+                          children: <CharacterForm characterId={props.id} previewMode />,
+                        });
+                      }}
+                    >
+                      View Definition
+                    </Menu.Item>
+                  )}
+
                   {isOwner && (
                     <>
                       <Menu.Divider />
                       <Menu.Label>Actions</Menu.Label>
-                      <Menu.Item icon={<AiFillEdit />} component="a" href={`/create-character?characterId=${props.id}`}>
+                      <Menu.Item
+                        icon={<AiFillEdit />}
+                        onClick={() => {
+                          modals.open({
+                            centered: true,
+                            size: "xl",
+                            children: <CharacterForm characterId={props.id} />,
+                            closeOnClickOutside: false,
+                            title: "Edit Character",
+                          });
+                        }}
+                      >
                         Edit
                       </Menu.Item>
                       <Menu.Item
@@ -213,7 +251,7 @@ const CharacterItem: FC<CharacterType> = (props) => {
         >
           <Flex direction="column" gap={2}>
             <Text fz="sm" lineClamp={3}>
-              {props.description}
+              {props.publicDescription || props.description}
             </Text>
           </Flex>
         </Flex>
@@ -251,6 +289,6 @@ const CharacterItem: FC<CharacterType> = (props) => {
       </Card>
     </MediaQuery>
   );
-};
+});
 
 export default CharacterItem;

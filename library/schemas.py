@@ -20,6 +20,7 @@ POST_USERS = Schema(
 POST_CHARACTERS = Schema(
     {
         Required("name"): All(str, Length(min=1, max=64)),
+        Required("public_description"): All(str, Length(min=1, max=4096)),
         Required("description"): All(str, Length(min=1, max=2048)),
         Optional("model"): Any("basic", "advanced"),
         Optional("knowledge"): All(
@@ -40,11 +41,14 @@ POST_CHARACTERS = Schema(
         Optional("private"): bool,
         Optional("image"): Url(),
         Optional("avatar_id"): Any(str, None),
+        Optional("definition_visibility"): bool,
+        Optional("nsfw"): bool,
     }
 )
 PATCH_CHARACTERS = Schema(
     {
         Optional("name"): All(str, Length(min=1, max=64)),
+        Optional("public_description"): All(str, Length(min=1, max=4096)),
         Optional("description"): All(str, Length(min=1, max=2048)),
         Optional("model"): Any("basic", "advanced"),
         Optional("avatar_id"): Any(str, None),
@@ -62,6 +66,8 @@ PATCH_CHARACTERS = Schema(
         ),
         Optional("private"): bool,
         Optional("image"): Url(),
+        Optional("definition_visibility"): bool,
+        Optional("nsfw"): bool,
     }
 )
 GET_CHARACTERS = Schema(
@@ -72,6 +78,7 @@ GET_CHARACTERS = Schema(
         Optional("sort"): Any("uses", "latest"),
         Optional("q"): str,
         Optional("favorites"): str,
+        Optional("nsfw"): Any("include", "only", "disabled"),
         **_PAGING_SCHEMA,
     }
 )
@@ -96,9 +103,11 @@ POST_CHAT = Schema(
     {
         Required("character_id"): str,
         Required("content"): str,
-        Optional("user_name"): Any(str, Length(min=1, max=100)),
+        Optional("user_name"): All(str, Length(min=1, max=100)),
         Optional("role"): Any("user", "assistant"),
         Optional("session_id"): str,
+        Optional("story_mode"): bool,
+        Optional("story"): Any(All(str, Length(min=0, max=2048)), None),
         Optional("id"): str,
     }
 )
@@ -119,7 +128,13 @@ GET_CHAT_COUNT = Schema(
         Optional("session_id"): str,
     }
 )
-PATCH_CHAT_SESSIONS = Schema({Optional("name"): str})
+PATCH_CHAT_SESSIONS = Schema(
+    {
+        Optional("name"): str,
+        Optional("story_mode"): bool,
+        Optional("story"): All(str, Length(min=0, max=2048)),
+    }
+)
 PATCH_CHAT_SESSIONS_QUERY_PARAMETERS = Schema(
     {Required("session_id"): str, Required("character_id"): str}
 )

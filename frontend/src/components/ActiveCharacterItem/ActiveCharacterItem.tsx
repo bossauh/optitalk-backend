@@ -16,7 +16,7 @@ const ActiveCharacterItem: FC = () => {
       <Card>
         <Card.Section inheritPadding py="xs" withBorder mb="xs">
           <Group>
-            <Avatar src={character.image} color="default">
+            <Avatar src={`/api/characters/render-character-avatar?character_id=${character.id}`} color="default">
               <BsRobot size="25px" />
             </Avatar>
             <Flex direction="column" gap={2}>

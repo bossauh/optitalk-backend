@@ -62,7 +62,10 @@ class File:
 
         file = cls(**kwargs)
         if kwargs["type"] == "avatar":
-            f = utils.compress_image(f, 5 * 1024 * 1024)
+            try:
+                f = utils.compress_image(f, 5 * 1024 * 1024)
+            except OSError:
+                f.seek(0)
 
         try:
             fs.put(f, id=file.id)

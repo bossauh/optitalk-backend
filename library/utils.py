@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Optional
 
 import tiktoken
 from flask import request, session
+from models.session import ChatSession
 from models.user import Application, User
 from mongoclass.cursor import Cursor
 from PIL import Image
@@ -212,6 +213,8 @@ def limit_chat_completion_tokens(
 
 def create_chat_completion_context(
     character: "Character",
+    session: ChatSession,
+    user: User,
     user_name: Optional[str] = None,
 ) -> tuple[str, list[dict[str, str]]]:
     """
@@ -261,8 +264,16 @@ def create_chat_completion_context(
         for exchange in character.example_exchanges:
             context_message["content"] += f"\n{exchange['role']}: {exchange['content']}"
 
-    context_message["content"] += "\n\nConversation Starts/Continues"
+    context_message[
+        "content"
+    ] += "\n\nConversation Starts/Continues, the user will now send you a message and you should act out your character.\n\nIMPORTANT: Make your messages very short and only one sentence and a couple of words long, and NEVER break character."
     messages.append(context_message)
+
+    if session.story_mode and session.story:
+        if user.plan.id == "basic":
+            context_message[
+                "content"
+            ] += f"\n\nHere's the story that you and the user should follow. Follow it in steps and progression as the conversation happens:\n{session.story}"
 
     return system, messages
 

@@ -37,7 +37,7 @@ const ActiveCharacterItem: FC = () => {
           }}
           lineClamp={4}
         >
-          {character.description}
+          {character.publicDescription || character.description}
         </Text>
         <Card.Section inheritPadding py="xs" mt="xs" withBorder>
           <Group align="center" position="apart">

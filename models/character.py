@@ -15,8 +15,11 @@ from library.exceptions import *
 from library.gpt import gpt
 from library.security import route_security
 from library.socketio import socketio
-from library.tasks import (increase_model_requests_state, insert_message,
-                           log_time_took_metric)
+from library.tasks import (
+    increase_model_requests_state,
+    insert_message,
+    log_time_took_metric,
+)
 from openai.embeddings_utils import cosine_similarity, get_embedding
 
 from models.knowledge import Knowledge
@@ -102,11 +105,18 @@ class Character:
     def __str__(self) -> str:
         return f"{self.name} ({self.id})"
 
-    def to_json(self) -> dict:
+    def to_json(self, bypass_definition_visibility: bool = False) -> dict:
         data = dataclasses.asdict(self)
         data.pop("parameters", None)
         data.pop("_moderated", None)
         data.pop("_auto_moderation_results", None)
+
+        if not self.definition_visibility and not bypass_definition_visibility:
+            data.pop("description", None)
+            data.pop("response_styles", None)
+            data.pop("example_exchanges", None)
+            data.pop("favorite_words", None)
+            data.pop("personalities", None)
 
         try:
             user_id = utils.get_user_id_from_request()
@@ -269,7 +279,7 @@ class Character:
                 character_id=self.id,
                 created_by=user_id,
                 story_mode=story_mode,
-                story=story
+                story=story,
             )
             logger.info(
                 f"Automatically created session '{session_id}' because it does not exist."

@@ -49,10 +49,10 @@ def setup(server: "App") -> Blueprint:
         Get details about a specific character.
         """
 
+        user_id = utils.get_user_id_from_request(anonymous=True)
         character_id = request.args["character_id"]
         character = Character.find_class({"id": character_id, "private": False})
         if character is None:
-            user_id = utils.get_user_id_from_request(anonymous=True)
             character = Character.find_class(
                 {"id": character_id, "created_by": user_id}
             )
@@ -64,7 +64,16 @@ def setup(server: "App") -> Blueprint:
                     },
                 )
 
-        return responses.create_response(payload=character.to_json())
+        character: Character
+        bypass_definition_visibility = False
+        if user_id == character.created_by:
+            bypass_definition_visibility = True
+
+        return responses.create_response(
+            payload=character.to_json(
+                bypass_definition_visibility=bypass_definition_visibility
+            )
+        )
 
     @app.post("/add-to-favorites")
     @route_security.request_args_schema(schema=schemas.POST_CHARACTERS_ADD_TO_FAVORITES)
@@ -187,7 +196,7 @@ def setup(server: "App") -> Blueprint:
         logger.info(f"Querying characters with the query '{query}'")
 
         characters = [
-            x.to_json()
+            x.to_json(bypass_definition_visibility=True if user_id == x.created_by else False)
             for x in utils.paginate_mongoclass_cursor(
                 Character.find_classes(query), page_size=page_size, page=page
             ).sort(sort_key, sort_direction)
@@ -274,7 +283,9 @@ def setup(server: "App") -> Blueprint:
             ip_address=route_security.get_client_ip(),
         )
 
-        return responses.create_response(payload=character.to_json())
+        return responses.create_response(
+            payload=character.to_json(bypass_definition_visibility=True)
+        )
 
     @app.get("/knowledge")
     @route_security.request_args_schema(schema=schemas.GET_CHARACTERS_KNOWLEDGE)
@@ -395,7 +406,8 @@ def setup(server: "App") -> Blueprint:
 
         character.save()
         return responses.create_response(
-            payload=character.to_json(), status_code=responses.CODE_200
+            payload=character.to_json(bypass_definition_visibility=True),
+            status_code=responses.CODE_200,
         )
 
     @app.delete("/")

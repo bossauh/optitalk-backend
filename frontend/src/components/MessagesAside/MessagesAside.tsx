@@ -230,18 +230,20 @@ const MessagesAside: FC<{
       <Flex
         direction="column"
         sx={(theme) => ({
-          background: theme.colors.dark[8],
-          width: isLg ? "240px" : "300px",
+          background: isMd ? "rgba(20,20,22,0.6)" : theme.colors.dark[8],
+          backdropFilter: isMd ? "blur(7px)" : "none",
+          width: isMd ? "300px" : isLg ? "280px" : "300px",
           borderWidth: "0px",
-          borderLeftWidth: "2px",
+          borderLeftWidth: isMd ? "0.5px" : "2px",
           borderStyle: "solid",
-          borderColor: theme.colors.dark[5],
+          borderColor: isMd ? theme.colors.dark[7] : theme.colors.dark[5],
           zIndex: isMd ? 500 : 10,
           position: isMd ? "fixed" : "static",
-          right: 0,
+          right: isMd ? (props.opened ? 0 : -310) : 0,
           top: 0,
           bottom: 0,
-          display: props.opened ? "block" : "none",
+          display: isMd ? "block" : props.opened ? "block" : "none",
+          transition: "right, 0.25s",
           overflowY: "auto",
         })}
         align="center"

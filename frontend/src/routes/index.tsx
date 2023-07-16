@@ -6,6 +6,7 @@ import {
   Avatar,
   Badge,
   Box,
+  Burger,
   Button,
   Divider,
   Flex,
@@ -29,7 +30,6 @@ import { useCookies } from "react-cookie";
 import { AiFillRobot, AiFillSetting, AiOutlinePlus } from "react-icons/ai";
 import { BsFillChatFill } from "react-icons/bs";
 import { FaDiscord, FaPaypal, FaRedditAlien } from "react-icons/fa";
-import { GiHamburgerMenu } from "react-icons/gi";
 import { MdAccountCircle } from "react-icons/md";
 import { Outlet, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import Changelog from "../blogs/Changelog";
@@ -135,14 +135,13 @@ const HeaderComponent: FC<{ setOpen: React.Dispatch<React.SetStateAction<boolean
             display: "none",
           }}
         >
-          <ActionIcon
-            size="lg"
+          <Burger
+            opened={props.open}
             onClick={() => {
               props.setOpen(!props.open);
             }}
-          >
-            <GiHamburgerMenu size={20} />
-          </ActionIcon>
+            size="sm"
+          />
         </MediaQuery>
       </Group>
     </Header>
@@ -391,15 +390,20 @@ const SessionSelection: FC = memo(() => {
 
 const NavbarComponent: FC<{ opened: boolean }> = memo((props) => {
   const store = useContext(StoreContext);
+  const theme = useMantineTheme();
+  const isSm = useMediaQuery(`(max-width: ${theme.breakpoints.sm})`);
 
   return (
     <Navbar
-      width={{ base: 280 }}
-      hiddenBreakpoint="sm"
-      hidden={!props.opened}
+      width={{ base: isSm ? 300 : 280 }}
+      // hiddenBreakpoint="sm"
+      // hidden={!props.opened}
       sx={(theme) => ({
-        background: theme.colors.dark[8],
+        background: isSm ? "rgba(20,20,22,0.7)" : theme.colors.dark[8],
+        backdropFilter: isSm ? "blur(7px)" : "none",
         zIndex: 200,
+        left: isSm ? (props.opened ? 0 : -300) : 0,
+        transition: "left 0.25s",
       })}
     >
       <Navbar.Section p="sm" pt="lg">

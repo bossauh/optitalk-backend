@@ -1,15 +1,14 @@
 import {
+  Accordion,
   ActionIcon,
   Anchor,
   Avatar,
   Button,
-  Divider,
   Flex,
   Group,
   Loader,
   MediaQuery,
   Overlay,
-  ScrollArea,
   Stack,
   Switch,
   Text,
@@ -290,91 +289,110 @@ const MessagesAside: FC<{
           </Group>
         </Flex>
 
-        <Flex direction="column" mt="xl" gap={0}>
-          <Stack>
-            <Stack spacing={8}>
+        <Accordion
+          variant="separated"
+          mt="md"
+          sx={(theme) => ({
+            ".mantine-Accordion-control": {
+              padding: theme.spacing.sm,
+            },
+            ".mantine-Accordion-label": {
+              padding: "0",
+            },
+            ".mantine-Accordion-item": {
+              marginTop: theme.spacing.xs,
+            },
+          })}
+        >
+          <Accordion.Item value="story-mode">
+            <Accordion.Control>
               <Group spacing={7} align="center">
-                <Title order={4}>Story Mode</Title>
+                <Title order={6}>Chat's Story Mode</Title>
                 {subscriptionStatus === "pending" ? (
                   <Loader size="xs" />
                 ) : subscriptionStatus === "activated" ? (
-                  <FaLockOpen size={16} color={theme.colors.yellow[7]} />
+                  <FaLockOpen size={13} color={theme.colors.yellow[7]} />
                 ) : (
-                  <FaLock size={16} color={theme.colors.yellow[7]} />
+                  <FaLock size={13} color={subscriptionStatusLoading ? theme.colors.dark[3] : theme.colors.yellow[7]} />
                 )}
               </Group>
-              <Text fz="xs">
-                Steer your conversation to a story you desire.{" "}
-                <Anchor
-                  onClick={() => {
-                    modals.open({ title: "StoryMode.tsx", children: <StoryMode /> });
-                    if (isMd) {
-                      props.setOpened(false);
-                    }
-                  }}
-                >
-                  Learn more
-                </Anchor>
-              </Text>
-              {(!subscriptionStatusLoading || !store?.authenticated) && (
-                <>
-                  {!store?.authenticated ? (
-                    <Text fz="xs">To unlock story mode, you need to be logged in and subscribed to OptiTalk+</Text>
-                  ) : subscriptionStatus === "pending" ? (
-                    <Text fz="xs">
-                      Your OptiTalk+ subscription is being activated. This should take no more than a few seconds.
-                    </Text>
-                  ) : subscriptionStatus === null ? (
-                    <Text fz="xs">
-                      To unlock story mode, you need to subscribe to{" "}
-                      <Anchor
-                        onClick={() => {
-                          navigate("/optitalk-plus");
-                        }}
-                      >
-                        OptiTalk+
-                      </Anchor>
-                    </Text>
-                  ) : (
-                    <></>
+            </Accordion.Control>
+            <Accordion.Panel>
+              <Stack>
+                <Stack spacing={8}>
+                  <Text fz="xs">
+                    Steer your conversation to a story you desire.{" "}
+                    <Anchor
+                      onClick={() => {
+                        modals.open({ title: "StoryMode.tsx", children: <StoryMode /> });
+                        if (isMd) {
+                          props.setOpened(false);
+                        }
+                      }}
+                    >
+                      Learn more
+                    </Anchor>
+                  </Text>
+                  {(!subscriptionStatusLoading || !store?.authenticated) && (
+                    <>
+                      {!store?.authenticated ? (
+                        <Text fz="xs">To unlock story mode, you need to be logged in and subscribed to OptiTalk+</Text>
+                      ) : subscriptionStatus === "pending" ? (
+                        <Text fz="xs">
+                          Your OptiTalk+ subscription is being activated. This should take no more than a few seconds.
+                        </Text>
+                      ) : subscriptionStatus === null ? (
+                        <Text fz="xs">
+                          To unlock story mode, you need to subscribe to{" "}
+                          <Anchor
+                            onClick={() => {
+                              navigate("/optitalk-plus");
+                            }}
+                          >
+                            OptiTalk+
+                          </Anchor>
+                        </Text>
+                      ) : (
+                        <></>
+                      )}
+                    </>
                   )}
-                </>
-              )}
-              <Switch
-                checked={subscriptionStatus !== "activated" ? false : storyMode}
-                disabled={subscriptionStatus !== "activated"}
-                onChange={() => {
-                  storyModeHandler.toggle();
-                }}
-                size="xs"
-              />
-            </Stack>
-            <Stack spacing={12}>
-              <Textarea
-                placeholder="Example: You're first going to start with asking the user X. You're then going to forcefully switch the topic to Y..."
-                disabled={subscriptionStatus !== "activated" || !storyMode}
-                minRows={10}
-                defaultValue={storyModeContent}
-                error={storyModeError}
-                onChange={(e) => {
-                  setStoryModeContent(e.target.value);
-                }}
-              />
-              <Group spacing={4} align="center" opacity={storyModeSaving ? 1 : 0}>
-                <Loader size="xs" />
-                <Text color="gray.5" fz="xs">
-                  Saving...
-                </Text>
-              </Group>
-            </Stack>
-          </Stack>
-
+                  <Switch
+                    checked={subscriptionStatus !== "activated" ? false : storyMode}
+                    disabled={subscriptionStatus !== "activated"}
+                    onChange={() => {
+                      storyModeHandler.toggle();
+                    }}
+                    size="xs"
+                  />
+                </Stack>
+                <Stack spacing={12}>
+                  <Textarea
+                    placeholder="Example: You're first going to start with asking the user X. You're then going to forcefully switch the topic to Y..."
+                    disabled={subscriptionStatus !== "activated" || !storyMode}
+                    minRows={10}
+                    defaultValue={storyModeContent}
+                    error={storyModeError}
+                    onChange={(e) => {
+                      setStoryModeContent(e.target.value);
+                    }}
+                  />
+                  <Group spacing={4} align="center" opacity={storyModeSaving ? 1 : 0}>
+                    <Loader size="xs" />
+                    <Text color="gray.5" fz="xs">
+                      Saving...
+                    </Text>
+                  </Group>
+                </Stack>
+              </Stack>
+            </Accordion.Panel>
+          </Accordion.Item>
           {store?.activeSession && (
-            <>
-              <Divider mt="sm" />
-
-              <Flex direction="column" mt="md" gap="xs">
-                <Title order={4}>Session Settings</Title>
+            <Accordion.Item value="settings">
+              <Accordion.Control>
+                <Title order={6}>Chat Settings</Title>
+              </Accordion.Control>
+              <Accordion.Panel>
                 <Group spacing="xs" grow>
                   <Button
                     onClick={() => {
@@ -472,10 +490,10 @@ const MessagesAside: FC<{
                     Delete
                   </Button>
                 </Group>
-              </Flex>
-            </>
+              </Accordion.Panel>
+            </Accordion.Item>
           )}
-        </Flex>
+        </Accordion>
       </Flex>
       {props.opened && (
         <MediaQuery

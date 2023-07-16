@@ -348,8 +348,9 @@ const SessionSelection: FC = memo(() => {
   return (
     <Group noWrap align="end" spacing="xs" position="apart">
       <Select
-        label="Chats"
-        placeholder="Pick a chat"
+        label={!store?.activeCharacter ? "Current chats" : `Current chats with ${store.activeCharacter.name}`}
+        disabled={!store?.activeCharacter}
+        placeholder={store?.activeCharacter ? "Pick a chat" : "Select a character first"}
         data={sessions.map((i) => ({ label: i.name, value: i.id, messages: i.messagesCount }))}
         searchable
         clearable

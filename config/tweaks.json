@@ -1,0 +1,67 @@
+{
+  "length": {
+    "very short": {
+      "model_note": "Your response must be extremely short, like a word or just a few words",
+      "parameters": {
+        "max_tokens": 100
+      }
+    },
+    "short": {
+      "model_note": "Your response must be short, like just a few words long or one sentence",
+      "parameters": {
+        "max_tokens": 150
+      }
+    },
+    "medium": {
+      "model_note": null,
+      "parameters": {}
+    },
+    "long": {
+      "model_note": "Your response must only be a maximum of 2 to 3 sentences",
+      "parameters": {
+        "max_tokens": 400
+      }
+    },
+    "very long": {
+      "model_note": "Your responses must be very very long Like multiple paragraphs long, even if the user's message doesn't require it",
+      "parameters": {
+        "max_tokens": 1300
+      }
+    }
+  },
+  "creativity": {
+    "predictable": {
+      "model_note": "Your response must be predictable",
+      "parameters": {
+        "temperature": 0,
+        "frequency_penalty": 0,
+        "presence_penalty": 0
+      }
+    },
+    "consistent": {
+      "model_note": "Your response must be consistent",
+      "parameters": {
+        "temperature": 0.56,
+        "presence_penalty": 0.45
+      }
+    },
+    "normal": {
+      "model_note": null,
+      "parameters": {}
+    },
+    "creative": {
+      "model_note": "Your response must be creative and unique and crazy",
+      "parameters": {
+        "temperature": 1.24,
+        "presence_penalty": 1.45
+      }
+    },
+    "extreme": {
+      "model_note": "Your response must be very extreme and very crazy no matter what",
+      "parameters": {
+        "temperature": 1.45,
+        "presence_penalty": 1.6
+      }
+    }
+  }
+}

@@ -6,6 +6,8 @@ _CHARACTER_EXCHANGE = {
     Optional("name"): All(str, Length(min=1, max=50)),
 }
 _PAGING_SCHEMA = {Optional("page"): str, Optional("page_size"): str}
+_TWEAKS_LENGTH = ["very short", "short", "medium", "long", "very long"]
+_TWEAKS_CREATIVITY = ["predictable", "consistent", "normal", "creative", "extreme"]
 POST_USERS_LOGIN = Schema(
     {Required("email"): Email(), Required("password"): All(str, Length(min=8, max=60))}
 )
@@ -22,6 +24,13 @@ POST_CHARACTERS = Schema(
         Required("name"): All(str, Length(min=1, max=64)),
         Required("public_description"): All(str, Length(min=1, max=4096)),
         Required("description"): All(str, Length(min=1, max=2048)),
+        Optional("tweaks"): Any(
+            {
+                Optional("length"): Any(*_TWEAKS_LENGTH),
+                Optional("creativity"): Any(*_TWEAKS_CREATIVITY),
+            },
+            None,
+        ),
         Optional("model"): Any("basic", "advanced"),
         Optional("knowledge"): All(
             [Schema(All(str, min=1, max=1024))], Length(min=0, max=1000)
@@ -50,6 +59,13 @@ PATCH_CHARACTERS = Schema(
         Optional("name"): All(str, Length(min=1, max=64)),
         Optional("public_description"): All(str, Length(min=1, max=4096)),
         Optional("description"): All(str, Length(min=1, max=2048)),
+        Optional("tweaks"): Any(
+            {
+                Optional("length"): Any(*_TWEAKS_LENGTH),
+                Optional("creativity"): Any(*_TWEAKS_CREATIVITY),
+            },
+            None,
+        ),
         Optional("model"): Any("basic", "advanced"),
         Optional("avatar_id"): Any(str, None),
         Optional("personalities"): All(
@@ -108,6 +124,13 @@ POST_CHAT = Schema(
         Optional("session_id"): str,
         Optional("story_mode"): bool,
         Optional("story"): Any(All(str, Length(min=0, max=2048)), None),
+        Optional("tweaks"): Any(
+            {
+                Optional("length"): Any(*_TWEAKS_LENGTH),
+                Optional("creativity"): Any(*_TWEAKS_CREATIVITY),
+            },
+            None,
+        ),
         Optional("id"): str,
     }
 )
@@ -133,6 +156,13 @@ PATCH_CHAT_SESSIONS = Schema(
         Optional("name"): str,
         Optional("story_mode"): bool,
         Optional("story"): All(str, Length(min=0, max=2048)),
+        Optional("tweaks"): Any(
+            {
+                Optional("length"): Any(*_TWEAKS_LENGTH),
+                Optional("creativity"): Any(*_TWEAKS_CREATIVITY),
+            },
+            None,
+        ),
     }
 )
 PATCH_CHAT_SESSIONS_QUERY_PARAMETERS = Schema(

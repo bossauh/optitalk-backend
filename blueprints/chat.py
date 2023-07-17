@@ -11,6 +11,7 @@ from library.socketio import socketio
 from models.character import Character
 from models.message import Message
 from models.session import ChatSession
+from models.tweaks import Tweaks
 
 if TYPE_CHECKING:
     from ..app import App
@@ -46,6 +47,10 @@ def setup(server: "App") -> Blueprint:
         )
         if character is not None:
             if not character.private or character.created_by == user_id:
+                tweaks = data.get("tweaks")
+                if tweaks:
+                    tweaks = Tweaks(**tweaks)
+
                 try:
                     response = character.chat(
                         user_id=user_id,
@@ -55,6 +60,7 @@ def setup(server: "App") -> Blueprint:
                         session_id=data.get("session_id", "0"),
                         story_mode=data.get("story_mode", False),
                         story=data.get("story"),
+                        tweaks=tweaks,
                         id=data.get("id"),
                     )
                 except ModelRequestsLimitExceeded as e:
@@ -332,7 +338,18 @@ def setup(server: "App") -> Blueprint:
         for k, v in request.json.items():
             if k == "name":
                 setattr(session, "name_changed", True)
-            setattr(session, k, v)
+
+            if k == "tweaks":
+                if v is None:
+                    session.tweaks = None
+                else:
+                    if not session.tweaks:
+                        session.tweaks = Tweaks(**v)
+                    else:
+                        for ik, iv in v.items():
+                            setattr(session.tweaks, ik, iv)
+            else:
+                setattr(session, k, v)
 
         data = session.to_json()
         data["created_at"] = session.created_at.isoformat()

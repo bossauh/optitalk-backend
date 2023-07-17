@@ -26,6 +26,7 @@ from models.knowledge import Knowledge
 from models.message import Message
 from models.session import ChatSession
 from models.state import UserPlanState
+from models.tweaks import Tweaks
 from models.user import Plan, User
 
 logger = logging.getLogger(__name__)
@@ -75,6 +76,7 @@ class Character:
     created_by: str
     name: str
     description: str
+    tweaks: Tweaks = dataclasses.field(default_factory=lambda: Tweaks())
     parameters: CharacterParameters = dataclasses.field(
         default_factory=lambda: CharacterParameters()
     )
@@ -203,6 +205,7 @@ class Character:
         id: Optional[str] = None,
         story_mode: bool = False,
         story: Optional[str] = None,
+        tweaks: Optional[Tweaks] = None,
     ) -> Message:
         """
         Chat with the Character. Either chat as the "user" role itself or as the "assistant"
@@ -280,6 +283,7 @@ class Character:
                 created_by=user_id,
                 story_mode=story_mode,
                 story=story,
+                tweaks=tweaks,
             )
             logger.info(
                 f"Automatically created session '{session_id}' because it does not exist."
@@ -360,6 +364,21 @@ class Character:
 
         messages.append(new_message)
 
+        model_parameters = {
+            "temperature": self.parameters.temperature,
+            "max_tokens": self.parameters.max_tokens,
+            "top_p": self.parameters.top_p,
+            "frequency_penalty": self.parameters.frequency_penalty,
+            "presence_penalty": self.parameters.presence_penalty,
+        }
+
+        # Get tweaks details
+        model_notes = None
+        used_tweaks = session.tweaks or self.tweaks
+        if used_tweaks:
+            model_notes = used_tweaks.model_notes
+            model_parameters.update(used_tweaks.model_parameters)
+
         if self.parameters.model in ("gpt-3.5-turbo", "gpt-4"):
             system, context_messages = utils.create_chat_completion_context(
                 self, user_name=user_name, user=user, session=session
@@ -376,6 +395,10 @@ class Character:
                     if message.knowledge_hint:
                         content += f"\nKnowledge Hint (The user should not be able to see this, the user only knows its own Response): {message.knowledge_hint}"
 
+                    if model_notes:
+                        notes = "\n".join([f"- {x}" for x in model_notes])
+                        content += f"\n\nLanguage model notes/settings:\n{notes}"
+
                 message_data = {
                     "role": message.role,
                     "content": content,
@@ -391,11 +414,7 @@ class Character:
                 system=system,
                 messages=prompt,
                 model=self.parameters.model,
-                temperature=self.parameters.temperature,
-                max_tokens=self.parameters.max_tokens,
-                top_p=self.parameters.top_p,
-                frequency_penalty=self.parameters.frequency_penalty,
-                presence_penalty=self.parameters.presence_penalty,
+                **model_parameters,
             )
 
         else:
@@ -411,13 +430,7 @@ class Character:
 
             completion_function = gpt.create_completion
             completion_parameters = dict(
-                prompt=prompt,
-                model=self.parameters.model,
-                temperature=self.parameters.temperature,
-                max_tokens=self.parameters.max_tokens,
-                top_p=self.parameters.top_p,
-                frequency_penalty=self.parameters.frequency_penalty,
-                presence_penalty=self.parameters.presence_penalty,
+                prompt=prompt, model=self.parameters.model, **model_parameters
             )
 
         processing_st = time.perf_counter()

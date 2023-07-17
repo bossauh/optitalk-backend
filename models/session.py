@@ -6,14 +6,16 @@ from typing import Generator, Optional
 from database import mongoclass
 
 from models.message import Message
+from models.tweaks import Tweaks
 
 
-@mongoclass.mongoclass()
+@mongoclass.mongoclass(nested=True)
 @dataclasses.dataclass
 class ChatSession:
     created_by: str
     name: str
     character_id: str
+    tweaks: Optional[Tweaks] = None
     story_mode: bool = False
     story: Optional[str] = None
     name_changed: bool = False

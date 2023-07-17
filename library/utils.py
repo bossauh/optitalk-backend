@@ -266,7 +266,13 @@ def create_chat_completion_context(
 
     context_message[
         "content"
-    ] += "\n\nConversation Starts/Continues, the user will now send you a message and you should act out your character.\n\nIMPORTANT: Make your messages very short and only one sentence and a couple of words long, and NEVER break character."
+    ] += "\n\nConversation Starts/Continues, the user will now send you a message and you should act out your character.\n\nIMPORTANT:\n- Stay true to your character and roleplays."
+
+    tweaks = session.tweaks or character.tweaks
+    if tweaks:
+        if tweaks.length not in ("long", "very long"):
+            context_message["content"] += "\n- Make sure your responses are VERY SHORT."
+
     messages.append(context_message)
 
     if session.story_mode and session.story:

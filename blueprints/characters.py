@@ -9,6 +9,7 @@ from library.configlib import config
 from library.security import route_security
 from models.character import Character, CharacterParameters, FavoriteCharacter
 from models.knowledge import Knowledge
+from models.tweaks import Tweaks
 from models.user import User
 
 if TYPE_CHECKING:
@@ -196,7 +197,9 @@ def setup(server: "App") -> Blueprint:
         logger.info(f"Querying characters with the query '{query}'")
 
         characters = [
-            x.to_json(bypass_definition_visibility=True if user_id == x.created_by else False)
+            x.to_json(
+                bypass_definition_visibility=True if user_id == x.created_by else False
+            )
             for x in utils.paginate_mongoclass_cursor(
                 Character.find_classes(query), page_size=page_size, page=page
             ).sort(sort_key, sort_direction)
@@ -237,8 +240,7 @@ def setup(server: "App") -> Blueprint:
         # model = data.get("model", "basic")
         model = "basic"  # Only the basic model is available
         model = config.model_mappings[model]
-
-        character = Character(
+        kwargs = dict(
             created_by=user_id,
             name=data["name"],
             description=data["description"],
@@ -255,6 +257,11 @@ def setup(server: "App") -> Blueprint:
             nsfw=data.get("nsfw", False),
             _moderated=True,
         )
+        tweaks = data.get("tweaks")
+        if tweaks:
+            kwargs["tweaks"] = Tweaks(**tweaks)
+
+        character = Character(**kwargs)
         character.save()
         logger.info(f"Created new character named '{character.name} ({character.id}).'")
 
@@ -400,7 +407,12 @@ def setup(server: "App") -> Blueprint:
             data.pop("model")
 
         for k, v in data.items():
-            setattr(character, k, v)
+            if k == "tweaks":
+                for ik, iv in v.items():
+                    setattr(character.tweaks, ik, iv)
+            else:
+                setattr(character, k, v)
+
             if k == "nsfw":
                 setattr(character, "_moderated", True)
 

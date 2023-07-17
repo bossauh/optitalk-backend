@@ -9,6 +9,7 @@ from models.open_ai import ChatCompletion, Completion
 from openai.util import convert_to_dict
 
 from library import tasks, utils
+from library.security import route_security
 from library.socketio import socketio
 
 from .configlib import config
@@ -120,6 +121,7 @@ class GPT:
         frequency_penalty: int = 0,
         presence_penalty: float = 0.78,
         allow_incomplete: bool = True,
+        character_id: Optional[str] = None,
         _previous_completions: Optional[list[ChatCompletion]] = None,
         **kwargs,
     ) -> list[ChatCompletion]:
@@ -139,14 +141,29 @@ class GPT:
 
         logger.info("Creating OpenAI chat completion...")
         messages_combined = [{"role": "system", "content": system}] + messages
+
+        limit_chat_st = time.perf_counter()
+        old_max_tokens = max_tokens
         messages_combined, max_tokens = utils.limit_chat_completion_tokens(
             messages=messages_combined, model=model, max_tokens=max_tokens
         )
+        limit_chat_et = time.perf_counter() - limit_chat_st
 
         is_request = has_request_context()
         user_id = None
+        ip_address = None
         if is_request:
+            ip_address = route_security.get_client_ip()
             user_id = utils.get_user_id_from_request(anonymous=True)
+
+        tasks.log_time_took_metric.delay(
+            name="limit_chat_completion_tokens",
+            user_id=user_id,
+            duration=limit_chat_et,
+            character_id=character_id,
+            ip_address=ip_address,
+            metadata={"old_max_tokens": old_max_tokens, "new_max_tokens": max_tokens},
+        )
 
         # Make the request and time it
         st = time.perf_counter()

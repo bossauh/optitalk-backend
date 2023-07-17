@@ -1,4 +1,5 @@
 import importlib
+import time
 
 import eventlet
 
@@ -18,12 +19,13 @@ if not os.getenv("PRODUCTION"):
     logging.info("Loaded development .env file.")
 
 import coloredlogs
-from flask import Flask, send_from_directory
+from flask import Flask, g, request, send_from_directory
 from flask_cors import CORS
 from flask_session import Session
 
 from database import mongoclass
-from library import responses, tasks
+from library import responses, tasks, utils
+from library.security import route_security
 from library.socketio import socketio
 
 coloredlogs.install(level="DEBUG")
@@ -84,6 +86,22 @@ class App:
         """
         Register the routes that will serve the react frontend.
         """
+
+        @self.app.before_request
+        def before_request():
+            g.start = time.perf_counter()
+
+        @self.app.teardown_request
+        def teardown_request(exception=None):
+            duration = time.perf_counter() - g.start
+
+            tasks.log_time_took_metric.delay(
+                name="flask_request",
+                user_id=utils.get_user_id_from_request(),
+                duration=duration,
+                metadata={"url": request.url, "function": request.endpoint},
+                ip_address=route_security.get_client_ip(),
+            )
 
         @self.app.route("/", defaults={"path": ""})
         @self.app.route("/<path:path>")

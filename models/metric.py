@@ -12,6 +12,7 @@ class TimeTookMetric:
     name: str
     user_id: str
     duration: float
+    metadata: Optional[dict] = None
     character_id: Optional[str] = None
     ip_address: Optional[str] = None
     created_at: dt.datetime = dataclasses.field(default_factory=dt.datetime.now)

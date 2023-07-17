@@ -93,15 +93,18 @@ class App:
 
         @self.app.teardown_request
         def teardown_request(exception=None):
-            duration = time.perf_counter() - g.start
+            try:
+                duration = time.perf_counter() - g.start
 
-            tasks.log_time_took_metric.delay(
-                name="flask_request",
-                user_id=utils.get_user_id_from_request(),
-                duration=duration,
-                metadata={"url": request.url, "function": request.endpoint},
-                ip_address=route_security.get_client_ip(),
-            )
+                tasks.log_time_took_metric.delay(
+                    name="flask_request",
+                    user_id=utils.get_user_id_from_request(),
+                    duration=duration,
+                    metadata={"url": request.url, "function": request.endpoint},
+                    ip_address=route_security.get_client_ip(),
+                )
+            except AttributeError:
+                pass
 
         @self.app.route("/", defaults={"path": ""})
         @self.app.route("/<path:path>")

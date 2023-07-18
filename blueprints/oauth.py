@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 import google.auth.transport.requests
 import requests
-from flask import Blueprint, redirect, request, session
+from flask import Blueprint, make_response, redirect, request, session
 from google.oauth2 import id_token
 from google_auth_oauthlib.flow import Flow
 from library import responses, users
@@ -54,17 +54,20 @@ def setup(server: "App") -> Blueprint:
         google_flow = get_flow()
         authorization_url, state = google_flow.authorization_url()
 
-        session["google-oauth-state"] = state
+        response = make_response(redirect(authorization_url))
+        response.set_cookie("google-oauth-state", state)
         time.sleep(1)
 
-        return redirect(authorization_url)
+        return response
 
     @app.get("/google-callback")
     def google_oauth_callback():
         google_flow = get_flow()
         time.sleep(1)
 
-        if session["google-oauth-state"] != request.args["state"]:
+        state = request.cookies.get("google-oauth-state")
+
+        if state != request.args["state"]:
             return responses.create_response(status_code=responses.CODE_500)
 
         fetch_attempts = 0

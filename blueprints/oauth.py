@@ -127,6 +127,9 @@ def setup(server: "App") -> Blueprint:
 
         users.authorize_session(user.id)
 
-        return redirect(redirect_url)
+        response = make_response(redirect(redirect_url))
+        response.delete_cookie("google-oauth-state")
+
+        return response
 
     return app

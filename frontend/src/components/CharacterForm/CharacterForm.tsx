@@ -247,7 +247,7 @@ const CharacterForm: FC<{
         openLoadingModal("Saving knowledge base...");
         fetch("/api/characters/knowledge", {
           method: "PATCH",
-          body: JSON.stringify({ knowledge_base: form.values.knowledge, character_id: props.characterId }),
+          body: JSON.stringify({ knowledge_base: values.knowledge, character_id: props.characterId }),
           headers: { "Content-Type": "application/json" },
         })
           .then((r) => r.json())

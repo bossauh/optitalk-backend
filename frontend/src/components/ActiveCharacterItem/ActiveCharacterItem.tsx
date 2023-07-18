@@ -11,7 +11,7 @@ const ActiveCharacterItem: FC = () => {
   }
 
   return (
-    <Flex direction="column" gap="xs" mb="xl">
+    <Flex direction="column" gap="xs" mb="xl" mt="xs">
       <Title order={2}>Active Character</Title>
       <Card>
         <Card.Section inheritPadding py="xs" withBorder mb="xs">

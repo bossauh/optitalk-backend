@@ -15,11 +15,8 @@ from library.exceptions import *
 from library.gpt import gpt
 from library.security import route_security
 from library.socketio import socketio
-from library.tasks import (
-    increase_model_requests_state,
-    insert_message,
-    log_time_took_metric,
-)
+from library.tasks import (increase_model_requests_state, insert_message,
+                           log_time_took_metric)
 from openai.embeddings_utils import cosine_similarity, get_embedding
 
 from models.knowledge import Knowledge
@@ -378,6 +375,10 @@ class Character:
         if used_tweaks:
             model_notes = used_tweaks.model_notes
             model_parameters.update(used_tweaks.model_parameters)
+
+        if session.story_mode and session.story:
+            model_notes = model_notes if model_notes is not None else []
+            model_notes.append("Follow the story provided to you, but don't rush it unless told.")
 
         logger.debug(f"Used tweaks {used_tweaks}")
         logger.debug(f"Model parameters {model_parameters}")

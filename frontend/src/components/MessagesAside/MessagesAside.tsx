@@ -175,7 +175,6 @@ const MessagesAside: FC<{
 
   const { status: subscriptionStatus, loading: subscriptionStatusLoading } = useSubscription();
 
-  // TODO: This is where you left off
   useDidUpdate(() => {
     if (!store?.activeSession || !activeCharacter) {
       if (store) {

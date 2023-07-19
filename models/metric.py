@@ -10,8 +10,8 @@ from database import mongoclass
 @dataclasses.dataclass
 class TimeTookMetric:
     name: str
-    user_id: str
     duration: float
+    user_id: Optional[str] = None
     metadata: Optional[dict] = None
     character_id: Optional[str] = None
     ip_address: Optional[str] = None

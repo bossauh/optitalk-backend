@@ -24,6 +24,7 @@ class InlineFeedback:
     session_id: Optional[str] = None
     character_id: Optional[str] = None
     message_id: Optional[str] = None
+    completion_id: Optional[str] = None
     content: Optional[str] = None
     created_at: dt.datetime = dataclasses.field(default_factory=dt.datetime.now)
     id: str = dataclasses.field(default_factory=lambda: str(uuid.uuid4()))

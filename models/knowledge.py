@@ -42,7 +42,7 @@ class Knowledge:
 
         # Calculate pricing based on OpenAI's pricing page
         # It's hardcoded since it's unlikely to change (I hope)
-        self.price = (tokens / 1000) * 0.0004
+        self.price = (tokens / 1000) * 0.0001
 
         logger.info(
             f"Updating embedding content of knowledge '{self.id}'. ({tokens} tokens, ${self.price})"

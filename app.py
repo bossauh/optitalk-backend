@@ -125,21 +125,11 @@ class App:
         def too_many_requests(e):
             return responses.create_response(status_code=responses.CODE_429)
 
-    def prelaunch(self) -> None:
-        """
-        This function's purpose is to perform feature related operations before the
-        launch of a version. Things like transferring user data, etc.
-        """
-
-        tasks.auto_moderate_characters.delay()
-
     def start(self) -> None:
         logger.info("Starting OptiTalk...")
         self.register_index_route()
         self.register_error_handlers()
         self.register_blueprints()
-
-        self.prelaunch()
 
         if os.getenv("PRODUCTION"):
             logger.info("Starting with eventlet server.")

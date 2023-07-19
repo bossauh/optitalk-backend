@@ -13,6 +13,7 @@ from PIL import Image
 from library import users
 from library.configlib import config
 from library.system_messages import system_message_handler
+from library.types import OpenAIFunctionSpec, ParameterSpec
 
 if TYPE_CHECKING:
     from models.character import Character
@@ -393,3 +394,57 @@ def clean_user_name(input_string):
     cleaned_string = cleaned_string[:64]
 
     return cleaned_string
+
+
+# Thank you auto-gpt
+# https://github.com/Significant-Gravitas/Auto-GPT/blob/3425b061b5e55b6b655d59d320c8c36895156830/autogpt/llm/providers/openai.py#L359C1-L408C6
+def format_function_specs_as_typescript_ns(functions: list[OpenAIFunctionSpec]) -> str:
+    """Returns a function signature block in the format used by OpenAI internally:
+    https://community.openai.com/t/how-to-calculate-the-tokens-when-using-function-call/266573/6
+
+    Accurate to within 5 tokens when used with count_string_tokens :)
+
+    Example given by OpenAI engineer:
+    ```ts
+    namespace functions {
+      type x = (_: {
+        location: string,
+        unit?: "celsius" | "fahrenheit",
+      }) => any;
+    } // namespace functions
+    ```
+
+    Format found by further experimentation: (seems accurate to within 5 tokens)
+    ```ts
+    namespace functions {
+
+    // Get the current weather in a given location
+    type get_current_weather = (_: {
+      location: string, // The city and state, e.g. San Francisco, CA
+      unit?: "celsius" | "fahrenheit",
+    }) => any;
+
+    } // namespace functions
+    ```
+    The `namespace` statement doesn't seem to count towards total token length.
+    """
+
+    def param_signature(p_spec: ParameterSpec) -> str:
+        # TODO: enum type support
+        return f'{p_spec.name}{"" if p_spec.required else ""}: {p_spec.type}, // {p_spec.description}'
+
+    def function_signature(f_spec: OpenAIFunctionSpec) -> str:
+        return "\n".join(
+            [
+                f"// {f_spec.description}",
+                f"type {f_spec.name} = (_ :{{",
+                *[f"  {param_signature(p)}" for p in f_spec.parameters.values()],
+                "}) => any;",
+            ]
+        )
+
+    return (
+        "namespace functions {\n\n"
+        + "\n\n".join(function_signature(f) for f in functions)
+        + "\n\n} // namespace functions"
+    )

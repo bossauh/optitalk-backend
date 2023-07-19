@@ -37,7 +37,7 @@ class Tweaks:
         if length:
             parameters.update(length)
 
-        creativity = tweaks["creativity"].get(self.creativity, {}).get("creativity")
+        creativity = tweaks["creativity"].get(self.creativity, {}).get("parameters")
         if creativity:
             parameters.update(creativity)
 

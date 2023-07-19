@@ -8,9 +8,8 @@ import { useCookies } from "react-cookie";
 import { AiFillCheckCircle, AiFillWarning } from "react-icons/ai";
 import { RouterProvider, createBrowserRouter } from "react-router-dom";
 import socket from "./common/socket";
-import { CharacterType, SessionType, UserPlanDetails } from "./common/types";
+import { CharacterType, SessionType, TweaksType, UserPlanDetails } from "./common/types";
 import { deserializeCharacterData, deserializeUserPlanDetails } from "./common/utils";
-import GlobalModalPopup from "./components/GlobalModalPopup";
 import HighTrafficWarning from "./components/HighTrafficWarning";
 import StoreContext from "./contexts/store";
 import "./index.css";
@@ -102,6 +101,7 @@ const App: FC = () => {
   // Temporary data for story mode
   const [storyMode, setStoryMode] = useState(false);
   const [storyModeContent, setStoryModeContent] = useState<string | null>("");
+  const [tweaks, setTweaks] = useState<TweaksType | null>(null);
 
   const fetchUserData = useCallback(() => {
     setIsAuthenticating(true);
@@ -235,6 +235,8 @@ const App: FC = () => {
         setStoryMode: setStoryMode,
         setStoryModeContent: setStoryModeContent,
         setColorScheme: setColorScheme,
+        tweaks: tweaks,
+        setTweaks: setTweaks,
       }}
     >
       <MantineProvider

@@ -1,13 +1,13 @@
 {
   "length": {
     "very short": {
-      "model_note": "Your response must be extremely short, like a word or just a few words",
+      "model_note": "Your response must be SUDDENLY EXTREMELY short, like a word or just a few words",
       "parameters": {
         "max_tokens": 100
       }
     },
     "short": {
-      "model_note": "Your response must be short, like just a few words long or one sentence",
+      "model_note": "Your response must be suddenly short, like just a few words long or one sentence",
       "parameters": {
         "max_tokens": 150
       }
@@ -17,7 +17,7 @@
       "parameters": {}
     },
     "long": {
-      "model_note": "Your response must only be a maximum of 2 to 3 sentences",
+      "model_note": "Your response must suddenly only be a maximum of 2 to 3 sentences",
       "parameters": {
         "max_tokens": 400
       }
@@ -50,17 +50,17 @@
       "parameters": {}
     },
     "creative": {
-      "model_note": "Your response must be creative and unique and crazy",
+      "model_note": "Your response must be creative and unique and crazy. You can also use roleplay annotations.",
       "parameters": {
-        "temperature": 1.24,
+        "temperature": 1.2,
         "presence_penalty": 1.45
       }
     },
     "extreme": {
-      "model_note": "Your response must be very extreme and very crazy no matter what",
+      "model_note": "Your response must be very extreme and very crazy. Use roleplays or expressions. GO WILD! and impress the user.",
       "parameters": {
-        "temperature": 1.45,
-        "presence_penalty": 1.6
+        "temperature": 1.24,
+        "presence_penalty": 2
       }
     }
   }

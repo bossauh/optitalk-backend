@@ -33,6 +33,8 @@ export interface StoreContextType {
   setStoryMode: (value: boolean) => void;
   setStoryModeContent: (value: string | null) => void;
   setColorScheme: (value: "dark" | "light") => void;
+  tweaks: TweaksType | null;
+  setTweaks: (value: TweaksType | null) => void;
 }
 
 export interface CharacterViewOutletContextType {
@@ -100,6 +102,7 @@ export interface SessionType {
   messagesCount?: number;
   lastUsed?: string;
   new?: boolean;
+  tweaks: TweaksType | null;
 }
 
 export interface MessageType {
@@ -308,4 +311,9 @@ export interface CharacterFormType {
   // Non-submittable
   previewOnly: boolean;
   characterId: string | null;
+}
+
+export interface TweaksType {
+  length?: string;
+  creativity?: string;
 }

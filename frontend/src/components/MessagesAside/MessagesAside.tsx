@@ -3,12 +3,14 @@ import {
   ActionIcon,
   Anchor,
   Avatar,
+  Badge,
   Button,
   Flex,
   Group,
   Loader,
   MediaQuery,
   Overlay,
+  Slider,
   Stack,
   Switch,
   Text,
@@ -21,16 +23,39 @@ import { useDebouncedState, useDidUpdate, useDisclosure, useMediaQuery } from "@
 import { modals } from "@mantine/modals";
 import { notifications } from "@mantine/notifications";
 import { nprogress } from "@mantine/nprogress";
-import { FC, useContext, useState } from "react";
+import { FC, useCallback, useContext, useState } from "react";
 import { AiFillDelete, AiFillEdit } from "react-icons/ai";
 import { BsRobot } from "react-icons/bs";
 import { FaLock, FaLockOpen, FaUser } from "react-icons/fa";
 import { IoSaveSharp } from "react-icons/io5";
 import { MdReportProblem } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
+import ModelTweaks from "../../blogs/ModelTweaks";
 import StoryMode from "../../blogs/StoryMode";
-import { useActiveCharacter, useSubscription } from "../../common/utils";
+import { TweaksType } from "../../common/types";
+import {
+  getTweaksCreativityValue,
+  getTweaksLengthValue,
+  useActiveCharacter,
+  useSubscription,
+} from "../../common/utils";
 import StoreContext from "../../contexts/store";
+
+const TWEAKS_LENGTHS_MARKS = [
+  { value: 0, label: "very short" },
+  { value: 1, label: "short" },
+  { value: 2, label: "medium" },
+  { value: 3, label: "long" },
+  { value: 4, label: "very long" },
+];
+
+const TWEAKS_CREATIVITY_MARKS = [
+  { value: 0, label: "predictable" },
+  { value: 1, label: "consistent" },
+  { value: 2, label: "normal" },
+  { value: 3, label: "creative" },
+  { value: 4, label: "extreme" },
+];
 
 const RenameSession: FC = () => {
   const [name, setName] = useState("");
@@ -137,10 +162,54 @@ const MessagesAside: FC<{
     store?.activeSession?.story || store?.storyModeContent || "",
     500
   );
+
+  // Story mode states
   const [storyModeError, setStoryModeError] = useState("");
   const [storyModeSaving, storyModeSavingHandler] = useDisclosure(false);
 
+  // Model tweaking State
+  const [tweaks, setTweaks] = useDebouncedState<TweaksType | null>(
+    store?.activeSession?.tweaks || store?.tweaks || null,
+    100
+  );
+
   const { status: subscriptionStatus, loading: subscriptionStatusLoading } = useSubscription();
+
+  // TODO: This is where you left off
+  useDidUpdate(() => {
+    if (!store?.activeSession || !activeCharacter) {
+      if (store) {
+        store.setTweaks(tweaks);
+      }
+      return;
+    }
+
+    fetch(`/api/chat/sessions?session_id=${store.activeSession.id}&character_id=${activeCharacter.id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ tweaks: tweaks }),
+      headers: { "Content-Type": "application/json" },
+    })
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.status_code !== 200) {
+          notifications.show({
+            title: "Unknown error",
+            message:
+              "A unknown error has occurred while saving the model tweaks. Please try again. If the problem persists, contact us.",
+            color: "red",
+          });
+        }
+      })
+      .catch((e) => {
+        console.error(e);
+        notifications.show({
+          title: "Network error",
+          message:
+            "A unknown network error has occurred while trying to save the model tweaks. The sight might have restarted. Please refresh the page and try again. If the problem persists, contact us.",
+          color: "red",
+        });
+      });
+  }, [tweaks]);
 
   useDidUpdate(() => {
     if (!store?.activeSession || !activeCharacter) {
@@ -305,7 +374,88 @@ const MessagesAside: FC<{
               marginTop: theme.spacing.xs,
             },
           })}
+          defaultValue="tweaks"
         >
+          <Accordion.Item value="tweaks">
+            <Accordion.Control>
+              <Title order={6}>
+                Model Tweaks <Badge size="xs">Beta</Badge>{" "}
+              </Title>
+            </Accordion.Control>
+            <Accordion.Panel>
+              <Stack>
+                <Text fz="xs">
+                  <Text fw="bold" span>
+                    Note:
+                  </Text>{" "}
+                  Your model tweaks value are different per chat.{" "}
+                  <Anchor
+                    onClick={() => {
+                      modals.open({ children: <ModelTweaks />, title: "ModelTweaks.tsx" });
+                    }}
+                  >
+                    Learn More
+                  </Anchor>
+                </Text>
+
+                <Stack>
+                  <Stack spacing={4}>
+                    <Title order={6}>Response Length</Title>
+                    <Slider
+                      defaultValue={
+                        TWEAKS_LENGTHS_MARKS.find(
+                          (mark) =>
+                            mark.label ===
+                            (store?.activeSession ? tweaks?.length || "medium" : store?.tweaks?.length || "medium")
+                        )?.value
+                      }
+                      label={(val) => TWEAKS_LENGTHS_MARKS.find((mark) => mark.value === val)?.label}
+                      step={1}
+                      marks={TWEAKS_LENGTHS_MARKS}
+                      max={4}
+                      styles={{ markLabel: { display: "none" } }}
+                      onChange={(value) => {
+                        // @ts-expect-error
+                        setTweaks((prev) => {
+                          let copy = { ...(prev || {}) };
+                          copy.length = getTweaksLengthValue(value);
+                          return copy;
+                        });
+                      }}
+                    />
+                  </Stack>
+                  <Stack spacing={4}>
+                    <Title order={6}>Response Creativity</Title>
+                    <Slider
+                      defaultValue={
+                        TWEAKS_CREATIVITY_MARKS.find(
+                          (mark) =>
+                            mark.label ===
+                            (store?.activeSession
+                              ? tweaks?.creativity || "normal"
+                              : store?.tweaks?.creativity || "normal")
+                        )?.value
+                      }
+                      label={(val) => TWEAKS_CREATIVITY_MARKS.find((mark) => mark.value === val)?.label}
+                      step={1}
+                      marks={TWEAKS_CREATIVITY_MARKS}
+                      max={4}
+                      styles={{ markLabel: { display: "none" } }}
+                      onChange={(value) => {
+                        // @ts-expect-error
+                        setTweaks((prev) => {
+                          let copy = { ...(prev || {}) };
+                          copy.creativity = getTweaksCreativityValue(value);
+                          return copy;
+                        });
+                      }}
+                    />
+                  </Stack>
+                </Stack>
+              </Stack>
+            </Accordion.Panel>
+          </Accordion.Item>
+
           <Accordion.Item value="story-mode">
             <Accordion.Control>
               <Group spacing={7} align="center">

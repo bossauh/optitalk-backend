@@ -379,6 +379,10 @@ class Character:
             model_notes = used_tweaks.model_notes
             model_parameters.update(used_tweaks.model_parameters)
 
+        logger.debug(f"Used tweaks {used_tweaks}")
+        logger.debug(f"Model parameters {model_parameters}")
+        logger.debug(f"Model notes {model_notes}")
+
         if self.parameters.model in ("gpt-3.5-turbo", "gpt-4"):
             system, context_messages = utils.create_chat_completion_context(
                 self, user_name=user_name, user=user, session=session

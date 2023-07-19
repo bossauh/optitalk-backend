@@ -48,6 +48,7 @@ export function deserializeSessionData(data: any): SessionType {
     lastUsed: data.last_used,
     storyMode: data.story_mode,
     story: data.story,
+    tweaks: data.tweaks,
   };
 }
 
@@ -724,6 +725,7 @@ export const useSendMessage = (
       // This will also set the active session to the newly created session.
       let storyMode = false;
       let story = null;
+      let tweaks = null;
       if (!sessionId) {
         let session = {
           id: uuidv4(),
@@ -733,13 +735,16 @@ export const useSendMessage = (
           new: true,
           storyMode: store?.storyMode || false,
           story: store?.storyModeContent || null,
+          tweaks: store?.tweaks || null,
         };
         sessionId = session.id;
         storyMode = session.storyMode;
         story = session.story;
+        tweaks = store?.tweaks;
         store?.setStoryMode(false);
         store?.setStoryModeContent(null);
         store?.setActiveSession(session);
+        store?.setTweaks(null);
       }
 
       setTimeout(() => {
@@ -758,6 +763,7 @@ export const useSendMessage = (
           story_mode: storyMode,
           story: story,
           id: id,
+          tweaks: tweaks,
         }),
       })
         .then((r) => r.json())
@@ -990,4 +996,30 @@ export const useUploadAvatar = (
   }, [file]);
 
   return [id, uploading];
+};
+
+export const getTweaksLengthValue = (value: number) => {
+  const mappings = {
+    0: "very short",
+    1: "short",
+    2: "medium",
+    3: "long",
+    4: "very long",
+  };
+
+  // @ts-expect-error
+  return mappings[value];
+};
+
+export const getTweaksCreativityValue = (value: number) => {
+  const mappings = {
+    0: "predictable",
+    1: "consistent",
+    2: "normal",
+    3: "creative",
+    4: "extreme",
+  };
+
+  // @ts-expect-error
+  return mappings[value];
 };

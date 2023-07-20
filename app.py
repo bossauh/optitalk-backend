@@ -38,7 +38,7 @@ class App:
         self.limiter = Limiter(
             get_remote_address,
             app=self.app,
-            default_limits=["10 per second"],
+            default_limits=["30 per second"],
             storage_uri=os.getenv("MONGODB_URI"),
         )
         flask_monitor.config.init_from(

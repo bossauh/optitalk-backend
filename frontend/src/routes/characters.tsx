@@ -53,6 +53,12 @@ const Characters: FC = () => {
       let newParams = new URLSearchParams(searchParams);
       newParams.set("tab", v);
       newParams.set("page", "1");
+
+      if (["my-characters", "favorites"].includes(v)) {
+        newParams.set("nsfw", "include");
+      } else {
+        newParams.set("nsfw", "disabled");
+      }
       setSearchParams(newParams);
     }
   };

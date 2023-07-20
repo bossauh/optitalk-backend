@@ -26,7 +26,7 @@ def setup(server: "App") -> Blueprint:
     route_security.patch(app, authentication_methods=["session", "api", "rapid-api"])
 
     @app.post("/")
-    @server.limiter.limit("1/second;25/minute")
+    @server.limiter.limit("3/second;25/minute")
     @route_security.request_json_schema(schema=schemas.POST_CHAT)
     @route_security.exclude
     def post_chat():

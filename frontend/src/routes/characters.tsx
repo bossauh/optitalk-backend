@@ -31,6 +31,7 @@ const Characters: FC = () => {
     sort: "uses",
     q: "",
     nsfw: "disabled",
+    tag: "",
   });
 
   const [characters, setCharacters] = useState<CharacterType[]>([]);
@@ -82,6 +83,7 @@ const Characters: FC = () => {
       page_size: "21",
       sort: searchParams.get("sort") || "uses",
       nsfw: searchParams.get("nsfw") || "hidden",
+      tag: searchParams.get("tag") || "",
       ...deconstructTab(searchParams.get("tab") || "featured"),
     };
 

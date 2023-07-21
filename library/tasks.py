@@ -1,6 +1,7 @@
 import logging
 import os
 import pprint
+import statistics
 import time
 import traceback
 
@@ -20,12 +21,15 @@ from typing import Generator, Optional
 
 import openai
 from celery import Celery
+from celery.signals import celeryd_after_setup
+from models.lock import CeleryLock, CeleryLockContext
 from models.message import Message
 from models.metric import TimeTookMetric
 from models.open_ai import ChatCompletion, Completion
 from models.session import ChatSession
 from models.state import UserPlanState
 from models.user import Application
+from openai.embeddings_utils import cosine_similarity
 from openai.error import RateLimitError
 
 from library.configlib import config
@@ -45,6 +49,18 @@ BASE_URL = f"http://{HOST}:{PORT}/api/tasks"
 # I know it's not the best but it'll do since those endpoints aren't
 # strictly dangerous if the secret token does get leaked.
 SECRET_TOKEN = "387bf3c1-ec5a-4887-a05d-1d134b60f55c"
+
+
+@celeryd_after_setup.connect
+def setup(*args, **kwargs):
+    locks = list(CeleryLock.find_classes({}))
+    for lock in locks:
+        lock.delete()
+
+    CeleryLock("update_characters_embeddings").save()
+    CeleryLock("auto_tag_characters").save()
+
+    logger.info("Cleaned locks")
 
 
 @app.task
@@ -323,10 +339,126 @@ def auto_moderate_characters():
         time.sleep(0.2)
 
 
+@app.task
+def update_characters_embeddings():
+    with CeleryLockContext("update_characters_embeddings") as lock:
+        if lock is None:
+            logger.info("update_characters_embeddings is LOCKED! returning")
+            return
+
+        from models.character import Character
+
+        characters: Generator[Character, None, None] = Character.find_classes(
+            {"$or": [{"embeddings": None}, {"embeddings": {"$exists": False}}]}
+        )
+
+        for character in characters:
+            try:
+                character.update_embeddings()
+                character.save()
+            except Exception:
+                pass
+
+            time.sleep(0.1)
+
+    lock.lock.open = True
+    lock.lock.save()
+
+
+@app.task
+def auto_tag_characters():
+    with CeleryLockContext("auto_tag_characters") as lock:
+        if lock is None:
+            logger.info("auto_tag_characters is LOCKED! returning")
+            return
+
+        from models.character import Character
+        from models.tags import Tag
+
+        # Create Tag objects for the default tags if they don't exist yet
+        for default_tag in config.character_tags:
+            if not Tag.count_documents({"tag": default_tag["tag"]}):
+                new_tag = Tag(
+                    tag=default_tag["tag"], description=default_tag["description"]
+                )
+
+                try:
+                    new_tag.update_embeddings()
+                    new_tag.save()
+                except Exception:
+                    pass
+
+        characters: Generator[Character, None, None] = Character.find_classes(
+            {
+                "$or": [
+                    {"tags": {"$size": 0}},
+                    {"tags": None},
+                    {"tags": {"$exists": False}},
+                ]
+            }
+        )
+        tags: list[Tag] = list(Tag.find_classes({}))
+
+        if not tags:
+            return
+
+        for character in characters:
+            if not character.embeddings:
+                continue
+
+            rankings = []
+            for tag in tags:
+                if not tag.embeddings:
+                    continue
+
+                ranking = {
+                    "tag": tag.tag,
+                    "similarity": cosine_similarity(
+                        character.embeddings, tag.embeddings
+                    ),
+                }
+                if ranking["similarity"] >= 0.78:
+                    rankings.append(ranking)
+
+            rankings.sort(key=lambda x: x["similarity"], reverse=True)
+
+            character.tags = []
+            similarity_values = []
+            for ranking in rankings:
+                if len(character.tags) >= 2:
+                    break
+
+                character.tags.append(ranking["tag"])
+                similarity_values.append(ranking["similarity"])
+
+            if len(character.tags) == 1:
+                character.tags_similarity = similarity_values[0]
+            elif len(character.tags) > 1:
+                character.tags_similarity = statistics.mean(similarity_values)
+
+            character.save()
+            if character.tags:
+                logger.info(
+                    f"Auto tagged '{character}' with tags {character.tags} with a average tags similarity of {character.tags_similarity}"
+                )
+
+    lock.lock.open = True
+    lock.lock.save()
+
+
 @app.on_after_configure.connect
 def setup_periodic_tasks(sender, **kwargs):
     sender.add_periodic_task(
         schedule=10.0,
         sig=reset_users_state_hourly_cap.s(),
         name="reset users hourly cap",
+    )
+
+    sender.add_periodic_task(
+        schedule=60.0, sig=auto_tag_characters.s(), name="auto tag characters"
+    )
+    sender.add_periodic_task(
+        schedule=20.0,
+        sig=update_characters_embeddings.s(),
+        name="update characters embeddings",
     )

@@ -35,6 +35,8 @@ export function deserializeCharacterData(data: any): CharacterType {
     avatarId: data.avatar_id,
     definitionVisibility: data.definition_visibility,
     nsfw: data.nsfw,
+    tags: data.tags,
+    tagsSimilarity: data.tags_similarity,
   };
 }
 

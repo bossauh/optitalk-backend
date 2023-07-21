@@ -1,4 +1,5 @@
-from voluptuous import All, Any, Email, Length, Optional, Range, Required, Schema, Url
+from voluptuous import (All, Any, Email, Length, Optional, Range, Required,
+                        Schema, Url)
 
 _CHARACTER_EXCHANGE = {
     Required("role"): Any("user", "assistant"),
@@ -52,6 +53,7 @@ POST_CHARACTERS = Schema(
         Optional("avatar_id"): Any(str, None),
         Optional("definition_visibility"): bool,
         Optional("nsfw"): bool,
+        Optional("tags"): All([Schema(All(str, min=0, max=500))], Length(min=0, max=3)),
     }
 )
 PATCH_CHARACTERS = Schema(
@@ -84,6 +86,7 @@ PATCH_CHARACTERS = Schema(
         Optional("image"): Url(),
         Optional("definition_visibility"): bool,
         Optional("nsfw"): bool,
+        Optional("tags"): All([Schema(All(str, min=0, max=500))], Length(min=0, max=3)),
     }
 )
 GET_CHARACTERS = Schema(
@@ -95,6 +98,7 @@ GET_CHARACTERS = Schema(
         Optional("q"): str,
         Optional("favorites"): str,
         Optional("nsfw"): Any("include", "only", "disabled"),
+        Optional("tag"): str,
         **_PAGING_SCHEMA,
     }
 )

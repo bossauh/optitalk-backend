@@ -2,6 +2,7 @@
 import {
   ActionIcon,
   Avatar,
+  Badge,
   Box,
   Button,
   FileButton,
@@ -18,6 +19,7 @@ import {
 } from "@mantine/core";
 import { FC, useEffect, useRef, useState } from "react";
 import { AiFillDelete, AiFillFileImage } from "react-icons/ai";
+import { TagFilterType } from "../../common/types";
 import { useUploadAvatar } from "../../common/utils";
 import { useCharacterFormContext } from "../../contexts/characterFormContext";
 
@@ -28,6 +30,8 @@ const BasicTab: FC = () => {
   const [avatarId, avatarUploading] = useUploadAvatar(avatarFile, form.values.avatar_id);
 
   const resetRef = useRef<() => void>(null);
+
+  const [tagsOptions, setTagsOptions] = useState<{ label: string; value: string }[]>([]);
 
   // Advanced Options
   const [personalitiesData, setPersonalitiesData] = useState<{ value: string; label: string }[]>([]);
@@ -49,6 +53,15 @@ const BasicTab: FC = () => {
     form.values.favorite_words.forEach((item) => {
       setFavoriteWordsData((previous) => [...previous, { label: item, value: item }]);
     });
+
+    fetch("/api/characters/tags")
+      .then((r) => r.json())
+      .then((d) => {
+        const data = d.payload.map((i: TagFilterType) => {
+          return { value: i.name, label: i.name };
+        });
+        setTagsOptions(data);
+      });
   }, []);
 
   return (
@@ -144,8 +157,29 @@ const BasicTab: FC = () => {
         </MediaQuery>
       </Stack>
       <Space h="xl" />
+
+      <Group spacing="xs">
+        <Title order={3}>Tags</Title>{" "}
+        <Badge variant="gradient" size="sm">
+          New
+        </Badge>
+      </Group>
+      <Text fz="sm" maw="550px">
+        Tags helps users discover your characters. If you don't put any, we will eventually automatically assign one.
+      </Text>
+
+      <MultiSelect
+        data={tagsOptions}
+        mt="md"
+        placeholder="Pick up to 3 tags"
+        maxSelectedValues={3}
+        disabled={form.values.previewOnly}
+        {...form.getInputProps("tags")}
+      />
+
+      <Space h="xl" />
       <Title order={3}>Character Traits</Title>
-      <Text fz="sm">Type something in one of the fields and click add</Text>
+      <Text fz="sm">Type something in one of the fields and click add.</Text>
       <MediaQuery
         smallerThan="lg"
         styles={{

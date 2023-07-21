@@ -85,6 +85,8 @@ export interface CharacterType {
   favorite: boolean;
   definitionVisibility: boolean;
   nsfw: boolean;
+  tags: string[];
+  tagsSimilarity: number | null;
 }
 
 export interface CharacterItemProps extends CharacterType {
@@ -307,6 +309,7 @@ export interface CharacterFormType {
   private: boolean;
   definition_visibility: boolean;
   nsfw: boolean;
+  tags: string[];
 
   // Non-submittable
   previewOnly: boolean;
@@ -316,4 +319,9 @@ export interface CharacterFormType {
 export interface TweaksType {
   length?: string;
   creativity?: string;
+}
+
+export interface TagFilterType {
+  characters: number;
+  name: string;
 }

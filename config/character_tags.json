@@ -1,0 +1,51 @@
+[
+  {
+    "tag": "Influencers",
+    "description": "Characters originating from the world of social media influencers and content creators."
+  },
+  {
+    "tag": "Anime",
+    "description": "Characters inspired by the diverse world of anime and its various series and genres."
+  },
+  { "tag": "Games", "description": "Characters originating from the vast realm of video games and gaming culture." },
+  {
+    "tag": "YouTubers",
+    "description": "Characters who hail from the virtual world of YouTube and its vibrant community."
+  },
+  { "tag": "Movies & TV", "description": "Characters brought to life from the realms of movies and television shows." },
+  { "tag": "History", "description": "Characters from various historical eras and events." },
+  { "tag": "Books", "description": "Characters sprung from the pages of literature and captivating storytelling." },
+  { "tag": "Politics", "description": "Characters emerging from the world of politics and its intricate workings." },
+  { "tag": "Animals", "description": "Characters inspired by the vast and diverse animal kingdom." },
+  { "tag": "Comedy", "description": "Characters known for their comedic acts and humorous personalities." },
+  { "tag": "Villains", "description": "Characters with dark and sinister origins, inspired by iconic villains." },
+  { "tag": "Music", "description": "Characters originating from the world of music, melodies, and harmonies." },
+  { "tag": "Fantasy", "description": "Characters born in the realms of fantasy, magic, and enchanted adventures." },
+  {
+    "tag": "Motivational",
+    "description": "Characters who inspire and uplift others with their wisdom and positivity."
+  },
+  {
+    "tag": "Romance",
+    "description": "Characters immersed in the world of love, passion, and heartfelt relationships."
+  },
+  { "tag": "Astronomy", "description": "Characters from the celestial realm of astronomy, stars, and galaxies." },
+  {
+    "tag": "Supernatural",
+    "description": "Characters with mysterious and otherworldly origins, delving into the supernatural."
+  },
+  {
+    "tag": "Science",
+    "description": "Characters rooted in the realm of science, knowledge, and groundbreaking discoveries."
+  },
+  {
+    "tag": "Person",
+    "description": "Characters with a well-rounded personality, reflecting a mix of various interests."
+  },
+  {
+    "tag": "Robot",
+    "description": "Characters with a futuristic robotic persona, reflecting a fascination for technology."
+  },
+  { "tag": "Heroes", "description": "Characters inspired by noble heroes and defenders of justice." },
+  { "tag": "Memes", "description": "Meme related characters." }
+]

@@ -47,6 +47,7 @@ const CharacterForm: FC<{
       private: false,
       definition_visibility: true,
       nsfw: false,
+      tags: [],
 
       // Non-submittable
       characterId: null,
@@ -97,6 +98,11 @@ const CharacterForm: FC<{
       },
       example_exchanges: {
         content: hasLength({ min: 1, max: 2048 }, "Example message must be 1 to 2048 characters."),
+      },
+      tags: (values) => {
+        if (values.length > 3) {
+          return "There can only be 3 maximum tags.";
+        }
       },
     },
   });
@@ -234,6 +240,7 @@ const CharacterForm: FC<{
         definition_visibility: values.definition_visibility,
         knowledge: undefined,
         nsfw: values.nsfw,
+        tags: values.tags,
       };
 
       if (method === "POST") {
@@ -292,6 +299,7 @@ const CharacterForm: FC<{
         private: characterDetails.private,
         response_styles: characterDetails.responseStyles,
         nsfw: characterDetails.nsfw,
+        tags: characterDetails.tags,
       });
 
       // Get knowledge base

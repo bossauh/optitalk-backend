@@ -4,9 +4,12 @@ import logging
 import pprint
 import re
 import time
+import traceback
 import uuid
 from typing import Literal, Optional, Union
 
+import backoff
+import tiktoken
 from database import mongoclass
 from IPy import IP
 from library import users, utils
@@ -16,6 +19,7 @@ from library.gpt import gpt
 from library.security import route_security
 from library.socketio import socketio
 from library.tasks import (
+    error_alert,
     increase_model_requests_state,
     insert_message,
     log_time_took_metric,
@@ -82,6 +86,8 @@ class Character:
     )
     uses: int = 0
     featured: bool = False
+    tags: Optional[list[str]] = None
+    tags_similarity: Optional[float] = None
     avatar_id: Optional[str] = None
     image: Optional[str] = None
     personalities: Optional[list[str]] = None
@@ -97,12 +103,71 @@ class Character:
         default_factory=datetime.datetime.now
     )
 
+    # Embeddings fields
+    embeddings: Optional[list[str]] = None
+    embeddings_price: Optional[float] = None
+    embeddings_tokens: Optional[int] = None
+    embeddings_updated_count: int = 0
+
     # Meta fields
     _moderated: bool = False
     _auto_moderation_results: Optional[dict] = None
 
     # Unused old fields
     knowledge: Optional[list[str]] = dataclasses.field(default_factory=list)
+
+    @property
+    def embeddings_content(self) -> str:
+        return f"Name: {self.name}\nDescription: {self.description}"
+
+    @backoff.on_exception(backoff.expo, Exception, max_time=60)
+    def update_embeddings(self) -> list[float]:
+        try:
+            user_id = utils.get_user_id_from_request()
+            ip_address = route_security.get_client_ip()
+        except Exception:
+            user_id = None
+            ip_address = None
+
+        try:
+            st = time.perf_counter()
+            self.embeddings = get_embedding(
+                self.embeddings_content, engine="text-embedding-ada-002"
+            )
+            et = time.perf_counter() - st
+
+            encoder = tiktoken.get_encoding("cl100k_base")
+            tokens = len(encoder.encode(self.embeddings_content))
+            self.embeddings_tokens = tokens
+            self.embeddings_price = (tokens / 1000) * 0.0001
+            self.embeddings_updated_count += 1
+
+            logger.info(
+                f"Updated embeddings of character '{self}'. (${self.embeddings_price})"
+            )
+
+            log_time_took_metric.delay(
+                name="update-embeddings-of-character",
+                duration=et,
+                user_id=self.created_by or user_id,
+                metadata={"data": self.to_json()},
+                ip_address=ip_address,
+            )
+
+            return self.embeddings
+        except Exception as e:
+            description = f"A unknown error has occurred while trying to generate the embeddings for the character '{self}'."
+
+            logger.exception(e)
+
+            error_alert.delay(
+                name="Update embeddings of character",
+                description=description,
+                metadata={"data": self.to_json()},
+                trace=traceback.format_exc(),
+            )
+
+            raise e
 
     def __str__(self) -> str:
         return f"{self.name} ({self.id})"
@@ -112,6 +177,10 @@ class Character:
         data.pop("parameters", None)
         data.pop("_moderated", None)
         data.pop("_auto_moderation_results", None)
+        data.pop("embeddings", None)
+        data.pop("embeddings_price", None)
+        data.pop("embeddings_tokens", None)
+        data.pop("embeddings_updated_count", None)
 
         if not self.definition_visibility and not bypass_definition_visibility:
             data.pop("description", None)

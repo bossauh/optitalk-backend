@@ -1,7 +1,7 @@
 import logging
 import re
 import time
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Generator, Optional
 
 from flask import Blueprint, redirect, request
 from library import responses, schemas, tasks, utils
@@ -9,6 +9,7 @@ from library.configlib import config
 from library.security import route_security
 from models.character import Character, CharacterParameters, FavoriteCharacter
 from models.knowledge import Knowledge
+from models.tags import Tag
 from models.tweaks import Tweaks
 from models.user import User
 
@@ -24,6 +25,30 @@ def setup(server: "App") -> Blueprint:
     app = Blueprint("characters", __name__, url_prefix="/api/characters")
 
     route_security.patch(app, authentication_methods=["session", "api", "rapid-api"])
+
+    @app.get("/tags")
+    @server.limiter.exempt
+    @route_security.exclude
+    def get_tags():
+        data = []
+        tags: Generator[Tag, None, None] = Tag.find_classes({})
+
+        for tag in tags:
+            data.append(
+                {
+                    "name": tag.tag,
+                    "characters": Character.count_documents(
+                        {
+                            "tags": {"$exists": True, "$elemMatch": {"$eq": tag.tag}},
+                            "private": False,
+                        }
+                    ),
+                }
+            )
+
+        data = [x for x in data if x["characters"] > 0]
+
+        return responses.create_response(payload=data)
 
     @app.get("/render-character-avatar")
     @server.limiter.exempt
@@ -148,6 +173,7 @@ def setup(server: "App") -> Blueprint:
         featured = request.args.get("featured", "False").lower() == "true"
         favorites = request.args.get("favorites", "False").lower() == "true"
         nsfw = request.args.get("nsfw", "disabled")
+        tag = request.args.get("tag")
 
         sort = request.args.get("sort", "latest")
         q = request.args.get("q")
@@ -190,9 +216,13 @@ def setup(server: "App") -> Blueprint:
 
         sort_direction = -1
         sort_key = "_id"
-
         if sort == "uses":
             sort_key = "uses"
+
+        sort_values = [(sort_key, sort_direction)]
+        if tag:
+            query["tags"] = {"$in": [tag]}
+            sort_values.append(("tags_similarity", -1))
 
         logger.info(f"Querying characters with the query '{query}'")
 
@@ -202,7 +232,7 @@ def setup(server: "App") -> Blueprint:
             )
             for x in utils.paginate_mongoclass_cursor(
                 Character.find_classes(query), page_size=page_size, page=page
-            ).sort(sort_key, sort_direction)
+            ).sort(sort_values)
         ]
 
         # Get documents count based on query to see how many pages there are
@@ -255,6 +285,7 @@ def setup(server: "App") -> Blueprint:
             public_description=data.get("public_description"),
             definition_visibility=data.get("definition_visibility", True),
             nsfw=data.get("nsfw", False),
+            tags=data.get("tags", []),
             _moderated=True,
         )
         tweaks = data.get("tweaks")

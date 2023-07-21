@@ -140,7 +140,7 @@ const CharactersSearchBox: FC = () => {
           <Text fz="xs" fw="bold">
             NSFW Control
           </Text>
-          <Indicator label="New" size={16}>
+          <Indicator label="New" disabled size={16}>
             <SegmentedControl
               size="xs"
               color={

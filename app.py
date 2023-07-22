@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 
 class App:
     def __init__(self) -> None:
-        self.app = Flask(__name__, static_folder="./build")
+        self.app = Flask(__name__, static_folder="./frontend/build")
         self.limiter = Limiter(
             get_remote_address,
             app=self.app,

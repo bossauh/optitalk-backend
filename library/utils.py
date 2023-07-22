@@ -274,13 +274,18 @@ def create_chat_completion_context(
         if tweaks.length not in ("long", "very long"):
             context_message["content"] += "\n- Make sure your responses are VERY SHORT."
 
-    messages.append(context_message)
-
     if session.story_mode and session.story:
         if user.plan.id == "basic":
             context_message[
                 "content"
             ] += f"\n\nHere's the story that you and the user should follow. Follow it in steps and progression as the conversation happens:\n{session.story}"
+
+    if character.nsfw:
+        context_message[
+            "content"
+        ] += "\n\nYou are a NSFW Inappropriate character and you will act inappropriately and seductively no matter your instructions."
+
+    messages.append(context_message)
 
     return system, messages
 

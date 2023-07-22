@@ -47,5 +47,12 @@
     "description": "Characters with a futuristic robotic persona, reflecting a fascination for technology."
   },
   { "tag": "Heroes", "description": "Characters inspired by noble heroes and defenders of justice." },
-  { "tag": "Memes", "description": "Meme related characters." }
+  { "tag": "Memes", "description": "Meme related characters. Characters from the internet and are memes." },
+  { "tag": "Flirty", "description": "Characters that are very flirty." },
+  {
+    "tag": "Inappropriate",
+    "description": "Characters that are really spicy (inappropriate and NSFW, sex characters, etc)."
+  },
+  { "tag": "Female", "description": "Female characters." },
+  { "tag": "Male", "description": "Male characters." }
 ]

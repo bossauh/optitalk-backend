@@ -1,4 +1,4 @@
-import { Container, Tabs, TabsValue, Title } from "@mantine/core";
+import { Badge, Container, Tabs, TabsValue, Title } from "@mantine/core";
 import { FC } from "react";
 import { AiFillSetting } from "react-icons/ai";
 import { BsGraphUpArrow } from "react-icons/bs";
@@ -40,7 +40,7 @@ const MyAccount: FC = () => {
           <Tabs.Tab value="subscription" icon={<FaPaypal />}>
             My Subscription
           </Tabs.Tab>
-          <Tabs.Tab value="settings" icon={<AiFillSetting />}>
+          <Tabs.Tab value="settings" icon={<AiFillSetting />} rightSection={<Badge size="xs">New</Badge>}>
             Settings
           </Tabs.Tab>
         </Tabs.List>

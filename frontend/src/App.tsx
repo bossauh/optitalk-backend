@@ -89,6 +89,7 @@ const App: FC = () => {
   const [isAuthenticating, setIsAuthenticating] = useState(true);
   const [userId, setUserId] = useState<string>();
   const [displayName, setDisplayName] = useState<string>();
+  const [description, setDescription] = useState<string>();
   const [email, setEmail] = useState<string>();
   const [userPlanDetails, setUserPlanDetails] = useState<UserPlanDetails>();
 
@@ -113,6 +114,7 @@ const App: FC = () => {
           setDisplayName(undefined);
           setEmail(undefined);
           setUserPlanDetails(undefined);
+          setDescription(undefined);
 
           fetch("/api/users/ip-address")
             .then((r) => r.json())
@@ -124,6 +126,7 @@ const App: FC = () => {
           setDisplayName(d.payload.display_name);
           setEmail(d.payload.email);
           setUserId(d.payload.id);
+          setDescription(d.payload.description);
 
           // Get plan details
           let plan = deserializeUserPlanDetails(d.payload.plan);
@@ -220,6 +223,7 @@ const App: FC = () => {
     <StoreContext.Provider
       value={{
         authenticated: authenticated,
+        description: description,
         displayName: displayName,
         email: email,
         userId: userId,

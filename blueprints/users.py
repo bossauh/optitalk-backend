@@ -31,6 +31,21 @@ def setup(server: "App") -> Blueprint:
 
         return responses.create_response()
 
+    @app.patch("/description")
+    @server.limiter.exempt
+    @route_security.request_json_schema(schema=schemas.PATCH_USER_DESCRIPTION)
+    def change_user_description():
+        user_id = utils.get_user_id_from_request()
+        user: Optional[User] = User.find_class({"id": user_id})
+        if user is None:
+            return responses.create_response(status_code=responses.CODE_400)
+
+        data = request.get_json()
+        user.description = data["content"]
+        user.save()
+
+        return responses.create_response()
+
     @app.patch("/display-name")
     @server.limiter.limit("1/second")
     @route_security.request_json_schema(schema=schemas.PATCH_DISPLAY_NAME)

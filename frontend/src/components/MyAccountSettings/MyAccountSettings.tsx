@@ -1,7 +1,8 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { ActionIcon, Button, Flex, Text, TextInput, Title } from "@mantine/core";
+import { ActionIcon, Badge, Button, Flex, Group, Stack, Text, TextInput, Textarea, Title } from "@mantine/core";
+import { useDebouncedValue, useDidUpdate } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
-import { FC, useContext, useEffect, useState } from "react";
+import { FC, useCallback, useContext, useEffect, useState } from "react";
 import { AiFillSave } from "react-icons/ai";
 import { BiLogOut } from "react-icons/bi";
 import { useNavigate } from "react-router-dom";
@@ -11,10 +12,58 @@ const MyAccountSettings: FC = () => {
   const [name, setName] = useState("");
   const [previousName, setPreviousName] = useState("");
 
+  const [descriptionError, setDescriptionError] = useState("");
+  const [description, setDescription] = useState("");
+  const [debouncedDescription] = useDebouncedValue(description, 200);
+
   const [nameError, setNameError] = useState("");
   const store = useContext(StoreContext);
 
   const navigate = useNavigate();
+
+  const validateDescription = useCallback((value: string) => {
+    if (value.length > 500) {
+      return "Description cannot be longer than 500 characters.";
+    }
+    return "";
+  }, []);
+
+  useDidUpdate(() => {
+    if (validateDescription(debouncedDescription) !== "") {
+      console.info("Invalid description", debouncedDescription);
+      return;
+    }
+
+    fetch("/api/users/description", {
+      method: "PATCH",
+      body: JSON.stringify({ content: debouncedDescription }),
+      headers: { "Content-Type": "application/json" },
+    })
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.status_code !== 200) {
+          notifications.show({
+            title: "Unknown error",
+            message:
+              "A unknown error has occurred while trying to save your description. Try again by editing the description. If the problem persists, contact us.",
+            color: "red",
+          });
+        }
+      })
+      .catch((e) => {
+        console.error(e);
+        notifications.show({
+          title: "Network error",
+          message:
+            "A unknown network error has occurred while trying to save your description. Refresh the page and try again. If the problem persists, contact us.",
+          color: "red",
+        });
+      });
+  }, [debouncedDescription]);
+
+  useEffect(() => {
+    store?.fetchUserData();
+  }, []);
 
   useEffect(() => {
     if (store?.isAuthenticating) {
@@ -24,6 +73,7 @@ const MyAccountSettings: FC = () => {
     if (store?.authenticated) {
       setName(store.displayName || "");
       setPreviousName(store.displayName || "");
+      setDescription(store.description || "");
     }
   }, [store?.isAuthenticating]);
 
@@ -125,6 +175,29 @@ const MyAccountSettings: FC = () => {
           error={nameError}
         />
       </Flex>
+
+      <Stack spacing="xs">
+        <Group spacing="xs">
+          <Title order={3}>Your Description</Title>
+          <Badge>New</Badge>
+        </Group>
+        <Text fz="sm">
+          Characters can refer to your description to know more about you. It is best to describe yourself in third
+          person.
+        </Text>
+        <Textarea
+          placeholder="Ex: {your-name-here} is a 21 year old college graduate living in..."
+          value={description}
+          error={descriptionError}
+          maxRows={10}
+          autosize
+          onChange={(e) => {
+            const error = validateDescription(e.currentTarget.value);
+            setDescriptionError(error);
+            setDescription(e.currentTarget.value);
+          }}
+        />
+      </Stack>
 
       <Button
         leftIcon={<BiLogOut />}

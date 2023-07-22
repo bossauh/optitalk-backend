@@ -17,6 +17,7 @@ export interface StoreContextType {
   userId?: string;
   displayName?: string;
   email?: string;
+  description?: string;
   isAuthenticating: boolean;
 
   activeCharacter?: CharacterType;

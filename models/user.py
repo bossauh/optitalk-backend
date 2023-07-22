@@ -94,6 +94,7 @@ class User:
     email: str
     display_name: Optional[str]
     password: Union[str, bytes] = dataclasses.field(repr=False)
+    description: Optional[str] = None
     admin: bool = False
     account_type: types.AccountType = "default"
     created_at: Optional[dt.datetime] = dataclasses.field(

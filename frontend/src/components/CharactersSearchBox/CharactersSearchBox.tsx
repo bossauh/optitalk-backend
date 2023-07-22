@@ -200,8 +200,10 @@ const CharactersSearchBox: FC = () => {
                         let newParams = new URLSearchParams(searchParams);
                         if (searchParams.get("tag") === item.name) {
                           newParams.delete("tag");
+                          newParams.delete("nsfw");
                         } else {
                           newParams.set("tag", item.name);
+                          newParams.set("nsfw", "include");
                         }
                         setSearchParams(newParams);
                       }}

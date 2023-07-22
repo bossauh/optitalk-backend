@@ -204,3 +204,4 @@ POST_INLINE_FEEDBACK = Schema(
 )
 GET_RENDER_AVATAR = Schema({Required("id"): str})
 DELETE_FILE = Schema({Required("id"): str})
+PATCH_USER_DESCRIPTION = Schema({Required("content"): All(str, Length(min=0, max=500))})

@@ -417,7 +417,7 @@ def auto_tag_characters():
                         character.embeddings, tag.embeddings
                     ),
                 }
-                if ranking["similarity"] >= 0.78:
+                if ranking["similarity"] >= 0.72:
                     rankings.append(ranking)
 
             rankings.sort(key=lambda x: x["similarity"], reverse=True)

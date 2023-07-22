@@ -65,7 +65,7 @@ const HeaderComponent: FC<{ setOpen: React.Dispatch<React.SetStateAction<boolean
         background: theme.colors.dark[8],
       })}
     >
-      <Group align="flex-start">
+      <Group align="flex-start" spacing={4}>
         <Group
           align="center"
           onClick={() => {

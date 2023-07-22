@@ -1,11 +1,13 @@
 import datetime
 import logging
+import random
 import time
 from typing import Optional
 
 import openai
 from flask import has_request_context
 from models.open_ai import ChatCompletion, Completion
+from models.user import User
 from openai.util import convert_to_dict
 
 from library import tasks, utils
@@ -152,9 +154,11 @@ class GPT:
         is_request = has_request_context()
         user_id = None
         ip_address = None
+        user: Optional[User] = None
         if is_request:
             ip_address = route_security.get_client_ip()
             user_id = utils.get_user_id_from_request(anonymous=True)
+            user = User.find_class({"id": user_id})
 
         tasks.log_time_took_metric.delay(
             name="limit_chat_completion_tokens",
@@ -184,6 +188,11 @@ class GPT:
         finish_reason = None
         created = time.time()
 
+        fast_response = False
+        if user:
+            if user.plan.id == "basic":
+                fast_response = True
+
         for chunk in response:
             completion_id = chunk["id"]
             finish_reason = chunk["choices"][0]["finish_reason"]
@@ -208,6 +217,8 @@ class GPT:
                 },
                 room=user_id,
             )
+            if not fast_response:
+                time.sleep(random.uniform(0.05, 0.2))
 
         result = "".join(chunks)
         et = round((time.perf_counter() - st) * 1000, 2)

@@ -197,7 +197,7 @@ def limit_chat_completion_tokens(
 
     copied_messages = [*messages]
     if max_tokens <= 512:
-        copied_messages.pop(1)
+        copied_messages.pop(2)
         logger.warning(
             "Removed one old message because the max tokens parameter is already at the 512 minimum limit."
         )

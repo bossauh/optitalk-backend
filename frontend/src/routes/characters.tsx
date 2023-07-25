@@ -253,9 +253,9 @@ const Characters: FC = () => {
         </Flex>
       </MediaQuery>
 
-      <Flex direction="column" align="center" mt="xl">
+      {/* <Flex direction="column" align="center" mt="xl">
         <AdComponent client="ca-pub-3336177471309301" slot="5172839273" format="autos" />
-      </Flex>
+      </Flex> */}
     </Container>
   );
 };

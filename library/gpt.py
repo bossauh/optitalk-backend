@@ -255,8 +255,8 @@ class GPT:
                 },
                 room=user_id,
             )
-            if not fast_response:
-                time.sleep(random.uniform(0.05, 0.2))
+            # if not fast_response:
+            #     time.sleep(random.uniform(0.05, 0.2))
 
         result = "".join(chunks)
         et = round((time.perf_counter() - st) * 1000, 2)

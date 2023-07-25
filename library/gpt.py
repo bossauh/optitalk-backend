@@ -1,18 +1,22 @@
+import ast
 import datetime
+import json
 import logging
 import random
 import time
 from typing import Optional
 
 import openai
+import tiktoken
 from flask import has_request_context
 from models.open_ai import ChatCompletion, Completion
 from models.user import User
 from openai.util import convert_to_dict
 
-from library import tasks, utils
+from library import actions, tasks, utils
 from library.security import route_security
 from library.socketio import socketio
+from library.types import OpenAIFunctionSpec
 
 from .configlib import config
 
@@ -123,6 +127,7 @@ class GPT:
         frequency_penalty: int = 0,
         presence_penalty: float = 0.78,
         allow_incomplete: bool = True,
+        functions: Optional[list[OpenAIFunctionSpec]] = None,
         character_id: Optional[str] = None,
         _previous_completions: Optional[list[ChatCompletion]] = None,
         **kwargs,
@@ -144,10 +149,18 @@ class GPT:
         logger.info("Creating OpenAI chat completion...")
         messages_combined = [{"role": "system", "content": system}] + messages
 
+        functions = functions or []
+
+        # TODO Uncomment this to get base actions back
+        # functions.extend(actions.get_base_actions())
+
         limit_chat_st = time.perf_counter()
         old_max_tokens = max_tokens
         messages_combined, max_tokens = utils.limit_chat_completion_tokens(
-            messages=messages_combined, model=model, max_tokens=max_tokens
+            messages=messages_combined,
+            model=model,
+            max_tokens=max_tokens,
+            functions=functions,
         )
         limit_chat_et = time.perf_counter() - limit_chat_st
 
@@ -180,6 +193,7 @@ class GPT:
             frequency_penalty=frequency_penalty,
             presence_penalty=presence_penalty,
             stream=True,
+            functions=[x.schema for x in functions],
             **kwargs,
         )
 
@@ -187,6 +201,8 @@ class GPT:
         completion_id = ""
         finish_reason = None
         created = time.time()
+
+        function_call = {"name": None, "arguments": ""}
 
         fast_response = False
         if user:
@@ -197,8 +213,28 @@ class GPT:
             completion_id = chunk["id"]
             finish_reason = chunk["choices"][0]["finish_reason"]
             created = chunk["created"]
+            delta = chunk["choices"][0]["delta"]
 
-            content = chunk["choices"][0]["delta"].get("content", "")
+            if "function_call" in delta:
+                if "name" in delta["function_call"]:
+                    function_call["name"] = delta["function_call"]["name"]
+
+                if "arguments" in delta["function_call"]:
+                    function_call["arguments"] += delta["function_call"]["arguments"]
+
+            if finish_reason == "function_call":
+                try:
+                    function_call["arguments"] = ast.literal_eval(
+                        function_call["arguments"]
+                    )
+                except Exception:
+                    function_call["arguments"] = {"_ERROR_PARSING": True}
+                break
+
+            if delta.get("content") is None:
+                continue
+
+            content = delta.get("content", "")
             chunks.append(content)
 
             if user_id is None:
@@ -223,12 +259,19 @@ class GPT:
         result = "".join(chunks)
         et = round((time.perf_counter() - st) * 1000, 2)
 
+        encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
+
         # Calculate tokens
         completion_tokens = utils.get_total_tokens_from_messages(
             [{"role": "assistant", "content": result}]
         )
-        prompt_tokens = utils.get_total_tokens_from_messages(messages_combined)
-        total_tokens = completion_tokens + prompt_tokens
+        prompt_tokens = utils.get_total_tokens_from_messages(
+            messages_combined, functions=functions
+        )
+        function_tokens = len(
+            encoding.encode(utils.format_function_specs_as_typescript_ns(functions))
+        )
+        total_tokens = completion_tokens + prompt_tokens + function_tokens
 
         completion_data = dict(
             id=completion_id,
@@ -247,6 +290,8 @@ class GPT:
             frequency_penalty=frequency_penalty,
             presence_penalty=presence_penalty,
             messages=messages_combined,
+            function_tokens=function_tokens,
+            function_call=function_call if function_call["name"] else None,
         )
         completion_object = ChatCompletion(**completion_data)
 
@@ -258,7 +303,7 @@ class GPT:
             f"Created OpenAI chat completion '{completion_object.id}' for ${cost} ({et}ms)."
         )
         logger.debug(
-            f"Total Tokens: {completion_object.total_tokens} | Prompt Tokens: {completion_object.prompt_tokens} | Completion Tokens: {completion_object.completion_tokens}"
+            f"Total Tokens: {completion_object.total_tokens} | Prompt Tokens:{completion_object.prompt_tokens} | Function Tokens: {completion_object.function_tokens} | Completion Tokens: {completion_object.completion_tokens}"
         )
 
         # Save the completion object in the database

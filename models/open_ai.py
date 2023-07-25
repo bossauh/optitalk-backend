@@ -63,3 +63,6 @@ class ChatCompletion:
     frequency_penalty: int
     presence_penalty: float
     messages: list[dict[str, str]]
+
+    function_call: Optional[dict] = None
+    function_tokens: int = 0

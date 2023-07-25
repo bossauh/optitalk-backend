@@ -1,7 +1,7 @@
 import dataclasses
 import datetime
 import uuid
-from typing import Optional
+from typing import Literal, Optional, Union
 
 from database import mongoclass
 
@@ -23,7 +23,7 @@ class Message:
     created_by: str
 
     # Response
-    content: Optional[str]
+    content: Optional[Union[str, dict]]
     comments: Optional[str] = None
     contradictions: Optional[str] = None
     knowledge_hint: Optional[str] = None

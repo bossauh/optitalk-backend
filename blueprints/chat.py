@@ -80,7 +80,9 @@ def setup(server: "App") -> Blueprint:
                         },
                     )
 
-                return responses.create_response(payload=response.to_json())
+                return responses.create_response(
+                    payload=response[-1].to_json()
+                )
 
         return responses.create_response(
             status_code=responses.CODE_404,

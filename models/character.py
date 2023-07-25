@@ -1,5 +1,6 @@
 import dataclasses
 import datetime
+import json
 import logging
 import pprint
 import re
@@ -12,7 +13,7 @@ import backoff
 import tiktoken
 from database import mongoclass
 from IPy import IP
-from library import users, utils
+from library import actions, users, utils
 from library.configlib import config
 from library.exceptions import *
 from library.gpt import gpt
@@ -28,6 +29,7 @@ from openai.embeddings_utils import cosine_similarity, get_embedding
 
 from models.knowledge import Knowledge
 from models.message import Message
+from models.open_ai import ChatCompletion
 from models.session import ChatSession
 from models.state import UserPlanState
 from models.tweaks import Tweaks
@@ -263,11 +265,56 @@ class Character:
 
         return "\n".join(hints)
 
+    def call_action(self, function_call: dict, completion_id: str) -> str:
+        """
+        Call a action and return the action's results.
+        """
+
+        name = function_call.get("name")
+        arguments = function_call.get("arguments", {})
+        error_parsing = arguments.get("_ERROR_PARSING")
+        if error_parsing:
+            return json.dumps(
+                {
+                    "status": "error",
+                    "message": "A error has occurred parsing the function arguments. It is possible the arguments provided is invalid JSON. Respond with something else instead.",
+                }
+            )
+
+        function = actions.ACTION_MAPPINGS.get(name)
+        if not function:
+            return json.dumps({"status": "error", "message": "Function not found"})
+
+        try:
+            return json.dumps(function(**arguments))
+        except Exception:
+            description = f"A error has occurred while trying to call the function {name} with the arguments {arguments}"
+            logger.exception(description)
+
+            error_alert(
+                title=f"Error while calling function '{name}'.",
+                trace=traceback.format_exc(),
+                description=description,
+                metadata={
+                    "character_id": self.id,
+                    "completion_id": completion_id,
+                    "user_id": utils.get_user_id_from_request(anonymous=True),
+                    "function_call": function_call,
+                },
+            )
+
+            return json.dumps(
+                {
+                    "status": "error",
+                    "message": "A error has occurred while the function is running.",
+                }
+            )
+
     def chat(
         self,
         user_id: str,
         content: str,
-        role: Literal["user", "assistant"] = "user",
+        role: Literal["user", "assistant", "function"] = "user",
         user_name: Optional[str] = None,
         session_id: Optional[str] = "0",
         regenerated: Optional[bool] = False,
@@ -275,7 +322,9 @@ class Character:
         story_mode: bool = False,
         story: Optional[str] = None,
         tweaks: Optional[Tweaks] = None,
-    ) -> Message:
+        clean_name: bool = True,
+        _previous_messages: Optional[list[Message]] = None,
+    ) -> list[Message]:
         """
         Chat with the Character. Either chat as the "user" role itself or as the "assistant"
         role.
@@ -321,7 +370,7 @@ class Character:
         logger.info(f"Chat as '{role}' with the message '{content}' from '{user_id}'.")
 
         # Clean user_name
-        if user_name:
+        if user_name and clean_name:
             user_name = utils.clean_user_name(user_name)
 
         if id:
@@ -329,16 +378,18 @@ class Character:
                 raise MessageIDAlreadyExists(id)
             logger.info(f"Using pre-provided ID: {id}")
 
-        new_message = Message(
-            content=content,
-            role=role,
-            session_id=session_id,
-            character_id=self.id,
-            created_by=user_id,
-            name=user_name,
-            raw_input=content,
-            id=id or str(uuid.uuid4()),
-        )
+        new_message = None
+        if role in ["user", "assistant"]:
+            new_message = Message(
+                content=content,
+                role=role,
+                session_id=session_id,
+                character_id=self.id,
+                created_by=user_id,
+                name=user_name,
+                raw_input=content,
+                id=id or str(uuid.uuid4()),
+            )
 
         # Create session if it does not exist
         session = ChatSession.find_class(
@@ -347,7 +398,7 @@ class Character:
         if not session:
             session = ChatSession(
                 id=session_id,
-                name="New Session",
+                name="New Chat",
                 character_id=self.id,
                 created_by=user_id,
                 story_mode=story_mode,
@@ -358,6 +409,7 @@ class Character:
                 f"Automatically created session '{session_id}' because it does not exist."
             )
 
+        # Update when the session was last used
         session.last_used = datetime.datetime.now()
         session.save()
         socketio.emit("session-used", {"id": session_id}, room=user_id)
@@ -389,23 +441,24 @@ class Character:
 
         is_rapid_api = utils.is_from_rapid_api()
 
-        # Check if the user has capped their requests limit.
-        state: Optional[UserPlanState] = UserPlanState.find_class({"id": user_id})
-        if state is None:
-            UserPlanState(id=user_id).save()
-        else:
-            requests_count = state.advanced_model_requests
-            cap = user.plan.max_advanced_model_requests_per_hour
-            model_type = "advanced"
-            if self.parameters.model in ("gpt-3.5-turbo", "gpt-4"):
-                requests_count = state.basic_model_requests
-                cap = user.plan.max_basic_model_requests_per_hour
-                model_type = "basic"
+        if role != "function":
+            # Check if the user has capped their requests limit.
+            state: Optional[UserPlanState] = UserPlanState.find_class({"id": user_id})
+            if state is None:
+                UserPlanState(id=user_id).save()
+            else:
+                requests_count = state.advanced_model_requests
+                cap = user.plan.max_advanced_model_requests_per_hour
+                model_type = "advanced"
+                if self.parameters.model in ("gpt-3.5-turbo", "gpt-4"):
+                    requests_count = state.basic_model_requests
+                    cap = user.plan.max_basic_model_requests_per_hour
+                    model_type = "basic"
 
-            logger.debug(f"{requests_count=} | {cap=} | {model_type=}")
+                logger.debug(f"{requests_count=} | {cap=} | {model_type=}")
 
-            if requests_count >= cap and not is_rapid_api:
-                raise ModelRequestsLimitExceeded(model=model_type, limit=cap)
+                if requests_count >= cap and not is_rapid_api:
+                    raise ModelRequestsLimitExceeded(model=model_type, limit=cap)
 
         fetch_messages_st = time.perf_counter()
         messages = list(
@@ -424,14 +477,16 @@ class Character:
         logger.debug(f"Fetching the messages took {fetch_messages_et}.")
 
         # Get the knowledge hint
-        fetch_knowledge_st = time.perf_counter()
-        knowledge_hint = self._get_knowledge_hint(content)
-        if knowledge_hint:
-            new_message.knowledge_hint = knowledge_hint
-        fetch_knowledge_et = time.perf_counter() - fetch_knowledge_st
-        logger.debug(f"Fetching the knowledge hint took {fetch_knowledge_et}.")
+        knowledge_hint = None
 
-        messages.append(new_message)
+        if role != "function":
+            fetch_knowledge_st = time.perf_counter()
+            knowledge_hint = self._get_knowledge_hint(content)
+            if knowledge_hint:
+                new_message.knowledge_hint = knowledge_hint
+            fetch_knowledge_et = time.perf_counter() - fetch_knowledge_st
+            logger.debug(f"Fetching the knowledge hint took {fetch_knowledge_et}.")
+            messages.append(new_message)
 
         model_parameters = {
             "temperature": self.parameters.temperature,
@@ -442,10 +497,10 @@ class Character:
         }
 
         # Get tweaks details
-        model_notes = []
+        model_notes = ["You are NOT a language model"]
         used_tweaks = session.tweaks or self.tweaks
         if used_tweaks:
-            model_notes = used_tweaks.model_notes
+            model_notes.extend(used_tweaks.model_notes)
             model_parameters.update(used_tweaks.model_parameters)
 
         if session.story_mode and session.story:
@@ -460,6 +515,9 @@ class Character:
 
         model_notes.append(
             "You will NEVER offer help/assistance to the user. Questions like 'how can I assist you?' is prohibited"
+        )
+        model_notes.append(
+            "If what the user is saying is not in the conversation history (or system message), feel free to use search_memory."
         )
 
         logger.debug(f"Used tweaks {used_tweaks}")
@@ -478,7 +536,11 @@ class Character:
                 if message.role == "assistant":
                     content = f"Comments: {message.comments}\nContradictions: {message.contradictions}\nResponse: {message.content}"
                 else:
-                    content = f"Response: {message.content}"
+                    if message.role == "user":
+                        content = f"Response: {message.content}"
+                    else:
+                        content = message.content
+
                     if message.knowledge_hint:
                         content += f"\nKnowledge Hint (The user should not be able to see this, the user only knows its own Response): {message.knowledge_hint}"
 
@@ -490,11 +552,16 @@ class Character:
                     message_data["name"] = message.name
                 prompt.append(message_data)
 
-            if prompt[-1]["role"] == "user":
+            notes_index = -1
+            for i, prompt_item in enumerate(prompt):
+                if prompt_item["role"] == "user":
+                    notes_index = i
+
+            if prompt[notes_index]["role"] == "user":
                 if model_notes:
                     notes = "\n".join([f"- {x}" for x in model_notes])
                     notes = f"\n\nLanguage model notes/settings:\n{notes}"
-                    prompt[-1]["content"] += notes
+                    prompt[notes_index]["content"] += notes
 
             logger.debug(f"Prompt: {pprint.pformat(prompt)}")
 
@@ -522,58 +589,77 @@ class Character:
                 prompt=prompt, model=self.parameters.model, **model_parameters
             )
 
+        if new_message:
+            # Remove knowledge hint from the user's message
+            new_message.knowledge_hint = None
+
+        # Generate a response
         processing_st = time.perf_counter()
-        completion = completion_function(**completion_parameters)
+        completion: ChatCompletion = completion_function(**completion_parameters)[0]
         processing_time = time.perf_counter() - processing_st
 
-        # Remove knowledge hint from the user's message
-        new_message.knowledge_hint = None
+        response = None
+        comments = None
+        contradictions = None
 
-        # Join the multiple completions together
-        content = "" if completion[0].result else None
-        if content is not None:
-            for completion in completion:
-                content += " " + completion.result
+        name = None
+        message_role = "assistant"
+        if completion.function_call is not None:
+            message_role = "function"
+            content = completion.function_call
 
-            content = content.strip()
+            # Call the function
+            response = self.call_action(completion.function_call, completion.id)
+            name = completion.function_call["name"]
 
-        # TODO: Remove this, the intent system will get a rework
-        message_intent = None
-        if content:
-            intents = config.intents
-            for intent in intents:
-                if content.endswith(intent):
-                    content = content.replace(intent, "")
-                    message_intent = intent
-
-        comments, contradictions, response = utils.parse_character_response(content)
+        else:
+            content = completion.result
+            comments, contradictions, response = utils.parse_character_response(content)
 
         response_message = Message(
             content=response,
             comments=comments,
             contradictions=contradictions,
-            role="assistant",
+            role=message_role,
             session_id=session_id,
             character_id=self.id,
             created_by=user_id,
             completion_model=self.parameters.model,
             completion_id=completion.id,
-            intent=message_intent,
+            intent=None,
             knowledge_hint=knowledge_hint,
             processing_time=processing_time,
             generated=True,
             regenerated=regenerated,
+            raw_input=content,
+            name=name,
         )
 
-        insert_message.delay(**dataclasses.asdict(new_message))
-        time.sleep(1)
-        insert_message.delay(**dataclasses.asdict(response_message))
+        if new_message:
+            insert_message(**dataclasses.asdict(new_message))
+
+        insert_message(**dataclasses.asdict(response_message))
         increase_model_requests_state.delay(
             id=user_id, model=self.parameters.model, value=1
         )
         self.uses += 1
         self.save()
-        return response_message
+
+        responses = _previous_messages or []
+        responses.append(response_message)
+
+        if response_message.role == "function":
+            return self.chat(
+                user_id=user_id,
+                session_id=session_id,
+                content=response_message,
+                role="function",
+                clean_name=False,
+                tweaks=tweaks,
+                _previous_messages=responses,
+            )
+
+        return responses
 
 
 @mongoclass.mongoclass()

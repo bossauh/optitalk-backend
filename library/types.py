@@ -15,7 +15,7 @@ StatusCodeType = tuple[str, int]
 class ParameterSpec:
     name: str
     type: str
-    description: Optional[str]
+    description: Optional[str] = None
     required: bool = False
 
 

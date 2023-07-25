@@ -288,7 +288,7 @@ def setup(server: "App") -> Blueprint:
             logger.exception("A OpenAI error has occurred while trying to regenerate.")
             return responses.create_response(status_code=responses.CODE_500)
 
-        return responses.create_response(payload=response.to_json())
+        return responses.create_response(payload=response[-1].to_json())
 
     @app.get("/sessions/count")
     @route_security.request_args_schema(schema=schemas.GET_CHAT_SESSIONS_COUNT)

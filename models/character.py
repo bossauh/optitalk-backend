@@ -417,8 +417,8 @@ class Character:
         socketio.emit("session-used", {"id": session_id}, room=user_id)
 
         if role == "assistant":
-            insert_message.delay(**dataclasses.asdict(new_message))
-            return new_message
+            insert_message(**dataclasses.asdict(new_message))
+            return [new_message]
 
         anonymous = True
         try:

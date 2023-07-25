@@ -107,6 +107,7 @@ def insert_message(**attributes):
                 session_id=message.session_id,
                 created_by=message.created_by,
                 character_id=message.character_id,
+                api_key=message.api_key,
             )
 
     logger.info(f"Saved message: {pprint.pformat(message)}")
@@ -136,7 +137,9 @@ def delete_chat_session(query):
 
 
 @app.task
-def auto_label_message(session_id: str, created_by: str, character_id: str):
+def auto_label_message(
+    session_id: str, created_by: str, character_id: str, api_key: str
+):
     system_message = """
 You are a tool whose job is to give a conversation exchange a labeled topic title. You will respond only with the labeled topic title and nothing more.
 
@@ -147,6 +150,8 @@ Deadpool: What's up what's up are you my buddy Haha! How ya doing mate?
 Example Response:
 Casual greetings from deadpool
 """
+
+    from models.character import Character
 
     messages: list[Message] = list(
         Message.find_classes(
@@ -160,10 +165,15 @@ Casual greetings from deadpool
         .limit(4)
     )
     messages.reverse()
+    character: Optional[Character] = Character.find_class({"id": character_id})
 
     prompt = []
     for message in messages:
-        prompt.append(f"{message.role.title()}: {message.content}")
+        name = message.name or message.role.title()
+        if message.role == "assistant" and character:
+            name = character.name
+        prompt.append(f"{name}: {message.content}")
+
     prompt = "\n".join(prompt)
 
     session: Optional[ChatSession] = ChatSession.find_class(
@@ -173,7 +183,9 @@ Casual greetings from deadpool
         return
 
     response = gpt.create_chat_completion(
-        system=system_message, messages=[{"role": "user", "content": prompt}]
+        system=system_message,
+        messages=[{"role": "user", "content": prompt}],
+        api_key=api_key,
     )
     label = response[0].result
 
@@ -454,11 +466,11 @@ def setup_periodic_tasks(sender, **kwargs):
         name="reset users hourly cap",
     )
 
-    sender.add_periodic_task(
-        schedule=60.0, sig=auto_tag_characters.s(), name="auto tag characters"
-    )
-    sender.add_periodic_task(
-        schedule=20.0,
-        sig=update_characters_embeddings.s(),
-        name="update characters embeddings",
-    )
+    # sender.add_periodic_task(
+    #     schedule=60.0, sig=auto_tag_characters.s(), name="auto tag characters"
+    # )
+    # sender.add_periodic_task(
+    #     schedule=20.0,
+    #     sig=update_characters_embeddings.s(),
+    #     name="update characters embeddings",
+    # )

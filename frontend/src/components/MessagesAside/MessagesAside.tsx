@@ -5,6 +5,7 @@ import {
   Avatar,
   Badge,
   Button,
+  Divider,
   Flex,
   Group,
   Loader,
@@ -24,6 +25,7 @@ import { modals } from "@mantine/modals";
 import { notifications } from "@mantine/notifications";
 import { nprogress } from "@mantine/nprogress";
 import { FC, useCallback, useContext, useState } from "react";
+import { useCookies } from "react-cookie";
 import { AiFillDelete, AiFillEdit } from "react-icons/ai";
 import { BsRobot } from "react-icons/bs";
 import { FaLock, FaLockOpen, FaUser } from "react-icons/fa";
@@ -156,6 +158,8 @@ const MessagesAside: FC<{
   const [activeCharacter] = useActiveCharacter();
 
   const navigate = useNavigate();
+
+  const [cookies, setCookies, ,] = useCookies(["openai-api-key"]);
 
   const [storyMode, storyModeHandler] = useDisclosure(store?.activeSession?.storyMode || store?.storyMode);
   const [storyModeContent, setStoryModeContent] = useDebouncedState(
@@ -373,8 +377,34 @@ const MessagesAside: FC<{
               marginTop: theme.spacing.xs,
             },
           })}
-          defaultValue="tweaks"
+          defaultValue="api-key"
         >
+          <Accordion.Item value="api-key">
+            <Accordion.Control>
+              <Title order={6}>API Key</Title>
+            </Accordion.Control>
+            <Accordion.Panel>
+              <Stack>
+                <Text fz="xs">Your API key is NEVER stored in our servers. It is only stored in your browser.</Text>
+                <TextInput
+                  label="OpenAI API Key"
+                  placeholder="Please paste your OpenAI API key here"
+                  size="xs"
+                  defaultValue={cookies["openai-api-key"]}
+                  onBlur={(e) => {
+                    const currentDate = new Date();
+                    const expiryDate = new Date();
+                    expiryDate.setDate(currentDate.getDate() + 100);
+
+                    setCookies("openai-api-key", e.currentTarget.value, { secure: false, expires: expiryDate });
+                  }}
+                />
+              </Stack>
+            </Accordion.Panel>
+          </Accordion.Item>
+
+          <Divider my="md" />
+
           <Accordion.Item value="tweaks">
             <Accordion.Control>
               <Title order={6}>
@@ -421,6 +451,7 @@ const MessagesAside: FC<{
                           return copy;
                         });
                       }}
+                      disabled={!store?.authenticated}
                     />
                   </Stack>
                   <Stack spacing={4}>
@@ -448,6 +479,7 @@ const MessagesAside: FC<{
                           return copy;
                         });
                       }}
+                      disabled={!store?.authenticated}
                     />
                   </Stack>
                 </Stack>
@@ -459,13 +491,6 @@ const MessagesAside: FC<{
             <Accordion.Control>
               <Group spacing={7} align="center">
                 <Title order={6}>Chat's Story Mode</Title>
-                {subscriptionStatus === "pending" ? (
-                  <Loader size="xs" />
-                ) : subscriptionStatus === "activated" ? (
-                  <FaLockOpen size={13} color={theme.colors.yellow[7]} />
-                ) : (
-                  <FaLock size={13} color={subscriptionStatusLoading ? theme.colors.dark[3] : theme.colors.yellow[7]} />
-                )}
               </Group>
             </Accordion.Control>
             <Accordion.Panel>
@@ -484,49 +509,25 @@ const MessagesAside: FC<{
                       Learn more
                     </Anchor>
                   </Text>
-                  {(!subscriptionStatusLoading || !store?.authenticated) && (
-                    <>
-                      {!store?.authenticated ? (
-                        <Text fz="xs">To unlock story mode, you need to be logged in and subscribed to OptiTalk+</Text>
-                      ) : subscriptionStatus === "pending" ? (
-                        <Text fz="xs">
-                          Your OptiTalk+ subscription is being activated. This should take no more than a few seconds.
-                        </Text>
-                      ) : subscriptionStatus === null ? (
-                        <Text fz="xs">
-                          To unlock story mode, you need to subscribe to{" "}
-                          <Anchor
-                            onClick={() => {
-                              navigate("/optitalk-plus");
-                            }}
-                          >
-                            OptiTalk+
-                          </Anchor>
-                        </Text>
-                      ) : (
-                        <></>
-                      )}
-                    </>
-                  )}
                   <Switch
-                    checked={subscriptionStatus !== "activated" ? false : storyMode}
-                    disabled={subscriptionStatus !== "activated"}
+                    checked={storyMode}
                     onChange={() => {
                       storyModeHandler.toggle();
                     }}
                     size="xs"
+                    disabled={!store?.authenticated}
                   />
                 </Stack>
                 <Stack spacing={12}>
                   <Textarea
                     placeholder="Example: You're first going to start with asking the user X. You're then going to forcefully switch the topic to Y..."
-                    disabled={subscriptionStatus !== "activated" || !storyMode}
                     minRows={10}
                     defaultValue={storyModeContent}
                     error={storyModeError}
                     onChange={(e) => {
                       setStoryModeContent(e.target.value);
                     }}
+                    disabled={!store?.authenticated}
                   />
                   <Group spacing={4} align="center" opacity={storyModeSaving ? 1 : 0}>
                     <Loader size="xs" />

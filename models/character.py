@@ -207,7 +207,7 @@ class Character:
         return data
 
     def _get_knowledge_ranking(
-        self, content: str
+        self, content: str, api_key: Optional[str] = None
     ) -> list[dict[str, Union[str, float]]]:
         """
         Return a ranking list of how similar the content is to the items in the
@@ -221,7 +221,9 @@ class Character:
             return []
 
         rankings = []
-        content_embedding = get_embedding(content, engine="text-embedding-ada-002")
+        content_embedding = get_embedding(
+            content, engine="text-embedding-ada-002", api_key=api_key
+        )
         for knowledge in Knowledge.find_classes({"character_id": self.id}):
             if not knowledge.embeddings:
                 continue
@@ -246,12 +248,14 @@ class Character:
 
         return rankings
 
-    def _get_knowledge_hint(self, content: str) -> Optional[str]:
+    def _get_knowledge_hint(
+        self, content: str, api_key: Optional[str] = None
+    ) -> Optional[str]:
         """
         Try and get a knowledge hint based on the provided content.
         """
 
-        rankings = self._get_knowledge_ranking(content)
+        rankings = self._get_knowledge_ranking(content, api_key=api_key)
         if not rankings:
             return
 
@@ -323,6 +327,7 @@ class Character:
         story: Optional[str] = None,
         tweaks: Optional[Tweaks] = None,
         clean_name: bool = True,
+        api_key: Optional[str] = None,  # TODO Remove
         _previous_messages: Optional[list[Message]] = None,
     ) -> list[Message]:
         """
@@ -389,6 +394,7 @@ class Character:
                 name=user_name,
                 raw_input=content,
                 id=id or str(uuid.uuid4()),
+                api_key=api_key,
             )
 
         # Create session if it does not exist
@@ -481,7 +487,7 @@ class Character:
 
         if role != "function":
             fetch_knowledge_st = time.perf_counter()
-            knowledge_hint = self._get_knowledge_hint(content)
+            knowledge_hint = self._get_knowledge_hint(content, api_key=api_key)
             if knowledge_hint:
                 new_message.knowledge_hint = knowledge_hint
             fetch_knowledge_et = time.perf_counter() - fetch_knowledge_st
@@ -570,6 +576,7 @@ class Character:
                 system=system,
                 messages=prompt,
                 model=self.parameters.model,
+                api_key=api_key,
                 **model_parameters,
             )
 
@@ -633,6 +640,7 @@ class Character:
             regenerated=regenerated,
             raw_input=content,
             name=name,
+            api_key=api_key,
         )
 
         if new_message:

@@ -6,10 +6,6 @@ import { useSubscription } from "../common/utils";
 import StoreContext from "../contexts/store";
 
 const StoryMode: FC = () => {
-  const store = useContext(StoreContext);
-  const { status } = useSubscription();
-  const navigate = useNavigate();
-
   return (
     <Box>
       <Title order={3}>What is Story Mode?</Title>
@@ -69,29 +65,6 @@ Finally, you meet with {user} and to your surprise, they look exactly like you. 
 {user} then asks if you want something to eat. However, you hesitate as you don't trust someone offering you random food, especially when they look just like you.
 `}
       </Prism>
-
-      {store?.authenticated && (
-        <>
-          {status === null ? (
-            <>
-              <Divider my="lg" />
-              <Text fz="sm">To use story mode, you must be subscribed to OptiTalk+</Text>
-              <Button
-                variant="gradient"
-                mt="xs"
-                fullWidth
-                onClick={() => {
-                  navigate("/optitalk-plus");
-                }}
-              >
-                Get OptiTalk+
-              </Button>
-            </>
-          ) : (
-            <></>
-          )}
-        </>
-      )}
     </Box>
   );
 };

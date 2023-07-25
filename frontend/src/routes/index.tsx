@@ -27,7 +27,7 @@ import { useMediaQuery } from "@mantine/hooks";
 import { ModalsProvider, modals } from "@mantine/modals";
 import { FC, forwardRef, memo, useContext, useEffect, useState } from "react";
 import { useCookies } from "react-cookie";
-import { AiFillRobot, AiFillSetting, AiOutlinePlus } from "react-icons/ai";
+import { AiFillHeart, AiFillRobot, AiFillSetting, AiOutlinePlus } from "react-icons/ai";
 import { BsFillChatFill } from "react-icons/bs";
 import { FaDiscord, FaPaypal, FaRedditAlien } from "react-icons/fa";
 import { MdAccountCircle } from "react-icons/md";
@@ -49,7 +49,11 @@ const HeaderComponent: FC<{ setOpen: React.Dispatch<React.SetStateAction<boolean
     console.log("Using version", process.env.REACT_APP_OPTITALK_VERSION);
 
     if (cookies["changelogShown"] !== process.env.REACT_APP_OPTITALK_VERSION) {
-      setCookies("changelogShown", process.env.REACT_APP_OPTITALK_VERSION);
+      const currentDate = new Date();
+      const expiryDate = new Date();
+      expiryDate.setDate(currentDate.getDate() + 100);
+
+      setCookies("changelogShown", process.env.REACT_APP_OPTITALK_VERSION, { secure: false, expires: expiryDate });
       modals.open({ title: `Version ${process.env.REACT_APP_OPTITALK_VERSION}`, children: <Changelog /> });
     }
   }, []);
@@ -100,7 +104,7 @@ const HeaderComponent: FC<{ setOpen: React.Dispatch<React.SetStateAction<boolean
             Sign Up
           </Button>
         )}
-        {store?.userPlanDetails?.subscriptionStatus == null && store?.authenticated && (
+        {/* {store?.userPlanDetails?.subscriptionStatus == null && store?.authenticated && (
           <Button
             size={largerThanSm ? "sm" : "xs"}
             onClick={() => {
@@ -110,7 +114,7 @@ const HeaderComponent: FC<{ setOpen: React.Dispatch<React.SetStateAction<boolean
           >
             Optitalk+
           </Button>
-        )}
+        )} */}
         {["activated", "pending"].includes(store?.userPlanDetails?.subscriptionStatus as string) && (
           <MediaQuery
             largerThan="sm"
@@ -471,6 +475,15 @@ const NavbarComponent: FC<{ opened: boolean }> = memo((props) => {
             }
           />
         </NavbarItem>
+        <NavbarItem
+          href="https://www.buymeacoffee.com/optitalk"
+          label="Support Us"
+          icon={
+            <ThemeIcon color="#eb4228" variant="filled">
+              <AiFillHeart />
+            </ThemeIcon>
+          }
+        />
         <NavbarItem
           path="/chat"
           label="Chat"

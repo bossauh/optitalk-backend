@@ -346,8 +346,12 @@ export const useActiveCharacter = (): [CharacterType | undefined, (character?: C
       store?.setActiveCharacter(undefined);
       removeCookie("activeCharacterId", { path: "/" });
     } else {
+      const newDate = new Date();
+      const expiryDate = new Date();
+      expiryDate.setDate(newDate.getDate() + 100);
+
       store?.setActiveCharacter(character);
-      setCookie("activeCharacterId", character.id, { path: "/" });
+      setCookie("activeCharacterId", character.id, { path: "/", secure: false, expires: expiryDate });
       notifications.show({
         title: "Character selectd",
         message: "You can now chat with the character by going to the Chat page and sending a message.",
@@ -626,10 +630,26 @@ export const useSendMessage = (
   const [sending, setSending] = useState(false);
   const store = useContext(StoreContext);
 
-  const limitUnauthenticatedReachedError = (
+  const [cookies, ,] = useCookies(["openai-api-key"]);
+
+  // const limitUnauthenticatedReachedError = (
+  //   <Text>
+  //     Oops! It seems like you've hit the limit of 5 messages per hour on non-registered accounts. Please{" "}
+  //     <Anchor href="/oauth/google-oauth">sign up</Anchor> to continue.{" "}
+  //   </Text>
+  // );
+
+  const apiKeyRequiredError = (
     <Text>
-      Oops! It seems like you've hit the limit of 5 messages per hour on non-registered accounts. Please{" "}
-      <Anchor href="/oauth/google-oauth">sign up</Anchor> to continue.{" "}
+      OpenAI API Key not provided. Please go the chat's side bar (three vertical dots at the top inside a chat) and put
+      your OpenAI API key.
+    </Text>
+  );
+
+  const unauthenticatedError = (
+    <Text>
+      Oops! It seems like you're not registered. From now on, we require users to register and provide their own OpenAI
+      API key. Please click Sign Up at the top. Once signed in, go the chat's side bar and put your OpenAI API key.
     </Text>
   );
 
@@ -646,7 +666,8 @@ export const useSendMessage = (
 
   const tooMuchTrafficError = (
     <Text>
-      Too much traffic. Please try again. We are actively working on our system to handle the huge amount of users.
+      OpenAI Error. Please try again. Either your OpenAI API Key has reached its limits, incorrect API Key, or you're
+      just being rate limited. Try again in a minute.
     </Text>
   );
 
@@ -664,6 +685,7 @@ export const useSendMessage = (
         body: JSON.stringify({
           character_id: characterId,
           session_id: sessionId,
+          api_key: cookies["openai-api-key"],
         }),
         headers: {
           "Content-Type": "application/json",
@@ -681,7 +703,7 @@ export const useSendMessage = (
 
           if (d.status_code === 403) {
             if (!store?.authenticated) {
-              onChatError(limitUnauthenticatedReachedError);
+              onChatError(unauthenticatedError);
             } else {
               onChatError(limitAuthenticatedReachedError);
             }
@@ -689,6 +711,8 @@ export const useSendMessage = (
             onChatError(tooMuchTrafficError);
           } else if (d.status_code === 429) {
             onChatError(rateLimitError);
+          } else if (d.status_code === 400) {
+            onChatError(apiKeyRequiredError);
           } else {
             onChatError(
               <Text>
@@ -766,6 +790,7 @@ export const useSendMessage = (
           story: story,
           id: id,
           tweaks: tweaks,
+          api_key: cookies["openai-api-key"],
         }),
       })
         .then((r) => r.json())
@@ -781,7 +806,7 @@ export const useSendMessage = (
 
           if (d.status_code === 403) {
             if (!store?.authenticated) {
-              onChatError(limitUnauthenticatedReachedError);
+              onChatError(unauthenticatedError);
             } else {
               onChatError(limitAuthenticatedReachedError);
             }
@@ -789,6 +814,8 @@ export const useSendMessage = (
             onChatError(tooMuchTrafficError);
           } else if (d.status_code === 429) {
             onChatError(rateLimitError);
+          } else if (d.status_code === 400) {
+            onChatError(apiKeyRequiredError);
           } else {
             onChatError(
               <Text>A unknown error has occurred while trying to generate a response. Please try again.</Text>

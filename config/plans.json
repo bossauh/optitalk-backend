@@ -1,20 +1,20 @@
 {
   "free": {
-    "max_basic_model_requests_per_hour": 15,
+    "max_basic_model_requests_per_hour": 15000000,
     "max_advanced_model_requests_per_hour": 10,
-    "max_session_history": 25,
-    "max_characters": 8,
+    "max_session_history": 1000,
+    "max_characters": 80000,
     "name": "Free"
   },
   "basic": {
-    "max_basic_model_requests_per_hour": 2500,
+    "max_basic_model_requests_per_hour": 25000000,
     "max_advanced_model_requests_per_hour": 80,
     "max_session_history": 50,
     "max_characters": 10000,
     "name": "Plus"
   },
   "anonymous": {
-    "max_basic_model_requests_per_hour": 5,
+    "max_basic_model_requests_per_hour": 0,
     "max_advanced_model_requests_per_hour": 10,
     "max_session_history": 30,
     "max_characters": 8,

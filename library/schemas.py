@@ -1,5 +1,4 @@
-from voluptuous import (All, Any, Email, Length, Optional, Range, Required,
-                        Schema, Url)
+from voluptuous import All, Any, Email, Length, Optional, Range, Required, Schema, Url
 
 _CHARACTER_EXCHANGE = {
     Required("role"): Any("user", "assistant"),
@@ -123,6 +122,7 @@ POST_CHAT = Schema(
     {
         Required("character_id"): str,
         Required("content"): str,
+        Required("api_key"): All(str, Length(min=10)),  # TODO Remove
         Optional("user_name"): All(str, Length(min=1, max=100)),
         Optional("role"): Any("user", "assistant"),
         Optional("session_id"): str,
@@ -190,7 +190,11 @@ DELETE_CHARACTERS_ADD_TO_FAVORITES = Schema({Required("id"): str})
 PATCH_DISPLAY_NAME = Schema({Required("name"): All(str, Length(min=1, max=45))})
 GET_RENDER_CHARACTER_AVATAR = Schema({Required("character_id"): str})
 POST_CHAT_REGENERATE = Schema(
-    {Required("session_id"): str, Required("character_id"): str}
+    {
+        Required("session_id"): str,
+        Required("character_id"): str,
+        Required("api_key"): All(str, Length(min=10)),
+    }
 )
 POST_INLINE_FEEDBACK = Schema(
     {

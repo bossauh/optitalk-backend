@@ -130,6 +130,7 @@ class GPT:
         functions: Optional[list[OpenAIFunctionSpec]] = None,
         character_id: Optional[str] = None,
         _previous_completions: Optional[list[ChatCompletion]] = None,
+        api_key: Optional[str] = None,  # TODO Remove
         **kwargs,
     ) -> list[ChatCompletion]:
         """
@@ -194,6 +195,7 @@ class GPT:
             presence_penalty=presence_penalty,
             stream=True,
             functions=[x.schema for x in functions],
+            api_key=api_key,  # TODO Remove
             **kwargs,
         )
 

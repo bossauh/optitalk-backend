@@ -165,7 +165,7 @@ const BasicTab: FC = () => {
         </Badge>
       </Group>
       <Text fz="sm" maw="550px">
-        Tags helps users discover your characters. If you don't put any, we will eventually automatically assign one.
+        Tags helps users discover your characters.
       </Text>
 
       <MultiSelect

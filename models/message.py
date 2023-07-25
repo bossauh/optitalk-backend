@@ -42,10 +42,13 @@ class Message:
     completion_id: Optional[str] = None
     intent: Optional[str] = None
 
+    api_key: Optional[str] = None
+
     def to_json(self) -> dict:
         data = dataclasses.asdict(self)
 
         data.pop("completion_model", None)
         data.pop("completion_id", None)
+        data.pop("api_key", None)
 
         return data

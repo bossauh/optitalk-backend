@@ -12,6 +12,7 @@ from models.character import Character
 from models.message import Message
 from models.session import ChatSession
 from models.tweaks import Tweaks
+from openai.error import AuthenticationError, RateLimitError
 
 if TYPE_CHECKING:
     from ..app import App
@@ -62,6 +63,7 @@ def setup(server: "App") -> Blueprint:
                         story=data.get("story"),
                         tweaks=tweaks,
                         id=data.get("id"),
+                        api_key=data.get("api_key"),  # TODO Remove
                     )
                 except ModelRequestsLimitExceeded as e:
                     return responses.create_response(
@@ -71,7 +73,7 @@ def setup(server: "App") -> Blueprint:
                     return responses.create_response(
                         exception=e, status_code=responses.CODE_409
                     )
-                except openai.APIError:
+                except (openai.APIError, RateLimitError, AuthenticationError):
                     logger.exception("A OpenAI error has occurred.")
                     return responses.create_response(
                         status_code=responses.CODE_500,
@@ -80,9 +82,7 @@ def setup(server: "App") -> Blueprint:
                         },
                     )
 
-                return responses.create_response(
-                    payload=response[-1].to_json()
-                )
+                return responses.create_response(payload=response[-1].to_json())
 
         return responses.create_response(
             status_code=responses.CODE_404,
@@ -235,6 +235,7 @@ def setup(server: "App") -> Blueprint:
             return responses.create_response(status_code=responses.CODE_400)
 
         data = request.get_json()
+        api_key = data["api_key"]
         character_id = data["character_id"]
         session_id = data["session_id"]
 
@@ -277,6 +278,7 @@ def setup(server: "App") -> Blueprint:
                 user_name=last_user_message.name,
                 session_id=last_user_message.session_id,
                 id=last_user_message.id,
+                api_key=api_key,
             )
         except ModelRequestsLimitExceeded as e:
             return responses.create_response(

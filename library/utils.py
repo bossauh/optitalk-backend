@@ -285,10 +285,9 @@ def create_chat_completion_context(
             context_message["content"] += "\n- Make sure your responses are VERY SHORT."
 
     if session.story_mode and session.story:
-        if user.plan.id == "basic":
-            context_message[
-                "content"
-            ] += f"\n\nHere's the story that you and the user should follow. Follow it in steps and progression as the conversation happens:\n{session.story}"
+        context_message[
+            "content"
+        ] += f"\n\nHere's the story that you and the user should follow. Follow it in steps and progression as the conversation happens:\n{session.story}"
 
     if character.nsfw:
         context_message[

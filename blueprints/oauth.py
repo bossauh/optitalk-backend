@@ -110,6 +110,7 @@ def setup(server: "App") -> Blueprint:
                     )
                 time.sleep(0.3)
 
+        print(id_info)
         redirect_url = "/"
         try:
             user = users.register_user(

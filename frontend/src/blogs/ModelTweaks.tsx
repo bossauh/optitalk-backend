@@ -24,21 +24,6 @@ const ModelTweaks: FC = () => {
             not as much. This means, it's best to adjust the parameters before you send your first chat.
           </Text>
         </List.Item>
-        <List.Item>
-          <Text fz="sm">
-            Model tweaking is currently at beta and is therefore <b>FREE</b> for everyone for now as we're still testing
-            and improving the feature and require feedback from everyone. Once the feature is out of its beta stage, it
-            will only be exclusive to{" "}
-            <Anchor
-              onClick={() => {
-                navigate("/optitalk-plus");
-              }}
-            >
-              OptiTalk+
-            </Anchor>{" "}
-            users.
-          </Text>
-        </List.Item>
       </List>
       <Divider my="lg" />
       <Title order={3}>Parameters</Title>

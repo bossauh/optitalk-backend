@@ -10,6 +10,7 @@ import {
   Text,
   ThemeIcon,
   Title,
+  Tooltip,
   useMantineTheme,
 } from "@mantine/core";
 import { hasLength } from "@mantine/form";
@@ -100,6 +101,10 @@ const CharacterForm: FC<{
         content: hasLength({ min: 1, max: 2048 }, "Example message must be 1 to 2048 characters."),
       },
       tags: (values) => {
+        if (values.length === 0) {
+          return "Please provide at least 1 tag.";
+        }
+
         if (values.length > 3) {
           return "There can only be 3 maximum tags.";
         }
@@ -356,7 +361,13 @@ const CharacterForm: FC<{
       >
         <Tabs.List position={isMd ? "center" : "left"}>
           <Tabs.Tab value="basic">Basic Information</Tabs.Tab>
-          <Tabs.Tab value="knowledge-base">Knowledge Base</Tabs.Tab>
+          <Tooltip label="Knowledge base is temporarily disabled." events={{ hover: true, focus: true, touch: true }}>
+            <span>
+              <Tabs.Tab value="knowledge-base" disabled>
+                Knowledge Base
+              </Tabs.Tab>
+            </span>
+          </Tooltip>
           <Tabs.Tab value="example-conversations">Example Conversations</Tabs.Tab>
         </Tabs.List>
 

@@ -15,6 +15,7 @@ import { useMediaQuery } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
 import { nprogress } from "@mantine/nprogress";
 import { FC, useCallback, useContext, useEffect, useRef, useState } from "react";
+import { useCookies } from "react-cookie";
 import { BsFillSendFill } from "react-icons/bs";
 import { useNavigate } from "react-router-dom";
 import { v4 as uuidv4 } from "uuid";
@@ -39,6 +40,8 @@ const Chat: FC = () => {
   const [asideOpened, setAsideOpened] = useState(false);
 
   const [messageError, setMessageError] = useState<React.ReactNode | null>(null);
+
+  const [cookies, ,] = useCookies(["openai-api-key"]);
 
   useEffect(() => {
     if (isMd != null) {
@@ -236,7 +239,19 @@ const Chat: FC = () => {
           setAsideOpened={setAsideOpened}
           sending={sending}
         />
-        {messages.length > 0 ? (
+
+        {!cookies["openai-api-key"] ? (
+          <Flex direction="column" h="100%" align="center" justify="center" p="lg">
+            <Flex direction="column" gap="xs" align="center">
+              <Title align="center" order={2}>
+                No OpenAI API Key Provided
+              </Title>
+              <Text align="center" fz="sm">
+                Provide a API key by opening the chat's sidebar and pasting your OpenAI key in the API Key field.
+              </Text>
+            </Flex>
+          </Flex>
+        ) : messages.length > 0 ? (
           <ScrollArea
             sx={{
               flex: 1,
@@ -342,7 +357,7 @@ const Chat: FC = () => {
           direction="column"
           gap="xs"
           px="lg"
-          pb={!store?.authenticated || store.userPlanDetails?.subscriptionStatus === "activated" ? "lg" : undefined}
+          pb={"lg"}
           sx={{
             boxShadow: "0px -31px 41px 8px rgba(26,27,30,1);",
             zIndex: 1,
@@ -389,11 +404,11 @@ const Chat: FC = () => {
                 </ActionIcon>
               )
             }
-            disabled={character === undefined || sending || messageError !== null}
+            disabled={character === undefined || sending || messageError !== null || !cookies["openai-api-key"]}
           />
         </Flex>
 
-        {store?.authenticated && store?.userPlanDetails?.subscriptionStatus !== "activated" && (
+        {/* {store?.authenticated && store?.userPlanDetails?.subscriptionStatus !== "activated" && (
           <Flex direction="column" px="lg" align="center" py="sm">
             <Text fz="xs" align="center">
               {store?.userPlanDetails?.subscriptionStatus === "pending" ? (
@@ -413,7 +428,7 @@ const Chat: FC = () => {
               )}
             </Text>
           </Flex>
-        )}
+        )} */}
       </Flex>
 
       <MessagesAside key={store?.activeSession?.id} opened={asideOpened} setOpened={setAsideOpened} />

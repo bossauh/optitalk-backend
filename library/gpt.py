@@ -194,7 +194,7 @@ class GPT:
             frequency_penalty=frequency_penalty,
             presence_penalty=presence_penalty,
             stream=True,
-            functions=[x.schema for x in functions],
+            # functions=[x.schema for x in functions],
             api_key=api_key,  # TODO Remove
             **kwargs,
         )

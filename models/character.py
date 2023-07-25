@@ -19,12 +19,8 @@ from library.exceptions import *
 from library.gpt import gpt
 from library.security import route_security
 from library.socketio import socketio
-from library.tasks import (
-    error_alert,
-    increase_model_requests_state,
-    insert_message,
-    log_time_took_metric,
-)
+from library.tasks import (error_alert, increase_model_requests_state,
+                           insert_message, log_time_took_metric)
 from openai.embeddings_utils import cosine_similarity, get_embedding
 
 from models.knowledge import Knowledge
@@ -486,12 +482,12 @@ class Character:
         knowledge_hint = None
 
         if role != "function":
-            fetch_knowledge_st = time.perf_counter()
-            knowledge_hint = self._get_knowledge_hint(content, api_key=api_key)
-            if knowledge_hint:
-                new_message.knowledge_hint = knowledge_hint
-            fetch_knowledge_et = time.perf_counter() - fetch_knowledge_st
-            logger.debug(f"Fetching the knowledge hint took {fetch_knowledge_et}.")
+            # fetch_knowledge_st = time.perf_counter()
+            # knowledge_hint = self._get_knowledge_hint(content, api_key=api_key)
+            # if knowledge_hint:
+            #     new_message.knowledge_hint = knowledge_hint
+            # fetch_knowledge_et = time.perf_counter() - fetch_knowledge_st
+            # logger.debug(f"Fetching the knowledge hint took {fetch_knowledge_et}.")
             messages.append(new_message)
 
         model_parameters = {

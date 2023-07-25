@@ -37,9 +37,6 @@ const MyAccount: FC = () => {
           <Tabs.Tab value="details" icon={<BsGraphUpArrow />}>
             Details
           </Tabs.Tab>
-          <Tabs.Tab value="subscription" icon={<FaPaypal />}>
-            My Subscription
-          </Tabs.Tab>
           <Tabs.Tab value="settings" icon={<AiFillSetting />} rightSection={<Badge size="xs">New</Badge>}>
             Settings
           </Tabs.Tab>

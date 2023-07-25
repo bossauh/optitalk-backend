@@ -254,7 +254,7 @@ const Characters: FC = () => {
       </MediaQuery>
 
       <Flex direction="column" align="center" mt="xl">
-        <AdComponent client="ca-pub-3336177471309301" slot="5172839273" format="auto" />
+        <AdComponent client="ca-pub-3336177471309301" slot="5172839273" format="autos" />
       </Flex>
     </Container>
   );

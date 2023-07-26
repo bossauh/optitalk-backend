@@ -553,6 +553,14 @@ const Index: FC = () => {
         })}
         navbarOffsetBreakpoint="sm"
         padding={0}
+        sx={{
+          ".mantine-AppShell-body": {
+            height: "100% !important",
+          },
+          ".mantine-AppShell-root": {
+            height: "100% !important",
+          },
+        }}
       >
         {navbarOpen && (
           <MediaQuery

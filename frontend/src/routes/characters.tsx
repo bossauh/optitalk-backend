@@ -145,9 +145,9 @@ const Characters: FC = () => {
 
   return (
     <Container fluid mt="lg" mx="xs" pb="90px">
-      <Flex direction="column" align="center" mt="xl">
+      {/* <Flex direction="column" align="center" mt="xl">
         <AdComponent client="ca-pub-3336177471309301" slot="5172839273" format="autos" />
-      </Flex>
+      </Flex> */}
 
       <ActiveCharacterItem />
       <CharactersSearchBox />

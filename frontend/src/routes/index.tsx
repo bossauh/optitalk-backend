@@ -549,7 +549,7 @@ const Index: FC = () => {
         header={<HeaderComponent setOpen={setNavbarOpen} open={navbarOpen} />}
         navbar={<NavbarComponent opened={navbarOpen} />}
         styles={(theme) => ({
-          main: { backgroundColor: theme.colors.dark[7], height: "100vh" },
+          main: { backgroundColor: theme.colors.dark[7], height: "100%" },
         })}
         navbarOffsetBreakpoint="sm"
         padding={0}
@@ -558,6 +558,9 @@ const Index: FC = () => {
             height: "100% !important",
           },
           ".mantine-AppShell-root": {
+            height: "100% !important",
+          },
+          ".mantine-AppShell-main": {
             height: "100% !important",
           },
         }}
